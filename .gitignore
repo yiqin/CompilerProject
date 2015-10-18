@@ -1,2 +1,2 @@
 *.o
-scanner.yy.cpp
+*.yy.cpp
