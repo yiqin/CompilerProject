@@ -1,9 +1,10 @@
+%option main
+
+
 %{
 
-#include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
-
+#include <iostream>
+#include <string>
 #include <vector>
 
 typedef enum {FUNCTION, INT} symbol_type;
@@ -11,100 +12,75 @@ typedef enum {EXTERN, FUNCTION_PARAMETER, GLOBAL, BLOCK_LOCAL, FOR_LOOP_STATEMEN
 
 struct Symbol
 {
-    char name[100];
-    char type[100];
-    char scope[100];
+    std::string name;
+    std::string type;
+    std::string scope;
 };
 
-bool isNewSymbol = false;
-bool isFunctionParameters = false;
-bool isForLoop = false;
-int blocksCount = 0;
-
-char currentType[100];
-char currentScope[100] = "global";
-
 std::vector<Symbol> symbol_table;
-int i = 0;
 
 %}
 
 %%
 
-"const int" {
-    printf("const int\n");
+("+"|"-"|"++"|"--"|"+="|"-=") {
+    std::cout << yytext << ": additive operation" << std::endl;
 }
 
-"const string" {
-    printf("const string\n");
+= {
+    std::cout << "=: affectation" << std::endl;
 }
 
-("+"|"-"|"++"|"--"|"+="|"=+"|"-="|"=-") {
-    printf("%s: additive operation\n", yytext);
-}
-
-(=|>|<|>=|<|<=|==|!=) {
-    printf("%s: comparison operation\n", yytext);
+(>|<|>=|<|<=|==|!=) {
+    std::cout << yytext << ": comparison operation" << std::endl;
 }
 
 (<<|>>) {
-    printf("%s: expression\n", yytext);
+    std::cout << yytext << ": expression" << std::endl;
 }
 
-if|else|while|do|for|return    {printf("%s: control\n", yytext);}
-
-int|string|extern {printf("%s: type\n", yytext);}
-
-[a-z]([a-z]|[0-9])* {
-    printf("%s: identifier\n", yytext);
-    if (isNewSymbol) {
-        struct Symbol currentSymbol;
-        strcpy(currentSymbol.name, yytext);
-        strcpy(currentSymbol.type, currentType);
-
-        if (isFunctionParameters) {
-            strcpy(currentSymbol.scope, "function parameter");
-        } else if(isForLoop) {
-            strcpy(currentSymbol.scope, "for-loop statement");
-        } else {
-            strcpy(currentSymbol.scope, currentScope);
-        }
-
-        symbol_table.push_back(currentSymbol);
-        i++;
-        isNewSymbol = false;
-        strcpy(currentType, "");
-    }
+if|else|while|do|for|return    {
+    std::cout << yytext << ": control" << std::endl;
 }
 
-"(" {printf("(: left_parenthesis\n"); }
+int|string|extern {
+    std::cout << yytext << ": type" << std::endl;
+}
+
+[A-Za-z_][A-Za-z0-9_]* {
+    std::cout << yytext << ": identifier" << std::endl;
+    Symbol currentSymbol;
+    currentSymbol.name = yytext;
+    symbol_table.push_back(currentSymbol);
+}
+
+"(" {
+    std::cout << "(: left_parenthesis" << std::endl;
+}
 ")" {
-    printf("): right_parenthesis\n");
+    std::cout << "): right_parenthesis" << std::endl;
 }
 
 "{" {
-    printf("{: left_bracket\n");
+    std::cout << "{: left_bracket" << std::endl;
 }
 "}" {
-    printf("}: right_bracket\n");
-
+    std::cout << "}: right_bracket" << std::endl;
 }
 
-";" {}
+";" {
+    std::cout << ";: semi_colon" << std::endl;
+}
+
+[0-9]+ {
+    std::cout << "const int" << std::endl;
+}
+
+\"[^\"]\" {
+    std::cout << "const string" << std::endl;
+}
 
 .   ;
 \n  ;
 
 %%
-
-int main()
-{
-    yylex();
-
-    return 0;
-}
-
-int yywrap()
-{
-    return 1;
-}
