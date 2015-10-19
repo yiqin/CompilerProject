@@ -31,11 +31,25 @@ int i = 0;
 
 %%
 
-(=|>|<|>=|<|<=|<>) {
-    printf("%s: comparison operations\n", yytext);
+"const int" {
+    printf("const int\n");
 }
 
+"const string" {
+    printf("const string\n");
+}
 
+("+"|"-"|"++"|"--"|"+="|"=+"|"-="|"=-") {
+    printf("%s: additive operation\n", yytext);
+}
+
+(=|>|<|>=|<|<=|==|!=) {
+    printf("%s: comparison operation\n", yytext);
+}
+
+(<<|>>) {
+    printf("%s: expression\n", yytext);
+}
 
 if|else|while|do|for|return    {printf("%s: control\n", yytext);}
 
@@ -66,26 +80,13 @@ int|string|extern {printf("%s: type\n", yytext);}
 "(" {printf("(: left_parenthesis\n"); }
 ")" {
     printf("): right_parenthesis\n");
-    if (isFunctionParameters) {
-        isFunctionParameters = false;
-    }
-    if (isForLoop) {
-        isForLoop = false;
-    }
 }
 
 "{" {
-    blocksCount++;
-    strcpy(currentScope, "block local");
+    printf("{: left_bracket\n");
 }
 "}" {
-    blocksCount--;
-    if (blocksCount < 0) {
-        blocksCount = 0;
-    }
-    if (blocksCount == 0) {
-        strcpy(currentScope, "");
-    }
+    printf("}: right_bracket\n");
 
 }
 
@@ -99,8 +100,6 @@ int|string|extern {printf("%s: type\n", yytext);}
 int main()
 {
     yylex();
-
-    
 
     return 0;
 }
