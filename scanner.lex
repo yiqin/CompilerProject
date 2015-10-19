@@ -60,9 +60,9 @@ int i = 0;
 extern {printf("extern: external_declaration\n"); strcpy(currentScope, "extern");}
 int {printf("%s: integer_declaration\n", yytext); isNewSymbol = true; strcpy(currentType, "int");}
 
-for {printf("for control\n"); isForLoop = true;}
-for"(" {printf("for control\n"); isForLoop = true;}
-if|else|while|do|return    {printf("control\n");}
+for"("? {printf("for: control\n"); isForLoop = true;}
+
+if|else|while|do|return    {printf("%s: control\n", yytext);}
 
 
 [A-Za-z]([A-Za-z]|[0-9])*"(" {
