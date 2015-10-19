@@ -14,7 +14,8 @@ struct Symbol
 };
 
 bool isNewSymbol = false;
-bool isInFunction = false;
+bool isFunctionParameters = false;
+bool isForLoop = false;
 int blocksCount = 0;
 
 char currentType[100];
@@ -59,16 +60,29 @@ int i = 0;
 extern {printf("extern: external_declaration\n"); strcpy(currentScope, "extern");}
 int {printf("%s: integer_declaration\n", yytext); isNewSymbol = true; strcpy(currentType, "int");}
 
-if|else|while|do|for|return    {printf("control\n");}
+for {printf("for control\n"); isForLoop = true;}
+if|else|while|do|return    {printf("control\n");}
+
+
 
 [a-z]([a-z]|[0-9])*"(" {
     printf("%s: function identifier\n", yytext);
     if (isNewSymbol) {
         struct Symbol currentSymbol;
+        size_t indexOfNullTerminator = strlen(yytext);
+        yytext[indexOfNullTerminator-1] = 0; 
         strcpy(currentSymbol.name, yytext);
         strcpy(currentSymbol.type, "function, ");
         strcat(currentSymbol.type, currentType);
-        strcpy(currentSymbol.scope, currentScope);
+
+        if(strcmp(currentScope, "") == 0) {
+            strcpy(currentSymbol.scope, "global");
+        } else {
+            strcpy(currentSymbol.scope, currentScope);
+        }
+        isFunctionParameters = true;
+        
+        
         a[i] = currentSymbol;
         i++;
         isNewSymbol = false;
@@ -83,7 +97,15 @@ if|else|while|do|for|return    {printf("control\n");}
         struct Symbol currentSymbol;
         strcpy(currentSymbol.name, yytext);
         strcpy(currentSymbol.type, currentType);
-        strcpy(currentSymbol.scope, currentScope);
+        
+        if (isFunctionParameters) {
+            strcpy(currentSymbol.scope, "function parameter");
+        } else if(isForLoop) {
+            strcpy(currentSymbol.scope, "for-loop statement");
+        } else {
+            strcpy(currentSymbol.scope, currentScope);
+        }
+
         a[i] = currentSymbol;
         i++;
         isNewSymbol = false;
@@ -94,7 +116,15 @@ if|else|while|do|for|return    {printf("control\n");}
 }
 
 "(" {printf("(: left_parenthesis\n"); }
-")" {printf("): right_parenthesis\n");}
+")" {
+    printf("): right_parenthesis\n");
+    if (isFunctionParameters) {
+        isFunctionParameters = false;
+    }
+    if (isForLoop) {
+        isForLoop = false;
+    }
+}
 
 "{" {
     blocksCount++; 
@@ -106,7 +136,7 @@ if|else|while|do|for|return    {printf("control\n");}
         blocksCount = 0;
     }
     if (blocksCount == 0) {
-        strcpy(currentScope, "global");
+        strcpy(currentScope, "");
     }
     
 }
@@ -124,7 +154,7 @@ int main()
     printf("Symbol name  |           Type       |   Scope\n");
     printf("--------------------------------------------------------\n");
     for(int j = 0; j <= i-1; j++)
-        printf("%s       |    %s    |     %s\n", a[j].name, a[j].type, a[j].scope);
+        printf("%s       |    %s    |        %s\n", a[j].name, a[j].type, a[j].scope);
 
     return 0;
 }
