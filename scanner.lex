@@ -31,14 +31,15 @@ int i = 0;
 
 %%
 
+(=|>|<|>=|<|<=|<>) {
+    printf("%s: comparison operations\n", yytext);
+}
 
-extern {printf("extern: external_declaration\n"); strcpy(currentScope, "extern");}
-int {printf("%s: integer_declaration\n", yytext); isNewSymbol = true; strcpy(currentType, "int");}
 
-for"("? {printf("for: control\n"); isForLoop = true;}
 
-if|else|while|do|return    {printf("%s: control\n", yytext);}
+if|else|while|do|for|return    {printf("%s: control\n", yytext);}
 
+int|string|extern {printf("%s: type\n", yytext);}
 
 [a-z]([a-z]|[0-9])* {
     printf("%s: identifier\n", yytext);
@@ -99,12 +100,7 @@ int main()
 {
     yylex();
 
-    printf("\n\n\nSymbol Table\n");
-    printf("--------------------------------------------------------\n");
-    printf("Symbol name  |           Type       |   Scope\n");
-    printf("--------------------------------------------------------\n");
-    for(int j = 0; j <= i-1; j++)
-        printf("%s       |    %s    |        %s\n", a[j].name, a[j].type, a[j].scope);
+    
 
     return 0;
 }
