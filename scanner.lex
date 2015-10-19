@@ -9,11 +9,16 @@ typedef enum {EXTERN, FUNCTION_PARAMETER, GLOBAL, BLOCK_LOCAL, FOR_LOOP_STATEMEN
 struct Symbol
 {
     char name[100];
-    symbol_type type;
-    symbol_scope scope;
+    char type[100];
+    char scope[100];
 };
 
 bool isNewSymbol = false;
+bool isInFunction = false;
+int blocksCount = 0;
+
+char currentType[100];
+char currentScope[100] = "global";
 
 typedef struct {
   int *array;
@@ -41,7 +46,7 @@ void freeArray(Array *a) {
   a->used = a->size = 0;
 }
 
-Symbol a[100];
+Symbol a[1000];
 int i = 0;
 
 %}
@@ -51,26 +56,60 @@ int i = 0;
 \/\/.* ; 
 \/\*(.*\n)*.*\*\/ ; 
 
-extern {printf("extern: external_declaration\n");}
-int {printf("%s: integer_declaration\n", yytext); isNewSymbol = true;}
+extern {printf("extern: external_declaration\n"); strcpy(currentScope, "extern");}
+int {printf("%s: integer_declaration\n", yytext); isNewSymbol = true; strcpy(currentType, "int");}
+
 if|else|while|do|for|return    {printf("control\n");}
+
+[a-z]([a-z]|[0-9])*"(" {
+    printf("%s: function identifier\n", yytext);
+    if (isNewSymbol) {
+        struct Symbol currentSymbol;
+        strcpy(currentSymbol.name, yytext);
+        strcpy(currentSymbol.type, "function, ");
+        strcat(currentSymbol.type, currentType);
+        strcpy(currentSymbol.scope, currentScope);
+        a[i] = currentSymbol;
+        i++;
+        isNewSymbol = false;
+        strcpy(currentType, "");
+        strcpy(currentScope, "");
+    }
+}
 
 [a-z]([a-z]|[0-9])* {
     printf("%s: identifier\n", yytext);
     if (isNewSymbol) {
         struct Symbol currentSymbol;
         strcpy(currentSymbol.name, yytext);
+        strcpy(currentSymbol.type, currentType);
+        strcpy(currentSymbol.scope, currentScope);
         a[i] = currentSymbol;
         i++;
         isNewSymbol = false;
+        strcpy(currentType, "");
+        strcpy(currentScope, "");
     }
 
 }
 
-([0-9][a-z])
-
-"(" {printf("(: left_parenthesis\n");}
+"(" {printf("(: left_parenthesis\n"); }
 ")" {printf("): right_parenthesis\n");}
+
+"{" {
+    blocksCount++; 
+    strcpy(currentScope, "block local");
+}
+"}" {
+    blocksCount--;
+    if (blocksCount < 0) {
+        blocksCount = 0;
+    }
+    if (blocksCount == 0) {
+        strcpy(currentScope, "global");
+    }
+    
+}
 
 ";" {}
 
@@ -84,8 +123,8 @@ int main()
     printf("--------------------------------------------------------\n");
     printf("Symbol name  |           Type       |   Scope\n");
     printf("--------------------------------------------------------\n");
-    for(int j = 0; j <= i; j++)
-        printf("%s\n", a[j].name);
+    for(int j = 0; j <= i-1; j++)
+        printf("%s       |    %s    |     %s\n", a[j].name, a[j].type, a[j].scope);
 
     return 0;
 }
