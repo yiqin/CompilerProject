@@ -65,12 +65,12 @@ for"(" {printf("for control\n"); isForLoop = true;}
 if|else|while|do|return    {printf("control\n");}
 
 
-[a-z]([a-z]|[0-9])*"(" {
+[A-Za-z]([A-Za-z]|[0-9])*"(" {
+    size_t indexOfNullTerminator = strlen(yytext);
+    yytext[indexOfNullTerminator-1] = 0; 
     printf("%s: function identifier\n", yytext);
     if (isNewSymbol) {
         struct Symbol currentSymbol;
-        size_t indexOfNullTerminator = strlen(yytext);
-        yytext[indexOfNullTerminator-1] = 0; 
         strcpy(currentSymbol.name, yytext);
         strcpy(currentSymbol.type, "function, ");
         strcat(currentSymbol.type, currentType);
@@ -142,6 +142,9 @@ if|else|while|do|return    {printf("control\n");}
 }
 
 ";" {}
+
+.   ;
+\n  ;
 
 %%
 
