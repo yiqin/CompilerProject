@@ -87,7 +87,7 @@ if|else|while|do|return    {printf("control\n");}
         i++;
         isNewSymbol = false;
         strcpy(currentType, "");
-        strcpy(currentScope, "");
+        
     }
 }
 
@@ -110,7 +110,7 @@ if|else|while|do|return    {printf("control\n");}
         i++;
         isNewSymbol = false;
         strcpy(currentType, "");
-        strcpy(currentScope, "");
+        
     }
 
 }
