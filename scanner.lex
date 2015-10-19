@@ -1,6 +1,7 @@
 %{
 #include<stdio.h>
 #include<string.h>
+#include <stdbool.h>
 
 typedef enum {FUNCTION, INT} symbol_type;
 typedef enum {EXTERN, FUNCTION_PARAMETER, GLOBAL, BLOCK_LOCAL, FOR_LOOP_STATEMENT} symbol_scope;
@@ -12,8 +13,7 @@ struct Symbol
     symbol_scope scope;
 };
 
-
-
+bool isNewSymbol = false;
 
 typedef struct {
   int *array;
@@ -52,15 +52,19 @@ int i = 0;
 \/\*(.*\n)*.*\*\/ ; 
 
 extern {printf("extern: external_declaration\n");}
-int {printf("%s: integer_declaration\n", yytext);}
+int {printf("%s: integer_declaration\n", yytext); isNewSymbol = true;}
 if|else|while|do|for|return    {printf("control\n");}
 
 [a-z]([a-z]|[0-9])* {
     printf("%s: identifier\n", yytext);
-    struct Symbol currentSymbol;
-    strcpy(currentSymbol.name, yytext);
-    a[i] = currentSymbol;
-    i++;
+    if (isNewSymbol) {
+        struct Symbol currentSymbol;
+        strcpy(currentSymbol.name, yytext);
+        a[i] = currentSymbol;
+        i++;
+        isNewSymbol = false;
+    }
+
 }
 
 ([0-9][a-z])
@@ -76,7 +80,10 @@ int main()
 {
     yylex();
     
-    printf("\n\nSymbol Table\n");
+    printf("\n\n\nSymbol Table\n");
+    printf("--------------------------------------------------------\n");
+    printf("Symbol name  |           Type       |   Scope\n");
+    printf("--------------------------------------------------------\n");
     for(int j = 0; j <= i; j++)
         printf("%s\n", a[j].name);
 
