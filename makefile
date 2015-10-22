@@ -5,14 +5,16 @@ SRCDIR   = src
 ifdef COMSPEC
 	CXX   = g++.exe
 	FLEX  = flex.exe
-	RM    = rm -rf
 	MKDIR = mkdir -p
+	MV    = mv -f
+	RM    = rm -rf
 
 else
 	CXX   = g++
 	FLEX  = flex
-	RM    = rm -f
 	MKDIR = mkdir -p
+	MV    = mv -f
+	RM    = rm -f
 
 endif
 
@@ -23,6 +25,8 @@ LDLIBS   =
 
 BINARIES = compiler preprocessor
 BINARIES := $(addprefix $(BINDIR)/,$(BINARIES))
+SRCS := $(wildcard $(SRCDIR)/*.cpp)
+LEXS := $(wildcard $(SRCDIR)/*.lex)
 
 
 # BUILD ACTIONS
@@ -54,6 +58,23 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@$(MKDIR) $(@D)
 	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
 
+$(BUILDDIR)/%.o: $(BUILDDIR)/%.cpp
+	@$(MKDIR) $(@D)
+	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
+
 $(BUILDDIR)/%.yy.cpp: $(SRCDIR)/%.lex
 	@$(MKDIR) $(@D)
 	$(FLEX) -o $@ $<
+
+$(BUILDDIR)/%.d: $(SRCDIR)/%.cpp
+	@$(MKDIR) $(@D)
+	$(CXX) -c -MT "$(BUILDDIR)/$*.o $(BUILDDIR)/$*.d" -MM -MP $(CPPFLAGS) $^ > $@
+
+$(BUILDDIR)/%.d: $(BUILDDIR)/%.cpp
+	@$(MKDIR) $(@D)
+	$(CXX) -c -MT "$(BUILDDIR)/$*.o $(BUILDDIR)/$*.d" -MM -MP $(CPPFLAGS) $^ > $@
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(patsubst $(SRCDIR)/%.cpp,$(BUILDDIR)/%.d,$(SRCS))
+-include $(patsubst $(SRCDIR)/%.lex,$(BUILDDIR)/%.yy.d,$(LEXS))
+endif
