@@ -1,50 +1,59 @@
-ifdef COMSPEC
-	CXX  = g++.exe
-	FLEX = flex.exe
-	RM   = rm -f
+BINDIR   = bin
+BUILDDIR = build
+SRCDIR   = src
 
-	EXECUTABLES = compiler.exe preprocessor.exe
+ifdef COMSPEC
+	CXX   = g++.exe
+	FLEX  = flex.exe
+	RM    = rm -rf
+	MKDIR = mkdir -p
 
 else
-	CXX  = g++
-	FLEX = flex
-	RM   = rm -f
-
-	EXECUTABLES = compiler
+	CXX   = g++
+	FLEX  = flex
+	RM    = rm -f
+	MKDIR = mkdir -p
 
 endif
 
-CPPFLAGS =
+CPPFLAGS = -I $(SRCDIR)
 CXXFLAGS = -std=gnu++11
 LDFLAGS  =
 LDLIBS   =
 
-LEXS = preprocessor.lex scanner.lex
-LEX_CPP = $(subst .lex,.yy.cpp,$(LEXS))
-
-SRCS = macro.cpp $(LEX_CPP)
-OBJS = $(subst .cpp,.o,$(SRCS))
+BINARIES = compiler preprocessor
+BINARIES := $(addprefix $(BINDIR)/,$(BINARIES))
 
 
-compiler: scanner.yy.o
-	$(CXX) $(LDFLAGS) -o compiler scanner.yy.o $(LDLIBS)
+# BUILD ACTIONS
 
-preprocessor: preprocessor.yy.o macro.o
-	$(CXX) $(LDFLAGS) -o preprocessor preprocessor.yy.o macro.o $(LDLIBS)
-
-all: compiler preprocessor
-
-macro.o: macro.cpp
-
-preprocessor.yy.o: preprocessor.yy.cpp
-
-scanner.yy.o: scanner.yy.cpp
-
-scanner.yy.cpp: scanner.lex
-	$(FLEX) -o scanner.yy.cpp scanner.lex
-
-preprocessor.yy.cpp: preprocessor.lex
-	$(FLEX) -o preprocessor.yy.cpp preprocessor.lex
+all: $(BINARIES)
 
 clean:
-	$(RM) $(OBJS) $(LEX_CPP) $(EXECUTABLES)
+	$(RM) $(BINDIR) $(BUILDDIR)
+
+.SECONDARY:
+.PHONY: all clean
+
+
+# SPECIFY BINARY DEPENDENCIES
+#   All dependencies will automatically be built using the rule patterns
+#   specified below.
+
+$(BINDIR)/compiler: $(BUILDDIR)/scanner.yy.o
+$(BINDIR)/preprocessor: $(BUILDDIR)/preprocessor.yy.o $(BUILDDIR)/macro.o
+
+
+# RULE PATTERNS
+
+$(BINDIR)/%:
+	@$(MKDIR) $(@D)
+	$(CXX) -o $@ $(LDFLAGS) $(LDLIBS) $^
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+	@$(MKDIR) $(@D)
+	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
+
+$(BUILDDIR)/%.yy.cpp: $(SRCDIR)/%.lex
+	@$(MKDIR) $(@D)
+	$(FLEX) -o $@ $<

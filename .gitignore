@@ -1,2 +1,2 @@
-*.o
-*.yy.cpp
+bin
+build
