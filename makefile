@@ -1,22 +1,15 @@
+# directories
 BINDIR   = bin
 BUILDDIR = build
 SRCDIR   = src
 
-ifdef COMSPEC
-	CXX   = g++.exe
-	FLEX  = flex.exe
-	MKDIR = mkdir -p
-	MV    = mv -f
-	RM    = rm -rf
+# build tools
+CXX  = g++
+FLEX = flex
 
-else
-	CXX   = g++
-	FLEX  = flex
-	MKDIR = mkdir -p
-	MV    = mv -f
-	RM    = rm -f
-
-endif
+MKDIR = mkdir -p
+MV    = mv -f
+RM    = rm -rf
 
 CPPFLAGS = -I $(SRCDIR)
 CXXFLAGS = -std=gnu++11
@@ -25,8 +18,8 @@ LDLIBS   =
 
 BINARIES = compiler preprocessor
 BINARIES := $(addprefix $(BINDIR)/,$(BINARIES))
-SRCS := $(wildcard $(SRCDIR)/*.cpp)
-LEXS := $(wildcard $(SRCDIR)/*.lex)
+SRCS = $(wildcard $(SRCDIR)/*.cpp)
+LEXS = $(wildcard $(SRCDIR)/*.lex)
 
 
 # BUILD ACTIONS
@@ -34,7 +27,7 @@ LEXS := $(wildcard $(SRCDIR)/*.lex)
 all: $(BINARIES)
 
 clean:
-	$(RM) $(BINDIR) $(BUILDDIR)
+	$(RM) $(BINDIR) $(BUILDDIR) $(patsubst $(SRCDIR)/%.lex,$(SRCDIR)/%.yy.cpp,$(LEXS))
 
 .SECONDARY:
 .PHONY: all clean
@@ -50,27 +43,23 @@ $(BINDIR)/preprocessor: $(BUILDDIR)/preprocessor.yy.o $(BUILDDIR)/macro.o
 
 # RULE PATTERNS
 
+# link
 $(BINDIR)/%:
 	@$(MKDIR) $(@D)
 	$(CXX) -o $@ $(LDFLAGS) $(LDLIBS) $^
 
+# compile/assemble
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@$(MKDIR) $(@D)
 	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
 
-$(BUILDDIR)/%.o: $(BUILDDIR)/%.cpp
-	@$(MKDIR) $(@D)
-	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
-
-$(BUILDDIR)/%.yy.cpp: $(SRCDIR)/%.lex
+# Flex
+$(SRCDIR)/%.yy.cpp: $(SRCDIR)/%.lex
 	@$(MKDIR) $(@D)
 	$(FLEX) -o $@ $<
 
+# dependencies
 $(BUILDDIR)/%.d: $(SRCDIR)/%.cpp
-	@$(MKDIR) $(@D)
-	$(CXX) -c -MT "$(BUILDDIR)/$*.o $(BUILDDIR)/$*.d" -MM -MP $(CPPFLAGS) $^ > $@
-
-$(BUILDDIR)/%.d: $(BUILDDIR)/%.cpp
 	@$(MKDIR) $(@D)
 	$(CXX) -c -MT "$(BUILDDIR)/$*.o $(BUILDDIR)/$*.d" -MM -MP $(CPPFLAGS) $^ > $@
 
