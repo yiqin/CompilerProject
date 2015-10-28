@@ -26,7 +26,10 @@ void strip (std::string& s) {
 %}
 
 
-%x block_comment def_macro def_macro_args
+%x block_comment
+%x include_directive
+%x def_macro
+%x def_macro_args
 
 identifier  [A-Za-z_][A-Za-z0-9_]*
 
@@ -39,6 +42,26 @@ identifier  [A-Za-z_][A-Za-z0-9_]*
     Macro_Map macros;
     preprocessor::Macro::Ptr curr_macro;
 %}
+
+
+    /* Include directives. */
+
+#[\t ]*include[\t ]*<                   {
+    BEGIN(include_directive);
+}
+
+<include_directive>[^ \t\n>]+>          {
+    std::string filename(yytext);
+    filename.erase(filename.end() - 1);
+
+    // TODO(emery): Process include files recursively. (See issue #7)
+    std::cerr
+        << "NOT YET IMPLEMENTED: Found file to include '"
+        << filename << "'." << std::endl;
+
+    BEGIN(INITIAL);
+}
+
 
     /* Macro definitions. */
 

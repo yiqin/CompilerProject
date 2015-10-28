@@ -1,4 +1,5 @@
 %option main
+%option yylineno
 
 
 %{
@@ -27,8 +28,12 @@ std::vector<Symbol> symbol_table;
     std::cout << yytext << ": additive operation" << std::endl;
 }
 
+"," {
+    std::cout << ",: list delimiter" << std::endl;
+}
+
 = {
-    std::cout << "=: affectation" << std::endl;
+    std::cout << "=: assignment" << std::endl;
 }
 
 (>|<|>=|<|<=|==|!=) {
@@ -76,11 +81,18 @@ int|string|extern {
     std::cout << "const int" << std::endl;
 }
 
-\"[^\"]\" {
+\"[^\"]*\" {
     std::cout << "const string" << std::endl;
 }
 
-.   ;
-\n  ;
+[\n ]  ;
+
+.   {
+    std::cerr
+        << "ERROR: unrecognized character '" << yytext
+        << "' found in line " << yylineno
+        << std::endl
+        ;
+}
 
 %%
