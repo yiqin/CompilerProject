@@ -1,8 +1,15 @@
-%option main
+ // Enable line number tracking by Flex.
 %option yylineno
 
+ // Generate c++ class instead of bare c functions.
+%option c++
+
+ // Scanner does not support handling multiple files.
+%option yywrap nounput
 
 %{
+
+#include "scanner.hpp"
 
 #include <iostream>
 #include <string>
@@ -22,7 +29,9 @@ std::vector<Symbol> symbol_table;
 
 %}
 
+
 %%
+
 
 ("+"|"-"|"++"|"--"|"+="|"-=") {
     std::cout << yytext << ": additive operation" << std::endl;
@@ -96,3 +105,22 @@ int|string|extern {
 }
 
 %%
+
+
+/* When the scanner receives an end-of-file indication from YY_INPUT, it then
+ * checks the yywrap() function. If yywrap() returns false (zero), then it is
+ * assumed that the function has gone ahead and set up `yyin' to point to
+ * another input file, and scanning continues. If it returns true (non-zero),
+ * then the scanner terminates, returning 0 to its caller. */
+
+int ScannerFlexLexer::yywrap () {
+    return 1;
+}
+
+
+int main () {
+    ScannerFlexLexer scanner;
+    scanner.yylex();
+    return 0;
+}
+
