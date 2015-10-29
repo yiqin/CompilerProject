@@ -19,13 +19,12 @@
 %token FOR
 %token THEN
 
-%token assignment
-%token INF
 %token EGAL
+%token DIFF
+%token INF
 %token SUP
 %token INFEQUAL
 %token SUPEQUAL
-%token DIFF
 
 %token PLUS
 %token MINUS
@@ -111,7 +110,7 @@ expression_instruction :
 ;
 
 assignment :
-    IDENT assignment expression
+    IDENT '=' expression
 ;
 
 compound_instruction :
@@ -159,12 +158,12 @@ condition :
 ;
 
 comparison_operator :
-    EGAL  {$$.entier=EGAL;}
-  | DIFF {$$.entier=DIFF;}
-  | INF  {$$.entier=INF;}
-  | SUP  {$$.entier=SUP;}
-  | INFEQUAL {$$.entier=INFEQUAL;}
-  | SUPEQUAL {$$.entier=SUPEQUAL;}
+    EGAL  {$$.entier=EGAL;}  // equal
+  | DIFF {$$.entier=DIFF;}   // not-equal
+  | INF  {$$.entier=INF;}    // less-than
+  | SUP  {$$.entier=SUP;}    // greater-than
+  | INFEQUAL {$$.entier=INFEQUAL;}  // less-than-or-equal
+  | SUPEQUAL {$$.entier=SUPEQUAL;}  // greater-than-or-equal
 ;
 
 expression :
