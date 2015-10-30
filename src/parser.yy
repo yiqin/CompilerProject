@@ -5,10 +5,10 @@
 #include <string>
 
 // WARNING: USE OF A DIRTY MACRO
-//          The parser will by default try to use a global yylex function. We //
-//          want it to use the yylex function #define yylex corresponding to its
-//          member reference "scanner".
-#define yylex scanner.yylex
+//          The parser will by default try to use a global yylex function. We
+//          want it to use the lex function of its member reference scanner. So
+//          #define yylex to refer to this.
+#define yylex scanner.lex
 
 %}
 
