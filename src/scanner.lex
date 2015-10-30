@@ -24,6 +24,10 @@
 // won't work. We need to explicitly use parser::Parser::token_type::END.
 #define yyterminate() return token::END
 
+// Each time yylex is invoked, advance the end position's column a number of
+// spaces equal to the length of the matched text.
+#define YY_USER_ACTION yylloc->columns(yyleng);
+
 typedef enum {FUNCTION, INT} symbol_type;
 typedef enum {EXTERN, FUNCTION_PARAMETER, GLOBAL, BLOCK_LOCAL, FOR_LOOP_STATEMENT} symbol_scope;
 
@@ -43,11 +47,16 @@ std::vector<Symbol> symbol_table;
 
 
 %{
-    // "Import" the token enumeration from the generated Parser class.
-    // (Originally defined in "parser.tab.hpp" which is generated from
-    // "parser.yy".)
-    typedef parser::Parser::token token;
-    typedef parser::Parser::token_type token_type;
+
+// "Import" the token enumeration from the generated Parser class.
+// (Originally defined in "parser.tab.hpp" which is generated from
+// "parser.yy".)
+typedef parser::Parser::token token;
+typedef parser::Parser::token_type token_type;
+
+// Reset the begining of the location tracker to its end.
+yylloc->step();
+
 %}
 
 
@@ -100,7 +109,8 @@ extern { return token::EXTERN; }
     return token::CONST_STRING;
 }
 
-[\n ]  ;
+[ \t]+  yylloc->step();
+\n+     yylloc->lines(yyleng); yylloc->step();
 
 .   {
     std::cerr

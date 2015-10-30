@@ -2,17 +2,18 @@ extern int foo2(int x);
 
 extern int foo3(int x, int y);
 
-int foo(int count) 
+int foo(int count)
 {
-    int sum = 0.0;
-    extern int sum2 = 1.0;
-	>>
+    int i;
+    int sum;
+    int sum2;
+    sum = 0;
+    sum2 = 1;
 
-	const int a = 1; 
-	
-    for    (int i=1; i <= count; i++) 
+
+    for    (i = 1; i <= count; i += 1)
         sum += foo2(i);
 
 
-    return sum; 
+    return sum;
 }
