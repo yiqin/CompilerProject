@@ -2,3 +2,10 @@ bin
 build
 
 *.pdf
+*.yy.cpp
+*.tab.hpp
+*.tab.cpp
+
+src/location.hh
+src/position.hh
+src/stack.hh
