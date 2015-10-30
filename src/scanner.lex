@@ -11,9 +11,18 @@
 
 #include "scanner.hpp"
 
+#include <cassert>
+
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "parser.tab.hpp"
+
+// By default yylex returns int. As part of how we are interfacing with Bison,
+// we return parser::Parser::token_type. This means that Flex's EOF return code
+// won't work. We need to explicitly use parser::Parser::token_type::END.
+#define yyterminate() return token::END
 
 typedef enum {FUNCTION, INT} symbol_type;
 typedef enum {EXTERN, FUNCTION_PARAMETER, GLOBAL, BLOCK_LOCAL, FOR_LOOP_STATEMENT} symbol_scope;
@@ -33,65 +42,62 @@ std::vector<Symbol> symbol_table;
 %%
 
 
-("+"|"-"|"++"|"--"|"+="|"-=") {
-    std::cout << yytext << ": additive operation" << std::endl;
-}
+%{
+    // "Import" the token enumeration from the generated Parser class.
+    // (Originally defined in "parser.tab.hpp" which is generated from
+    // "parser.yy".)
+    typedef parser::Parser::token token;
+    typedef parser::Parser::token_type token_type;
+%}
 
-"," {
-    std::cout << ",: list delimiter" << std::endl;
-}
 
-= {
-    std::cout << "=: assignment" << std::endl;
-}
+"+" { return token::PLUS; }
+"-" { return token::MINUS; }
+"*" { return token::MULTIPLY; }
+"/" { return token::DIVIDE; }
+"%" { return token::MODULO; }
 
-(>|<|>=|<|<=|==|!=) {
-    std::cout << yytext << ": comparison operation" << std::endl;
-}
+">>" { return token::SHIFTRIGHT; }
+"<<" { return token::SHIFTLEFT; }
 
-(<<|>>) {
-    std::cout << yytext << ": expression" << std::endl;
-}
+"," { return static_cast<token_type>(','); }
+"=" { return static_cast<token_type>('='); }
 
-if|else|while|do|for|return    {
-    std::cout << yytext << ": control" << std::endl;
-}
+"==" { return token::EQUAL;        }
+"!=" { return token::NEQUAL;       }
+"<"  { return token::LESS;         }
+">"  { return token::GREATER;      }
+"<=" { return token::LESSEQUAL;    }
+">=" { return token::GREATEREQUAL; }
 
-int|string|extern {
-    std::cout << yytext << ": type" << std::endl;
-}
+if     { return token::IF;     }
+else   { return token::ELSE;   }
+while  { return token::WHILE;  }
+do     { return token::DO;     }
+for    { return token::FOR;    }
+return { return token::RETURN; }
+
+int    { return token::INT;    }
+string { return token::STRING; }
+extern { return token::EXTERN; }
 
 [A-Za-z_][A-Za-z0-9_]* {
-    std::cout << yytext << ": identifier" << std::endl;
-    Symbol currentSymbol;
-    currentSymbol.name = yytext;
-    symbol_table.push_back(currentSymbol);
+    yylval->string_value = new std::string(yytext, yyleng);
+    return token::IDENT;
 }
 
-"(" {
-    std::cout << "(: left_parenthesis" << std::endl;
-}
-")" {
-    std::cout << "): right_parenthesis" << std::endl;
-}
+"("|")"|"{"|"}" { return static_cast<token_type>(*yytext); }
 
-"{" {
-    std::cout << "{: left_bracket" << std::endl;
-}
-"}" {
-    std::cout << "}: right_bracket" << std::endl;
-}
-
-";" {
-    std::cout << ";: semi_colon" << std::endl;
-}
+";" { return static_cast<token_type>(';'); }
 
 [0-9]+ {
-    std::cout << "const int" << std::endl;
+    yylval->integer_value = atoi(yytext);
+    return token::CONST_INT;
 }
 
 \"[^\"]*\" {
-    std::cout << "const string" << std::endl;
+    yylval->string_value = new std::string(yytext, yyleng);
+    return token::CONST_STRING;
 }
 
 [\n ]  ;
@@ -107,6 +113,12 @@ int|string|extern {
 %%
 
 
+// This should never be executed.
+int ScannerFlexLexer::yylex () {
+    assert(false and "This function should never be called. You meant to call parser::Parser::yylex(parser::Parser::semantic_type* yylval).");
+}
+
+
 /* When the scanner receives an end-of-file indication from YY_INPUT, it then
  * checks the yywrap() function. If yywrap() returns false (zero), then it is
  * assumed that the function has gone ahead and set up `yyin' to point to
@@ -116,11 +128,3 @@ int|string|extern {
 int ScannerFlexLexer::yywrap () {
     return 1;
 }
-
-
-int main () {
-    ScannerFlexLexer scanner;
-    scanner.yylex();
-    return 0;
-}
-
