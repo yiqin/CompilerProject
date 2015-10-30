@@ -264,6 +264,9 @@ primary_expression :
 %%
 
 
-void parser::Parser::error (const location_type& loc, const std::string& message) {
+void parser::Parser::error (
+    const parser::Parser::location_type& loc,
+    const std::string& message
+) {
     std::cerr << "ERROR: at " << loc << " - " << message << std::endl;
 }
