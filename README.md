@@ -26,11 +26,3 @@ the output from "preprocessor" into the input of "compiler".
 Notes about the Scanner implementation:
     1) The Lexer has no notion of type, so when building the symbol table, it
        leaves that field blank.
-
-
-===============================================================================
-
-REFERENCES:
-
-The usage pattern of Bison in this project (and also by extension Flex) is based
-on the example found at [https://panthema.net/2007/flex-bison-cpp-example/](https://panthema.net/2007/flex-bison-cpp-example/).
