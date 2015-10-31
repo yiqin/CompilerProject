@@ -37,7 +37,7 @@ clean:
 	$(SRCDIR)/location.hh $(SRCDIR)/position.hh $(SRCDIR)/stack.hh
 
 .SECONDARY:
-.PHONY: all clean test test_gtest
+.PHONY: all clean test test_catch
 
 # TEST ACTIONS
 
