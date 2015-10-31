@@ -2,6 +2,7 @@
 BINDIR   = bin
 BUILDDIR = build
 SRCDIR   = src
+TEST 	 = test
 
 # build tools
 CXX   = g++
@@ -36,7 +37,16 @@ clean:
 	$(SRCDIR)/location.hh $(SRCDIR)/position.hh $(SRCDIR)/stack.hh
 
 .SECONDARY:
-.PHONY: all clean
+.PHONY: all clean test test_gtest
+
+# TEST ACTIONS
+
+test:
+	./$(BINDIR)/preprocessor | ./$(BINDIR)/compiler <$(TEST)/testCase1.c >$(TEST)/testCase1.compiled_result; \
+	sdiff -s $(TEST)/testCase1.correct_result $(TEST)/testCase1.compiled_result >$(TEST)/testCase1.test_report; \
+	cat $(TEST)/testCase1.test_report
+
+test_gtest:
 
 
 # SPECIFY BINARY DEPENDENCIES
