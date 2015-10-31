@@ -28,12 +28,12 @@
 // Pass by reference an instance of the scanner to the parse() function. This
 // allows for the parser to drive the scanner.
 %parse-param { scanner::Scanner& scanner }
+%parse-param { Symbol_Table::Ptr symbol_table }
 
-// NOTE: If you are getting errors like "error: 'scanner' has not been
-//       declared" when you #include "parser.tab.hpp", you may need to forward
-//       declare scanner::Scanner like below:
-//
-//       namespace scanner { class Scanner; }
+%code requires {
+    #include "symbol_table.hpp"
+    namespace scanner { class Scanner; }
+}
 
 // Track locations within source file (stdin) for error reporting.
 %locations
@@ -45,7 +45,14 @@
 %union {
     int          integer_value;
     std::string* string_value;
+    Type         type_value;
+    Symbol*      symbol;
+    Symbol_List* symbol_list;
+
 }
+
+%destructor { delete $$; } <string_value>
+%destructor { delete $$; } <symbol_list>
 
 %token INT
 %token STRING
@@ -82,6 +89,17 @@
 %token END 0
 
 
+// non-terminal type specifications
+
+%type <symbol_list> declaration
+%type <symbol_list> declarator_list
+%type <symbol_list> parameter_list
+%type <symbol> declarator
+%type <symbol> function_declarator
+%type <symbol> parameter_declaration
+%type <type_value> type
+
+
 %%
 
 
@@ -91,8 +109,13 @@ program :
 ;
 
 external_declaration :
-    declaration         { std::cout << "external_declaration: declaration" << std::endl; }  // Declaration Global
-  | EXTERN declaration  { std::cout << "external_declaration: EXTERN declaration" << std::endl; }  // Set Extern attribute
+    declaration { /* Nothing to do. Symbol was already added to symbol_table. */ }
+  | EXTERN declaration {
+        for (auto& symbol : *$2) {
+            symbol->set(Symbol::Attribute::EXTERN);
+            std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
+        }
+    }
   | function_definition { std::cout << "external_declaration: function_definition" << std::endl; }
 ;
 
@@ -107,44 +130,82 @@ decl_glb_fct : { std::cout << "decl_glb_fct:" << std::endl; }
 ;
 
 declaration :
-    type declarator_list ';' { std::cout << "declaration: type declarator_list ';'" << std::endl; }
+    type declarator_list ';' {
+        $$ = $2;
+        for (auto& symbol : *$$) {
+            symbol->type($1);
+
+            if (symbol_table->is_in_this_scope(symbol->name())) {
+                // TODO (Emery): Move this to some sort of centralized function
+                //               for handling semantic errors.
+                std::cerr
+                    << "ERROR: Duplicate declaration of symbol '"
+                    << symbol->name() << "'" << std::endl
+                    ;
+            } else {
+                symbol_table->add(symbol->name(), symbol);
+                symbol->print_semantic_action();
+            }
+        }
+    }
 ;
 
 type :
-    INT    { std::cout << "type: INT" << std::endl; }  // set INT
-  | STRING { std::cout << "type: STRING" << std::endl; }  // set String
+    INT    { $$ = Type::INT; }
+  | STRING { $$ = Type::STRING; }
 ;
 
 declarator_list :
-    declarator                     { std::cout << "declarator_list: declarator" << std::endl; }  // Propagate code
-  | declarator_list ',' declarator { std::cout << "declarator_list: declarator_list ',' declarator" << std::endl; }
+    declarator {
+        $$ = new Symbol_List;
+        $$->push_back(Symbol::Ptr($1));
+    }
+  | declarator_list ',' declarator {
+        $$ = $1;
+        $$->push_back(Symbol::Ptr($3));
+    }
 ;
 
 declaration_list :
-    declaration                   {
-        std::cout << "declaration_list: declaration" << std::endl;
-        //std::cout << "- declare local variable: " << $1.string_value << std::endl;
+    declaration {
+        // Nothing to do. Semantic action of "declaration" handles symbol creation.
     }
-  | declaration_list declaration  { std::cout << "declaration_list: declaration_list declaration" << std::endl; }  // Set locals
+  | declaration_list declaration  {
+        // Nothing to do. Semantic action of "declaration" handles symbol creation.
+    }
 ;
 
 declarator :
-    IDENT               { std::cout << "declarator: IDENT" << std::endl; }    // Create Variable
-  | function_declarator { std::cout << "declarator: function_declarator" << std::endl; }              // Create Function
+    IDENT { $$ = new Symbol(std::move(*$1)); }
+  | function_declarator { $$ = $1; }
 ;
 
 function_declarator :
-    IDENT '(' ')'                 { std::cout << "declare function '" << *$1 << "'" << std::endl; }  // Create function name
-  | IDENT '(' parameter_list ')'  { std::cout << "declare function '" << *$1 << "' with parameters" << std::endl; }  // Create partial function
+    IDENT '(' ')' {
+        $$ = new Function(std::move(*$1));
+    }
+  | IDENT '(' parameter_list ')'  {
+        $$ = new Function(std::move(*$1));
+        for (auto& symbol : *$3) {
+            symbol->set(Symbol::Attribute::FUNCTION_PARAM);
+            static_cast<Function*>($$)->argument_list().push_back(symbol);
+        }
+    }
 ;
 
 parameter_list :
-    parameter_declaration                    { std::cout << "parameter_list: parameter_declaration" << std::endl; }
-  | parameter_list ',' parameter_declaration { std::cout << "parameter_list: parameter_list ',' parameter_declaration" << std::endl; }  // Insert parameters
+    parameter_declaration {
+        $$ = new Symbol_List;
+        $$->push_back(Symbol::Ptr($1));
+    }
+  | parameter_list ',' parameter_declaration {
+        $$ = $1;
+        $$->push_back(Symbol::Ptr($3));
+    }
 ;
 
 parameter_declaration :
-    type IDENT { std::cout << "parameter_declaration: type IDENT" << std::endl; }  // Type declaration
+    type IDENT { $$ = new Symbol(std::move(*$2)); $$->type($1); }
 ;
 
 instruction :
