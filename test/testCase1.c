@@ -1,4 +1,3 @@
-int foo() {
-  int sum;
-  string a;
-}
+int a;
+int b;
+int c;
