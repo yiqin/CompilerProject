@@ -1,0 +1,19 @@
+type: INT
+declare function 'foo'
+decl_glb_fct:
+block_start: '{'
+type: INT
+declarator: IDENT
+declarator_list: declarator
+declaration: type declarator_list ';'
+declaration_list: declaration
+type: STRING
+declarator: IDENT
+declarator_list: declarator
+declaration: type declarator_list ';'
+declaration_list: declaration_list declaration
+block_end '}'
+compound_instruction: block_start declaration_list block_end
+function_definition: type function_declarator decl_glb_fct compound_instruction
+external_declaration: function_definition
+program: external_declaration
