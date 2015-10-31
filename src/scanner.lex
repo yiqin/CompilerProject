@@ -28,18 +28,6 @@
 // spaces equal to the length of the matched text.
 #define YY_USER_ACTION yylloc->columns(yyleng);
 
-typedef enum {FUNCTION, INT} symbol_type;
-typedef enum {EXTERN, FUNCTION_PARAMETER, GLOBAL, BLOCK_LOCAL, FOR_LOOP_STATEMENT} symbol_scope;
-
-struct Symbol
-{
-    std::string name;
-    std::string type;
-    std::string scope;
-};
-
-std::vector<Symbol> symbol_table;
-
 %}
 
 
