@@ -9,3 +9,6 @@ build
 src/location.hh
 src/position.hh
 src/stack.hh
+
+*.compiled_result
+*.test_report
