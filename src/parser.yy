@@ -2,6 +2,7 @@
 
 #include "scanner.hpp"
 
+#include <algorithm>
 #include <string>
 
 // WARNING: USE OF A DIRTY MACRO
@@ -41,14 +42,19 @@
     @$.begin.filename = @$.end.filename = new std::string("<stdin>");
 }
 
+%code {
+    parser::Function* last_function_;
+    bool new_function_definition_;
+}
+
 
 %union {
-    int          integer_value;
-    std::string* string_value;
-    Type         type_value;
-    Symbol*      symbol;
-    Symbol_List* symbol_list;
-
+    int           integer_value;
+    std::string*  string_value;
+    Type          type_value;
+    Symbol*       symbol;
+    Symbol_List*  symbol_list;
+    Symbol_Table* symbol_table;
 }
 
 %destructor { delete $$; } <string_value>
@@ -121,12 +127,97 @@ external_declaration :
 
 function_definition :
     type function_declarator decl_glb_fct compound_instruction {
-        std::cout << "function_definition: type function_declarator decl_glb_fct compound_instruction" << std::endl;
+        // Check function return type.
+        auto function = static_cast<Function*>($2);
+        function->type($1);
+
+        // A function can be declared before it is defined.
+        if (symbol_table->is_visible(function->name())) {
+            auto declared_func = std::dynamic_pointer_cast<Function>(
+                symbol_table->lookup(function->name()));
+            if (!declared_func) {
+                // TODO (Emery): Move this semantic error to a dedicated function.
+                std::cerr
+                    << "ERROR: Attempt to define function with name of variable '"
+                    << function->name() << "'." << std::endl
+                    ;
+            } else if (function->type() != declared_func->type()) {
+                // Verify the return type. (type-checking)
+                std::cerr
+                    << "ERROR: Return type of function definition does not match declaration."
+                    << std::endl
+                    ;
+            }
+        }
+
+        // Or it can be declared for the first time here.
+        else {
+            symbol_table->add($2->name(), Symbol::Ptr($2));
+            $2->print_semantic_action();
+        }
     }
 ;
 
-decl_glb_fct : { std::cout << "decl_glb_fct:" << std::endl; }
-// Get function name - Create a spot to store the function - set attributes
+decl_glb_fct : {
+        std::cout << "- define function '" << last_function_->name() << "'" << std::endl;
+
+        Function* function = last_function_;
+        bool error = false;
+
+        // A function can be declared before it is defined.
+        if (symbol_table->is_visible(function->name())) {
+            auto declared_func = std::dynamic_pointer_cast<Function>(
+                symbol_table->lookup(function->name()));
+            if (!declared_func) {
+                // TODO (Emery): Move this semantic error to a dedicated function.
+                std::cerr
+                    << "ERROR: Attempt to define function with name of variable '"
+                    << function->name() << "'." << std::endl
+                    ;
+                error = true;
+            } else {
+                // Verify the argument list. (type-checking)
+                if (function->argument_list().size() != declared_func->argument_list().size()) {
+                    std::cerr
+                        << "ERROR: Signature mismatch between function definition and declaration."
+                        << std::endl
+                        ;
+                    error = true;
+                } else {
+                    auto pair = std::mismatch(
+                        std::begin(function->argument_list()), std::end(function->argument_list()),
+                        std::begin(declared_func->argument_list()),
+                        [] (Symbol::Ptr a, Symbol::Ptr b) { return a->type() == b->type(); }
+                    );
+                    if (pair.first != std::end(function->argument_list())) {
+                        std::cerr
+                            << "ERROR: Signature mismatch between function definition and declaration."
+                            << std::endl
+                            ;
+                        error = true;
+                    }
+                }
+            }
+        }
+
+        // Raise a flag to let "block_start" know that the symbol-table has
+        // already been created.
+        new_function_definition_ = true;
+
+        // Create the new symbol-table for this function.
+        symbol_table = Symbol_Table::construct(
+            "function scope - " + function->name(),
+            @$,
+            symbol_table
+        );
+
+        // NOTE: compound_instruction will have not yet already taken care of creating a
+        //       new symbol-table for the new scope. However, it will not add
+        //       the function parameters to this scope. We must do that here.
+        for (auto& symbol : function->argument_list()) {
+            symbol_table->add(symbol->name(), symbol);
+        }
+    }
 ;
 
 declaration :
@@ -182,10 +273,12 @@ declarator :
 
 function_declarator :
     IDENT '(' ')' {
-        $$ = new Function(std::move(*$1));
+        last_function_ = new Function(std::move(*$1));
+        $$ = last_function_;
     }
   | IDENT '(' parameter_list ')'  {
-        $$ = new Function(std::move(*$1));
+        last_function_ = new Function(std::move(*$1));
+        $$ = last_function_;
         for (auto& symbol : *$3) {
             symbol->set(Symbol::Attribute::FUNCTION_PARAM);
             static_cast<Function*>($$)->argument_list().push_back(symbol);
@@ -235,11 +328,20 @@ compound_instruction :
 
 
 block_start :
-    '{' { std::cout << "block_start: '{'" << std::endl; }  // Init your hash table - symbol table
+    '{' {
+        if (not new_function_definition_) {
+            symbol_table = Symbol_Table::construct("anonymous block", @$, symbol_table);
+        } else {
+            new_function_definition_ = false;
+        }
+    }
 ;
 
 block_end :
-    '}' { std::cout << "block_end '}'" << std::endl; }  // Empty hash table
+    '}' {
+        symbol_table->loc.end = @$.end;
+        symbol_table = symbol_table->parent();
+    }
 ;
 
 instruction_list :
