@@ -298,7 +298,7 @@ parameter_list :
 ;
 
 parameter_declaration :
-    type IDENT { $$ = new Symbol(std::move(*$2)); $$->type($1); }
+    type IDENT { $$ = new Symbol(std::move(*$2)); $$->type($1);}
 ;
 
 instruction :
@@ -316,7 +316,10 @@ expression_instruction :
 ;
 
 assignment :
-    IDENT '=' expression { /* std::cout << "assignment: IDENT '=' expression" << std::endl; */ }
+    IDENT '=' expression { 
+        /* std::cout << "assignment: IDENT '=' expression" << std::endl; */ 
+        std::cout << "- assignment " << *$1 << std::endl;
+    }
 ;
 
 compound_instruction :
