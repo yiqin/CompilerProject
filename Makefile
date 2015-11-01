@@ -44,7 +44,6 @@ clean:
 test:
 	./$(BINDIR)/preprocessor | ./$(BINDIR)/compiler <$(TEST)/testCase1.c >$(TEST)/testCase1.compiled_result; \
 	sdiff -s $(TEST)/testCase1.correct_result $(TEST)/testCase1.compiled_result >$(TEST)/testCase1.test_report; \
-	cat $(TEST)/testCase1.test_report
 
 test_catch:
 	./$(BINDIR)/preprocessor | ./$(BINDIR)/compiler <$(TEST)/testCase1.c >$(TEST)/testCase1.compiled_result; \

@@ -110,8 +110,8 @@
 
 
 program :
-    external_declaration         { std::cout << "program: external_declaration" << std::endl; }
-  | program external_declaration { std::cout << "program: program external_declaration" << std::endl; }
+    external_declaration         { /* std::cout << "program: external_declaration" << std::endl; */ }
+  | program external_declaration { /* std::cout << "program: program external_declaration" << std::endl; */ }
 ;
 
 external_declaration :
@@ -122,7 +122,7 @@ external_declaration :
             std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
         }
     }
-  | function_definition { std::cout << "external_declaration: function_definition" << std::endl; }
+  | function_definition { /* std::cout << "external_declaration: function_definition" << std::endl; */ }
 ;
 
 function_definition :
@@ -302,28 +302,28 @@ parameter_declaration :
 ;
 
 instruction :
-    ';'                    { std::cout << "instruction: ';'"                    << std::endl; }
-  | compound_instruction   { std::cout << "instruction: compound_instruction"   << std::endl; }  // {$$=$1;}
-  | expression_instruction { std::cout << "instruction: expression_instruction" << std::endl; }  // {$$=$1;}
-  | iteration_instruction  { std::cout << "instruction: iteration_instruction"  << std::endl; }  // {$$=$1;}
-  | select_instruction     { std::cout << "instruction: select_instruction"     << std::endl; }  // {$$=$1;}
-  | jump_instruction       { std::cout << "instruction: jump_instruction"       << std::endl; }  // {$$=$1;}
+    ';'                    { /* std::cout << "instruction: ';'"                    << std::endl; */ }
+  | compound_instruction   { /* std::cout << "instruction: compound_instruction"   << std::endl; */ }  // {$$=$1;}
+  | expression_instruction { /* std::cout << "instruction: expression_instruction" << std::endl; */ }  // {$$=$1;}
+  | iteration_instruction  { /* std::cout << "instruction: iteration_instruction"  << std::endl; */ }  // {$$=$1;}
+  | select_instruction     { /* std::cout << "instruction: select_instruction"     << std::endl; */ }  // {$$=$1;}
+  | jump_instruction       { /* std::cout << "instruction: jump_instruction"       << std::endl; */ }  // {$$=$1;}
 ;
 
 expression_instruction :
-    expression ';' { std::cout << "expression_instruction: expression ';'" << std::endl; }
-  | assignment ';' { std::cout << "expression_instruction: assignment ';'" << std::endl; }
+    expression ';' { /* std::cout << "expression_instruction: expression ';'" << std::endl; */ }
+  | assignment ';' { /* std::cout << "expression_instruction: assignment ';'" << std::endl; */ }
 ;
 
 assignment :
-    IDENT '=' expression { std::cout << "assignment: IDENT '=' expression" << std::endl; }
+    IDENT '=' expression { /* std::cout << "assignment: IDENT '=' expression" << std::endl; */ }
 ;
 
 compound_instruction :
-    block_start declaration_list instruction_list block_end { std::cout << "compound_instruction: block_start declaration_list instruction_list block_end" << std::endl; }  // {$$=$3;}
-  | block_start declaration_list block_end { std::cout << "compound_instruction: block_start declaration_list block_end" << std::endl; }
-  | block_start instruction_list block_end { std::cout << "compound_instruction: block_start instruction_list block_end" << std::endl; }  // {$$=$2;}
-  | block_start block_end { std::cout << "compound_instruction: block_start block_end" << std::endl; }
+    block_start declaration_list instruction_list block_end { /* std::cout << "compound_instruction: block_start declaration_list instruction_list block_end" << std::endl; */ }  // {$$=$3;}
+  | block_start declaration_list block_end { /* std::cout << "compound_instruction: block_start declaration_list block_end" << std::endl; */ }
+  | block_start instruction_list block_end { /* std::cout << "compound_instruction: block_start instruction_list block_end" << std::endl; */ }  // {$$=$2;}
+  | block_start block_end { /* std::cout << "compound_instruction: block_start block_end" << std::endl; */ }
 ;
 
 
@@ -345,82 +345,82 @@ block_end :
 ;
 
 instruction_list :
-    instruction                  { std::cout << "instruction_list: instruction" << std::endl; }  // {$$=$1;}
-  | instruction_list instruction { std::cout << "instruction_list: instruction_list instruction" << std::endl; }
+    instruction                  { /* std::cout << "instruction_list: instruction" << std::endl; */ }  // {$$=$1;}
+  | instruction_list instruction { /* std::cout << "instruction_list: instruction_list instruction" << std::endl; */ }
 ;
 
 select_instruction :
-    cond_instruction instruction                  { std::cout << "select_instruction: cond_instruction instruction" << std::endl; }
-  | cond_instruction instruction ELSE instruction { std::cout << "select_instruction: cond_instruction instruction ELSE instruction" << std::endl; }
+    cond_instruction instruction                  { /* std::cout << "select_instruction: cond_instruction instruction" << std::endl; */ }
+  | cond_instruction instruction ELSE instruction { /* std::cout << "select_instruction: cond_instruction instruction ELSE instruction" << std::endl; */ }
 ;
 
 cond_instruction :
-    IF '(' condition ')' { std::cout << "cond_instruction: IF '(' condition ')'" << std::endl; }  // {$$=$3;}
+    IF '(' condition ')' { /* std::cout << "cond_instruction: IF '(' condition ')'" << std::endl; */ }  // {$$=$3;}
 ;
 
 iteration_instruction :
-    WHILE '(' condition ')' instruction                             { std::cout << "iteration_instruction: WHILE '(' condition ')' instruction" << std::endl; }  // Handle while loop
-  | DO instruction WHILE '(' condition ')'                          { std::cout << "iteration_instruction: DO instruction WHILE '(' condition ')'" << std::endl; }
-  | FOR '(' assignment ';' condition ';' assignment ')' instruction { std::cout << "iteration_instruction: FOR '(' assignment ';' condition ';' assignment ')' instruction" << std::endl; }
+    WHILE '(' condition ')' instruction                             { /* std::cout << "iteration_instruction: WHILE '(' condition ')' instruction" << std::endl; */ }  // Handle while loop
+  | DO instruction WHILE '(' condition ')'                          { /* std::cout << "iteration_instruction: DO instruction WHILE '(' condition ')'" << std::endl; */ }
+  | FOR '(' assignment ';' condition ';' assignment ')' instruction { /* std::cout << "iteration_instruction: FOR '(' assignment ';' condition ';' assignment ')' instruction" << std::endl; */ }
 ;
 
 jump_instruction:
-    RETURN expression ';' { std::cout << "jump_instruction: RETURN expression ';'" << std::endl; }
+    RETURN expression ';' { /* std::cout << "jump_instruction: RETURN expression ';'" << std::endl; */ }
 ;
 
 condition :
-    expression comparison_operator expression { std::cout << "condition: expression comparison_operator expression" << std::endl; }
+    expression comparison_operator expression { /* std::cout << "condition: expression comparison_operator expression" << std::endl; */ }
 ;
 
 comparison_operator :
-    EQUAL        { std::cout << "comparison_operator: EQUAL"        << std::endl; }  // { $$.entier = EQUAL;        }  // equal
-  | NEQUAL       { std::cout << "comparison_operator: NEQUAL"       << std::endl; }  // { $$.entier = NEQUAL;       }  // not-equal
-  | LESS         { std::cout << "comparison_operator: LESS"         << std::endl; }  // { $$.entier = LESS;         }  // less-than
-  | GREATER      { std::cout << "comparison_operator: GREATER"      << std::endl; }  // { $$.entier = GREATER;      }  // greater-than
-  | LESSEQUAL    { std::cout << "comparison_operator: LESSEQUAL"    << std::endl; }  // { $$.entier = LESSEQUAL;    }  // less-than-or-equal
-  | GREATEREQUAL { std::cout << "comparison_operator: GREATEREQUAL" << std::endl; }  // { $$.entier = GREATEREQUAL; }  // greater-than-or-equal
+    EQUAL        { /* std::cout << "comparison_operator: EQUAL"        << std::endl; */ }  // { $$.entier = EQUAL;        }  // equal
+  | NEQUAL       { /* std::cout << "comparison_operator: NEQUAL"       << std::endl; */ }  // { $$.entier = NEQUAL;       }  // not-equal
+  | LESS         { /* std::cout << "comparison_operator: LESS"         << std::endl; */ }  // { $$.entier = LESS;         }  // less-than
+  | GREATER      { /* std::cout << "comparison_operator: GREATER"      << std::endl; */ }  // { $$.entier = GREATER;      }  // greater-than
+  | LESSEQUAL    { /* std::cout << "comparison_operator: LESSEQUAL"    << std::endl; */ }  // { $$.entier = LESSEQUAL;    }  // less-than-or-equal
+  | GREATEREQUAL { /* std::cout << "comparison_operator: GREATEREQUAL" << std::endl; */ }  // { $$.entier = GREATEREQUAL; }  // greater-than-or-equal
 ;
 
 expression :
-    additive_expression                       { std::cout << "expression: additive_expression" << std::endl; }  // {$$=$1;}
-  | expression SHIFTLEFT additive_expression  { std::cout << "expression: expression SHIFTLEFT additive_expression" << std::endl; }  //  Compute expression
-  | expression SHIFTRIGHT additive_expression { std::cout << "expression: expression SHIFTRIGHT additive_expression" << std::endl; }  // Compute expression
+    additive_expression                       { /* std::cout << "expression: additive_expression" << std::endl; */ }  // {$$=$1;}
+  | expression SHIFTLEFT additive_expression  { /* std::cout << "expression: expression SHIFTLEFT additive_expression" << std::endl; */ }  //  Compute expression
+  | expression SHIFTRIGHT additive_expression { /* std::cout << "expression: expression SHIFTRIGHT additive_expression" << std::endl; */ }  // Compute expression
 ;
 
 additive_expression :
-    multiplicative_expression                           { std::cout << "additive_expression: multiplicative_expression" << std::endl; }  // {$$=$1;}
-  | additive_expression PLUS multiplicative_expression  { std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; }  // Compute expression
-  | additive_expression MINUS multiplicative_expression { std::cout << "additive_expression: additive_expression MINUS multiplicative_expression" << std::endl; }  // Compute expression
+    multiplicative_expression                           { /* std::cout << "additive_expression: multiplicative_expression" << std::endl; */ }  // {$$=$1;}
+  | additive_expression PLUS multiplicative_expression  { /* std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; */ }  // Compute expression
+  | additive_expression MINUS multiplicative_expression { /* std::cout << "additive_expression: additive_expression MINUS multiplicative_expression" << std::endl; */ }  // Compute expression
 ;
 
 multiplicative_expression :
-    unary_expression                                    { std::cout << "multiplicative_expression: unary_expression" << std::endl; }  // {$$=$1;}
-  | multiplicative_expression MULTIPLY unary_expression { std::cout << "multiplicative_expression: multiplicative_expression MULTIPLY unary_expression" << std::endl; }
-  | multiplicative_expression DIVIDE unary_expression   { std::cout << "multiplicative_expression: multiplicative_expression DIVIDE unary_expression" << std::endl; }
-  | multiplicative_expression MODULO unary_expression   { std::cout << "multiplicative_expression: multiplicative_expression MODULO unary_expression" << std::endl; }
+    unary_expression                                    { /* std::cout << "multiplicative_expression: unary_expression" << std::endl; */ }  // {$$=$1;}
+  | multiplicative_expression MULTIPLY unary_expression { /* std::cout << "multiplicative_expression: multiplicative_expression MULTIPLY unary_expression" << std::endl; */ }
+  | multiplicative_expression DIVIDE unary_expression   { /* std::cout << "multiplicative_expression: multiplicative_expression DIVIDE unary_expression" << std::endl; */ }
+  | multiplicative_expression MODULO unary_expression   { /* std::cout << "multiplicative_expression: multiplicative_expression MODULO unary_expression" << std::endl; */ }
 ;
 
 unary_expression:
-    postfix_expression     { std::cout << "unary_expression: postfix_expression" << std::endl; }  // {$$=$1;}
-  | MINUS unary_expression { std::cout << "unary_expression: MINUS unary_expression" << std::endl; }
+    postfix_expression     { /* std::cout << "unary_expression: postfix_expression" << std::endl; */ }  // {$$=$1;}
+  | MINUS unary_expression { /* std::cout << "unary_expression: MINUS unary_expression" << std::endl; */ }
 ;
 
 postfix_expression :
-    primary_expression                     { std::cout << "postfix_expression: primary_expression" << std::endl; }  // {$$=$1;}
-  | IDENT '(' argument_expression_list ')' { std::cout << "postfix_expression: IDENT '(' argument_expression_list ')'" << std::endl; }
-  | IDENT '(' ')'                          { std::cout << "postfix_expression: IDENT '(' ')'" << std::endl; }
+    primary_expression                     { /* std::cout << "postfix_expression: primary_expression" << std::endl; */ }  // {$$=$1;}
+  | IDENT '(' argument_expression_list ')' { /* std::cout << "postfix_expression: IDENT '(' argument_expression_list ')'" << std::endl; */ }
+  | IDENT '(' ')'                          { /* std::cout << "postfix_expression: IDENT '(' ')'" << std::endl; */ }
 ;
 
 argument_expression_list:
-    expression                              { std::cout << "argument_expression_list: expression" << std::endl; }
-  | argument_expression_list ',' expression { std::cout << "argument_expression_list: argument_expression_list ',' expression" << std::endl; }
+    expression                              { /* std::cout << "argument_expression_list: expression" << std::endl; */ }
+  | argument_expression_list ',' expression { /* std::cout << "argument_expression_list: argument_expression_list ',' expression" << std::endl; */ }
 ;
 
 primary_expression :
-    IDENT              { std::cout << "primary_expression: IDENT" << std::endl; }
-  | CONST_INT          { std::cout << "primary_expression: CONST_INT" << std::endl; }
-  | CONST_STRING       { std::cout << "primary_expression: CONST_STRING" << std::endl; }
-  | '(' expression ')' { std::cout << "primary_expression: '(' expression ')'" << std::endl; }
+    IDENT              { /* std::cout << "primary_expression: IDENT" << std::endl; */ }
+  | CONST_INT          { /* std::cout << "primary_expression: CONST_INT" << std::endl; */ }
+  | CONST_STRING       { /* std::cout << "primary_expression: CONST_STRING" << std::endl; */ }
+  | '(' expression ')' { /* std::cout << "primary_expression: '(' expression ')'" << std::endl; */ }
 ;
 
 
