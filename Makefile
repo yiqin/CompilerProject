@@ -2,7 +2,7 @@
 BINDIR   = bin
 BUILDDIR = build
 SRCDIR   = src
-TEST 	 = test
+TESTDIR  = test
 
 # build tools
 CXX   = g++
@@ -23,6 +23,7 @@ BINARIES := $(addprefix $(BINDIR)/,$(BINARIES))
 SRCS = $(wildcard $(SRCDIR)/*.cpp)
 LEXS = $(wildcard $(SRCDIR)/*.lex)
 BSNS = $(wildcard $(SRCDIR)/*.yy)
+TEST_SRCS = $(wildcard $(TESTDIR)/$(SRCDIR)/*.cpp)
 
 
 # BUILD ACTIONS
@@ -31,24 +32,29 @@ all: $(BINARIES)
 
 clean:
 	$(RM) $(BINDIR) $(BUILDDIR) \
-	$(patsubst $(SRCDIR)/%.lex,$(SRCDIR)/%.yy.cpp, $(LEXS)) \
-	$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.cpp,$(BSNS)) \
-	$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.hpp,$(BSNS)) \
-	$(SRCDIR)/location.hh $(SRCDIR)/position.hh $(SRCDIR)/stack.hh
+		$(patsubst $(SRCDIR)/%.lex,$(SRCDIR)/%.yy.cpp, $(LEXS)) \
+		$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.cpp,$(BSNS)) \
+		$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.hpp,$(BSNS)) \
+		$(SRCDIR)/location.hh $(SRCDIR)/position.hh $(SRCDIR)/stack.hh \
+		$(TESTDIR)/unittest
 
 .SECONDARY:
 .PHONY: all clean test test_catch
 
+
 # TEST ACTIONS
 
-test:
-	./$(BINDIR)/preprocessor | ./$(BINDIR)/compiler <$(TEST)/testCase1.c >$(TEST)/testCase1.compiled_result; \
-	sdiff -s $(TEST)/testCase1.correct_result $(TEST)/testCase1.compiled_result >$(TEST)/testCase1.test_report; \
+# test:
+# 	./$(BINDIR)/preprocessor | ./$(BINDIR)/compiler <$(TEST)/testCase1.c >$(TEST)/testCase1.compiled_result; \
+# 	sdiff -s $(TEST)/testCase1.correct_result $(TEST)/testCase1.compiled_result >$(TEST)/testCase1.test_report; \
 
-test_catch:
-	./$(BINDIR)/preprocessor | ./$(BINDIR)/compiler <$(TEST)/testCase1.c >$(TEST)/testCase1.compiled_result; \
-	$(CXX) $(CXXFLAGS) -I src $(TEST)/testCatch.cpp -o $(TEST)/testCatch; \
-	./$(TEST)/testCatch >$(TEST)/test_report.txt
+# test_catch:
+# 	./$(BINDIR)/preprocessor | ./$(BINDIR)/compiler <$(TEST)/testCase1.c >$(TEST)/testCase1.compiled_result; \
+# 	$(CXX) $(CXXFLAGS) -I src $(TEST)/testCatch.cpp -o $(TEST)/testCatch; \
+# 	./$(TEST)/testCatch >$(TEST)/test_report.txt
+
+test_unittest: $(TESTDIR)/$(BINDIR)/unittest
+	$<
 
 
 # SPECIFY BINARY DEPENDENCIES
@@ -58,6 +64,9 @@ test_catch:
 $(BINDIR)/compiler: $(BUILDDIR)/compiler_main.o \
 	$(BUILDDIR)/scanner.yy.o $(BUILDDIR)/parser.tab.o $(BUILDDIR)/symbol_table.o
 $(BINDIR)/preprocessor: $(BUILDDIR)/preprocessor.yy.o $(BUILDDIR)/macro.o
+
+$(TESTDIR)/$(BINDIR)/unittest: $(TESTDIR)/$(BUILDDIR)/unittest_main.o \
+	$(TESTDIR)/$(BUILDDIR)/unittest_scanner.o $(BUILDDIR)/scanner.yy.o
 
 
 # SPECIFY SPECIAL DEPENDENCIES
@@ -73,12 +82,15 @@ $(SRCDIR)/symbol_table.cpp: $(SRCDIR)/location.hh
 # RULE PATTERNS
 
 # link
-$(BINDIR)/%:
+$(BINDIR)/% $(TESTDIR)/$(BINDIR)/%:
 	@$(MKDIR) $(@D)
 	$(CXX) -o $@ $(LDFLAGS) $(LDLIBS) $^
 
 # compile/assemble
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+	@$(MKDIR) $(@D)
+	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
+$(TESTDIR)/$(BUILDDIR)/%.o: $(TESTDIR)/$(SRCDIR)/%.cpp
 	@$(MKDIR) $(@D)
 	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
 
@@ -96,8 +108,12 @@ $(SRCDIR)/%.tab.cpp $(SRCDIR)/%.tab.hpp: $(SRCDIR)/%.yy
 $(BUILDDIR)/%.d: $(SRCDIR)/%.cpp
 	@$(MKDIR) $(@D)
 	$(CXX) -c -MT "$(BUILDDIR)/$*.o $(BUILDDIR)/$*.d" -MM -MP $(CPPFLAGS) $(CXXFLAGS) $^ > $@
+$(TESTDIR)/$(BUILDDIR)/%.d: $(TESTDIR)/$(SRCDIR)/%.cpp
+	@$(MKDIR) $(@D)
+	$(CXX) -c -MT "$(TESTDIR)/$(BUILDDIR)/$*.o $(TESTDIR)/$(BUILDDIR)/$*.d" -MM -MP $(CPPFLAGS) $(CXXFLAGS) $^ > $@
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst $(SRCDIR)/%.cpp,$(BUILDDIR)/%.d,$(SRCS))
 -include $(patsubst $(SRCDIR)/%.lex,$(BUILDDIR)/%.yy.d,$(LEXS))
+-include $(patsubst $(TESTDIR)/$(SRCDIR)/%.cpp,$(TESTDIR)/$(BUILDDIR)/%.d,$(TEST_SRCS))
 endif
