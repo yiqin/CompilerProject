@@ -39,7 +39,7 @@ clean:
 		$(TESTDIR)/$(BINDIR) $(TESTDIR)/$(BUILDDIR)
 
 .SECONDARY:
-.PHONY: all clean test test_catch
+.PHONY: all clean unit_test
 
 
 # TEST ACTIONS

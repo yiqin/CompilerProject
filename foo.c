@@ -1,11 +1,18 @@
-#include <stdio.h>
-#define min(X, Y)  ((X) < (Y) ? (X) : (Y))
-main()
+extern int foo2(int x);
+
+extern int foo3(int x, int y);
+
+int foo(int count)
 {
-/* comment 1 */
-    int a = ((+1.1+2));
-   min (-100.01E4,2);
-    int b = (1+2);
-    return a;
-    // comment 2
+    int i, sum;
+    int sum2;
+    sum = 0;
+    sum2 = 1;
+
+
+    for    (i = 1; i <= count; i = i + 1)
+        sum = sum + foo2(i);
+
+
+    return sum;
 }

@@ -328,8 +328,8 @@ expression_instruction :
 ;
 
 assignment :
-    IDENT '=' expression { 
-        /* std::cout << "assignment: IDENT '=' expression" << std::endl; */ 
+    IDENT '=' expression {
+        /* std::cout << "assignment: IDENT '=' expression" << std::endl; */
         std::cout << "- assignment " << *$1 << std::endl;
 
         if (symbol_table->is_visible(*$1)) {
@@ -421,16 +421,16 @@ expression :
 
 additive_expression :
     multiplicative_expression                           { /* std::cout << "additive_expression: multiplicative_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
-  | additive_expression PLUS multiplicative_expression  { 
-        /* std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; */ 
+  | additive_expression PLUS multiplicative_expression  {
+        /* std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; */
         if ($1 == Type::INT && $3 == Type::INT) {
             std::cout << "- addition two integers" << std::endl;
         } else {
             std::cout << "ERROR: only two integers can do '+' operation" << std::endl;
         }
     }  // Compute expression
-  | additive_expression MINUS multiplicative_expression { 
-        /* std::cout << "additive_expression: additive_expression MINUS multiplicative_expression" << std::endl; */ 
+  | additive_expression MINUS multiplicative_expression {
+        /* std::cout << "additive_expression: additive_expression MINUS multiplicative_expression" << std::endl; */
         if ($1 == Type::INT && $3 == Type::INT) {
             std::cout << "- subtration two integers" << std::endl;
         } else {
@@ -440,28 +440,28 @@ additive_expression :
 ;
 
 multiplicative_expression :
-    unary_expression                                    { 
-        /* std::cout << "multiplicative_expression: unary_expression" << std::endl; */ $$ = $1; 
-
+    unary_expression                                    {
+        /* std::cout << "multiplicative_expression: unary_expression" << std::endl; */
+        $$ = $1;
     }  // {$$=$1;}
-  | multiplicative_expression MULTIPLY unary_expression { 
-        /* std::cout << "multiplicative_expression: multiplicative_expression MULTIPLY unary_expression" << std::endl; */ 
+  | multiplicative_expression MULTIPLY unary_expression {
+        /* std::cout << "multiplicative_expression: multiplicative_expression MULTIPLY unary_expression" << std::endl; */
         if ($1 == Type::INT && $3 == Type::INT) {
             std::cout << "- multiplication two integers" << std::endl;
         } else {
             std::cout << "ERROR: only two integers can do '*' operation" << std::endl;
         }
-    } 
+    }
   | multiplicative_expression DIVIDE unary_expression   {
-        /* std::cout << "multiplicative_expression: multiplicative_expression DIVIDE unary_expression" << std::endl; */ 
+        /* std::cout << "multiplicative_expression: multiplicative_expression DIVIDE unary_expression" << std::endl; */
         if ($1 == Type::INT && $3 == Type::INT) {
             std::cout << "- division two integers" << std::endl;
         } else {
             std::cout << "ERROR: only two integers can do '/' operation" << std::endl;
         }
     }
-  | multiplicative_expression MODULO unary_expression   { 
-        /* std::cout << "multiplicative_expression: multiplicative_expression MODULO unary_expression" << std::endl; */ 
+  | multiplicative_expression MODULO unary_expression   {
+        /* std::cout << "multiplicative_expression: multiplicative_expression MODULO unary_expression" << std::endl; */
         if ($1 == Type::INT && $3 == Type::INT) {
             std::cout << "- modulo two integers" << std::endl;
         } else {
@@ -477,7 +477,7 @@ unary_expression:
 
 postfix_expression :
     primary_expression                     { /* std::cout << "postfix_expression: primary_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
-  | IDENT '(' argument_expression_list ')' { 
+  | IDENT '(' argument_expression_list ')' {
         /* std::cout << "postfix_expression: IDENT '(' argument_expression_list ')'" << std::endl; */
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
         if (symbol_table->is_visible(*$1)) {
@@ -485,7 +485,7 @@ postfix_expression :
 
             Function::Ptr tmpFunction;
             tmpFunction = std::dynamic_pointer_cast<Function>(tmp);
-            if(tmpFunction) { 
+            if(tmpFunction) {
                 // If we have the function
                 std::ostringstream oss1;
                 for (auto& tmpSymbol : tmpFunction->argument_list()) {
@@ -511,14 +511,14 @@ postfix_expression :
             std::cout << "ERROR:" << *$1 << " is not defined" << std::endl;
         }
     }
-  | IDENT '(' ')'                          { 
+  | IDENT '(' ')'                          {
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
         if (symbol_table->is_visible(*$1)) {
             Symbol::Ptr tmp = symbol_table->lookup(*$1);
 
             Function::Ptr tmpFunction;
             tmpFunction = std::dynamic_pointer_cast<Function>(tmp);
-            if(tmpFunction) { 
+            if(tmpFunction) {
                 if (tmpFunction->type_str().compare("function") == 0) {
                     std::cout << "ERROR: " << "The argument list doesn't match the argument_list of the function" << std::endl;
                 } else {
@@ -529,7 +529,7 @@ postfix_expression :
                 std::cout << "ERROR: " << "Syntax error" << std::endl;
             }
 
-            
+
         } else {
             std::cout << "ERROR:" << *$1 << " is not defined" << std::endl;
         }
@@ -537,20 +537,20 @@ postfix_expression :
 ;
 
 argument_expression_list:
-    expression                              { 
-        /* std::cout << "argument_expression_list: expression" << std::endl; */ 
+    expression                              {
+        /* std::cout << "argument_expression_list: expression" << std::endl; */
         $$ = new std::vector<Type>;
-        $$->push_back($1); 
+        $$->push_back($1);
     }
-  | argument_expression_list ',' expression { 
-        /* std::cout << "argument_expression_list: argument_expression_list ',' expression" << std::endl; */ 
+  | argument_expression_list ',' expression {
+        /* std::cout << "argument_expression_list: argument_expression_list ',' expression" << std::endl; */
         $$ = $1;
-        $$->push_back($3); 
+        $$->push_back($3);
   }
 ;
 
 primary_expression :
-    IDENT              { 
+    IDENT              {
         /* std::cout << "primary_expression: IDENT " << *$1 << std::endl; */
         if (symbol_table->is_visible(*$1)) {
             Symbol::Ptr tmp = symbol_table->lookup(*$1);
