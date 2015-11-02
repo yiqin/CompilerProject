@@ -36,7 +36,7 @@ clean:
 		$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.cpp,$(BSNS)) \
 		$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.hpp,$(BSNS)) \
 		$(SRCDIR)/location.hh $(SRCDIR)/position.hh $(SRCDIR)/stack.hh \
-		$(TESTDIR)/unittest
+		$(TESTDIR)/$(BINDIR) $(TESTDIR)/$(BUILDDIR)
 
 .SECONDARY:
 .PHONY: all clean test test_catch
@@ -53,7 +53,7 @@ clean:
 # 	$(CXX) $(CXXFLAGS) -I src $(TEST)/testCatch.cpp -o $(TEST)/testCatch; \
 # 	./$(TEST)/testCatch >$(TEST)/test_report.txt
 
-test_unittest: $(TESTDIR)/$(BINDIR)/unittest
+unit_test: $(TESTDIR)/$(BINDIR)/unit_test
 	$<
 
 
@@ -65,8 +65,8 @@ $(BINDIR)/compiler: $(BUILDDIR)/compiler_main.o \
 	$(BUILDDIR)/scanner.yy.o $(BUILDDIR)/parser.tab.o $(BUILDDIR)/symbol_table.o
 $(BINDIR)/preprocessor: $(BUILDDIR)/preprocessor.yy.o $(BUILDDIR)/macro.o
 
-$(TESTDIR)/$(BINDIR)/unittest: $(TESTDIR)/$(BUILDDIR)/unittest_main.o \
-	$(TESTDIR)/$(BUILDDIR)/unittest_scanner.o $(BUILDDIR)/scanner.yy.o
+$(TESTDIR)/$(BINDIR)/unit_test: $(TESTDIR)/$(BUILDDIR)/unit_test_main.o \
+	$(TESTDIR)/$(BUILDDIR)/unit_test_scanner.o $(BUILDDIR)/scanner.yy.o
 
 
 # SPECIFY SPECIAL DEPENDENCIES
@@ -77,6 +77,8 @@ $(TESTDIR)/$(BINDIR)/unittest: $(TESTDIR)/$(BUILDDIR)/unittest_main.o \
 $(SRCDIR)/compiler_main.cpp: $(SRCDIR)/parser.tab.hpp
 $(SRCDIR)/scanner.yy.cpp: $(SRCDIR)/parser.tab.hpp
 $(SRCDIR)/symbol_table.cpp: $(SRCDIR)/location.hh
+
+$(TESTDIR)/$(SRCDIR)/unit_test_scanner.cpp: $(SRCDIR)/parser.tab.hpp
 
 
 # RULE PATTERNS
