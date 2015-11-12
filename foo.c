@@ -1,3 +1,7 @@
+#include    "foo2.c"
+#define min
+#define max
+
 extern int foo2(int x);
 
 extern int foo3(int x, int y);
