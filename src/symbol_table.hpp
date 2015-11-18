@@ -39,7 +39,7 @@ class Symbol_Table {
     const std::string& name   () const { return name_; }
     Ptr                parent ()       { return parent_; }
 
-    void name           (std::string&& value) { name_           = std::move(value); }
+    void name (std::string&& value) { name_ = std::move(value); }
 
     bool is_in_this_scope (const std::string& name);
     bool is_visible       (const std::string& name);
