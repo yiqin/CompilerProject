@@ -5,6 +5,7 @@ build
 *.yy.cpp
 *.tab.hpp
 *.tab.cpp
+*.sublime-workspace
 
 src/location.hh
 src/position.hh
