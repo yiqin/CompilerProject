@@ -10,8 +10,15 @@ FLEX  = flex
 BISON = bison
 
 MKDIR = mkdir -p
-MV    = mv -f
 RM    = rm -rf
+
+ifdef COMSPEC
+	FLEX  = C:/dev-tools/win_flex_bison-2.5.5/win_flex.exe
+	BISON = C:/dev-tools/win_flex_bison-2.5.5/win_bison.exe
+
+	MKDIR = C:/MinGW/msys/1.0/bin/mkdir.exe -p
+	RM    = C:/MinGW/msys/1.0/bin/rm.exe -rf
+endif
 
 CPPFLAGS = -I $(SRCDIR)
 CXXFLAGS = -std=gnu++11

@@ -84,17 +84,17 @@ extern { return token::EXTERN; }
 "("|")"|"{"|"}" { return static_cast<token_type>(*yytext); }
 
 [A-Za-z_][A-Za-z0-9_]* {
-    yylval->string_value = new std::string(yytext, yyleng);
+    yylval->build<std::string>(std::string(yytext, yyleng));
     return token::IDENT;
 }
 
 [0-9]+ {
-    yylval->integer_value = atoi(yytext);
+    yylval->build<int>(atoi(yytext));
     return token::CONST_INT;
 }
 
 \"[^\"]*\" {
-    yylval->string_value = new std::string(yytext, yyleng);
+    yylval->build<std::string>(std::string(yytext, yyleng));
     return token::CONST_STRING;
 }
 

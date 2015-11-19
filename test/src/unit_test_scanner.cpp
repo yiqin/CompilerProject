@@ -376,7 +376,7 @@ TEST_CASE ("scanner::Scanner recognizes lexemes") {
         auto tok = scanner.lex(&value, &location);
 
         REQUIRE (tok == token::IDENT);
-        REQUIRE (*value.string_value == input_value);
+        REQUIRE (value.as<std::string>() == input_value);
         REQUIRE (output.str() == "");
 
         REQUIRE (location.begin == initial_position);
@@ -389,7 +389,7 @@ TEST_CASE ("scanner::Scanner recognizes lexemes") {
         auto tok = scanner.lex(&value, &location);
 
         REQUIRE (tok == token::CONST_INT);
-        REQUIRE (value.integer_value == atoi(input_value.c_str()));
+        REQUIRE (value.as<int>() == atoi(input_value.c_str()));
         REQUIRE (output.str() == "");
 
         REQUIRE (location.begin == initial_position);
@@ -402,7 +402,7 @@ TEST_CASE ("scanner::Scanner recognizes lexemes") {
         auto tok = scanner.lex(&value, &location);
 
         REQUIRE (tok == token::CONST_STRING);
-        REQUIRE (*value.string_value == input_value);
+        REQUIRE (value.as<std::string>() == input_value);
         REQUIRE (output.str() == "");
 
         REQUIRE (location.begin == initial_position);

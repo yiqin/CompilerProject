@@ -21,11 +21,11 @@
 %skeleton "lalr1.cc"
 
 // Name to use for the generated parser class.
-%define "parser_class_name" "Parser"
+%define parser_class_name {Parser}
 
 // Use this namespace to contain all the generated classes related to Parser,
 // including Parser itself.
-%define "namespace" "parser"
+%define api.namespace {parser}
 
 // Pass by reference an instance of the scanner to the parse() function. This
 // allows for the parser to drive the scanner.
@@ -44,31 +44,19 @@
 }
 
 %code {
-    parser::Function* last_function_;
+    parser::Function::Ptr last_function_;
     bool new_function_definition_;
 }
 
+%define api.value.type variant
 
-%union {
-    int           integer_value;
-    std::string*  string_value;
-    Type          type_value;
-    Symbol*       symbol;
-    Symbol_List*  symbol_list;
-    Symbol_Table* symbol_table;
-    std::vector<Type>* type_list;
-}
-
-%destructor { delete $$; } <string_value>
-%destructor { delete $$; } <symbol_list>
-%destructor { delete $$; } <type_list>
 
 %token INT
 %token STRING
-%token <integer_value> CONST_INT
-%token <string_value>  CONST_STRING
+%token <int>         CONST_INT
+%token <std::string> CONST_STRING
 
-%token <string_value> IDENT
+%token <std::string> IDENT
 
 %token EXTERN
 
@@ -100,22 +88,22 @@
 
 // non-terminal type specifications
 
-%type <symbol_list> declaration
-%type <symbol_list> declarator_list
-%type <symbol_list> parameter_list
-%type <symbol> declarator
-%type <symbol> function_declarator
-%type <symbol> parameter_declaration
-%type <type_value> type
+%type <Symbol_List> declaration
+%type <Symbol_List> declarator_list
+%type <Symbol_List> parameter_list
+%type <Symbol::Ptr> declarator
+%type <Symbol::Ptr> function_declarator
+%type <Symbol::Ptr> parameter_declaration
+%type <Type> type
 
-%type <type_value> primary_expression
-%type <type_value> postfix_expression
-%type <type_value> unary_expression
-%type <type_value> multiplicative_expression
-%type <type_value> additive_expression
-%type <type_value> expression
+%type <Type> primary_expression
+%type <Type> postfix_expression
+%type <Type> unary_expression
+%type <Type> multiplicative_expression
+%type <Type> additive_expression
+%type <Type> expression
 
-%type <type_list> argument_expression_list
+%type <std::vector<Type>> argument_expression_list
 
 
 %%
@@ -129,7 +117,7 @@ program :
 external_declaration :
     declaration { /* Nothing to do. Symbol was already added to symbol_table. */ }
   | EXTERN declaration {
-        for (auto& symbol : *$2) {
+        for (auto& symbol : $2) {
             symbol->set(Symbol::Attribute::EXTERN);
             std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
         }
@@ -140,7 +128,7 @@ external_declaration :
 function_definition :
     type function_declarator decl_glb_fct compound_instruction {
         // Check function return type.
-        auto function = static_cast<Function*>($2);
+        auto function = std::static_pointer_cast<Function>($2);
         function->type($1);
 
         // A function can be declared before it is defined.
@@ -173,7 +161,7 @@ function_definition :
 decl_glb_fct : {
         std::cout << "- define function '" << last_function_->name() << "'" << std::endl;
 
-        Function* function = last_function_;
+        Function::Ptr function = last_function_;
         bool error = false;
 
         // A function can be declared before it is defined.
@@ -235,7 +223,7 @@ decl_glb_fct : {
 declaration :
     type declarator_list ';' {
         $$ = $2;
-        for (auto& symbol : *$$) {
+        for (auto& symbol : $$) {
             symbol->type($1);
 
             if (symbol_table->is_in_this_scope(symbol->name())) {
@@ -260,12 +248,11 @@ type :
 
 declarator_list :
     declarator {
-        $$ = new Symbol_List;
-        $$->push_back(Symbol::Ptr($1));
+        $$.push_back($1);
     }
   | declarator_list ',' declarator {
-        $$ = $1;
-        $$->push_back(Symbol::Ptr($3));
+        $$ = std::move($1);
+        $$.push_back($3);
     }
 ;
 
@@ -279,38 +266,40 @@ declaration_list :
 ;
 
 declarator :
-    IDENT { $$ = new Symbol(std::move(*$1)); }
+    IDENT { $$ = std::make_shared<Symbol>(std::move($1)); }
   | function_declarator { $$ = $1; }
 ;
 
 function_declarator :
     IDENT '(' ')' {
-        last_function_ = new Function(std::move(*$1));
+        last_function_ = std::make_shared<Function>(std::move($1));
         $$ = last_function_;
     }
   | IDENT '(' parameter_list ')'  {
-        last_function_ = new Function(std::move(*$1));
+        last_function_ = std::make_shared<Function>(std::move($1));
         $$ = last_function_;
-        for (auto& symbol : *$3) {
+        for (auto& symbol : $3) {
             symbol->set(Symbol::Attribute::FUNCTION_PARAM);
-            static_cast<Function*>($$)->argument_list().push_back(symbol);
+            std::static_pointer_cast<Function>($$)->argument_list().push_back(symbol);
         }
     }
 ;
 
 parameter_list :
     parameter_declaration {
-        $$ = new Symbol_List;
-        $$->push_back(Symbol::Ptr($1));
+        $$.push_back($1);
     }
   | parameter_list ',' parameter_declaration {
-        $$ = $1;
-        $$->push_back(Symbol::Ptr($3));
+        $$ = std::move($1);
+        $$.push_back($3);
     }
 ;
 
 parameter_declaration :
-    type IDENT { $$ = new Symbol(std::move(*$2)); $$->type($1);}
+    type IDENT {
+        $$ = std::make_shared<Symbol>(std::move($2));
+        $$->type($1);
+    }
 ;
 
 instruction :
@@ -330,10 +319,10 @@ expression_instruction :
 assignment :
     IDENT '=' expression {
         /* std::cout << "assignment: IDENT '=' expression" << std::endl; */
-        std::cout << "- assignment " << *$1 << std::endl;
+        std::cout << "- assignment " << $1 << std::endl;
 
-        if (symbol_table->is_visible(*$1)) {
-            Symbol::Ptr tmp = symbol_table->lookup(*$1);
+        if (symbol_table->is_visible($1)) {
+            Symbol::Ptr tmp = symbol_table->lookup($1);
             if (tmp->type() != $3) {
                 std::string expression_str;
                 if ($3 == Type::INT) {
@@ -346,7 +335,7 @@ assignment :
                 std::cout << "Type checking error. Assign " << tmp->type_str() << " to " << expression_str << std::endl;
             }
         } else {
-            std::cout << "ERROR: " << *$1 << " is not defined" << std::endl;
+            std::cout << "ERROR: " << $1 << " is not defined" << std::endl;
         }
     }
 ;
@@ -480,8 +469,8 @@ postfix_expression :
   | IDENT '(' argument_expression_list ')' {
         /* std::cout << "postfix_expression: IDENT '(' argument_expression_list ')'" << std::endl; */
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
-        if (symbol_table->is_visible(*$1)) {
-            Symbol::Ptr tmp = symbol_table->lookup(*$1);
+        if (symbol_table->is_visible($1)) {
+            Symbol::Ptr tmp = symbol_table->lookup($1);
 
             Function::Ptr tmpFunction;
             tmpFunction = std::dynamic_pointer_cast<Function>(tmp);
@@ -493,7 +482,7 @@ postfix_expression :
                 }
 
                 std::ostringstream oss2;
-                for (auto& tmpType : *$3) {
+                for (auto& tmpType : $3) {
                     oss2 << (tmpType == Type::INT ? "int" : "string") << ",";
                 }
 
@@ -508,13 +497,13 @@ postfix_expression :
             }
 
         } else {
-            std::cout << "ERROR:" << *$1 << " is not defined" << std::endl;
+            std::cout << "ERROR: " << $1 << " is not defined" << std::endl;
         }
     }
   | IDENT '(' ')'                          {
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
-        if (symbol_table->is_visible(*$1)) {
-            Symbol::Ptr tmp = symbol_table->lookup(*$1);
+        if (symbol_table->is_visible($1)) {
+            Symbol::Ptr tmp = symbol_table->lookup($1);
 
             Function::Ptr tmpFunction;
             tmpFunction = std::dynamic_pointer_cast<Function>(tmp);
@@ -531,7 +520,7 @@ postfix_expression :
 
 
         } else {
-            std::cout << "ERROR:" << *$1 << " is not defined" << std::endl;
+            std::cout << "ERROR: " << $1 << " is not defined" << std::endl;
         }
     }
 ;
@@ -539,24 +528,23 @@ postfix_expression :
 argument_expression_list:
     expression                              {
         /* std::cout << "argument_expression_list: expression" << std::endl; */
-        $$ = new std::vector<Type>;
-        $$->push_back($1);
+        $$.push_back($1);
     }
   | argument_expression_list ',' expression {
         /* std::cout << "argument_expression_list: argument_expression_list ',' expression" << std::endl; */
-        $$ = $1;
-        $$->push_back($3);
+        $$ = std::move($1);
+        $$.push_back($3);
   }
 ;
 
 primary_expression :
     IDENT              {
         /* std::cout << "primary_expression: IDENT " << *$1 << std::endl; */
-        if (symbol_table->is_visible(*$1)) {
-            Symbol::Ptr tmp = symbol_table->lookup(*$1);
+        if (symbol_table->is_visible($1)) {
+            Symbol::Ptr tmp = symbol_table->lookup($1);
             $$ = tmp->type();
         } else {
-            std::cerr << "ERROR:" << *$1 << " is not defined" << std::endl;
+            std::cerr << "ERROR: " << $1 << " is not defined" << std::endl;
         }
     }
   | CONST_INT          { /* std::cout << "primary_expression: CONST_INT " << $1 << std::endl; */  $$ = Type::INT; }
