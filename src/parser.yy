@@ -7,8 +7,8 @@
 
 // WARNING: USE OF A DIRTY MACRO
 //          The parser will by default try to use a global yylex function. We
-//          want it to use the lex function of its member reference scanner. So
-//          #define yylex to refer to this.
+//          want it to use the lex function of its member reference "scanner".
+//          So #define yylex to refer to this.
 #define yylex scanner.lex
 
 
@@ -92,7 +92,7 @@
 %type <Symbol_List> declarator_list
 %type <Symbol_List> parameter_list
 %type <Symbol::Ptr> declarator
-%type <Symbol::Ptr> function_declarator
+%type <Function::Ptr> function_declarator
 %type <Symbol::Ptr> parameter_declaration
 %type <Type> type
 
@@ -127,27 +127,30 @@ external_declaration :
 
 function_definition :
     type function_declarator decl_glb_fct compound_instruction {
-        // Check function return type.
-        auto function = std::static_pointer_cast<Function>($2);
+        // Set function return type.
+        auto function = $2;
         function->type($1);
 
         // A function can be declared before it is defined.
         if (symbol_table->is_visible(function->name())) {
+            // Retrieve previously declared function.
             auto declared_func = std::dynamic_pointer_cast<Function>(
                 symbol_table->lookup(function->name()));
-            if (!declared_func) {
-                // TODO (Emery): Move this semantic error to a dedicated function.
-                std::cerr
-                    << "ERROR: Attempt to define function with name of variable '"
-                    << function->name() << "'." << std::endl
+
+            // Verify the return type. (type-checking)
+            if (function->type() != declared_func->type()) {
+                std::ostringstream oss;
+                oss
+                    << "Return type of function definition, "
+                    << (function->type() == Type::INT ? "int" : "string")
+                    << ", does not match declaration, "
+                    << (declared_func->type() == Type::INT ? "int" : "string")
+                    << "."
                     ;
-            } else if (function->type() != declared_func->type()) {
-                // Verify the return type. (type-checking)
-                std::cerr
-                    << "ERROR: Return type of function definition does not match declaration."
-                    << std::endl
-                    ;
+                throw syntax_error(@$, oss.str());
             }
+
+            // Rest of type checking is done when processing `decl_glb_fct`.
         }
 
         // Or it can be declared for the first time here.
@@ -162,41 +165,32 @@ decl_glb_fct : {
         std::cout << "- define function '" << last_function_->name() << "'" << std::endl;
 
         Function::Ptr function = last_function_;
-        bool error = false;
 
         // A function can be declared before it is defined.
         if (symbol_table->is_visible(function->name())) {
+            // Retrieve previously declared function.
             auto declared_func = std::dynamic_pointer_cast<Function>(
                 symbol_table->lookup(function->name()));
-            if (!declared_func) {
-                // TODO (Emery): Move this semantic error to a dedicated function.
-                std::cerr
-                    << "ERROR: Attempt to define function with name of variable '"
-                    << function->name() << "'." << std::endl
-                    ;
-                error = true;
-            } else {
-                // Verify the argument list. (type-checking)
-                if (function->argument_list().size() != declared_func->argument_list().size()) {
-                    std::cerr
-                        << "ERROR: Signature mismatch between function definition and declaration."
-                        << std::endl
-                        ;
-                    error = true;
-                } else {
-                    auto pair = std::mismatch(
-                        std::begin(function->argument_list()), std::end(function->argument_list()),
-                        std::begin(declared_func->argument_list()),
-                        [] (Symbol::Ptr a, Symbol::Ptr b) { return a->type() == b->type(); }
-                    );
-                    if (pair.first != std::end(function->argument_list())) {
-                        std::cerr
-                            << "ERROR: Signature mismatch between function definition and declaration."
-                            << std::endl
-                            ;
-                        error = true;
-                    }
-                }
+
+            // Verify that previously declared identifier is a function.
+            if (not declared_func) {
+                throw syntax_error(@$, "Attempt to define function with name of "
+                    "variable '" + function->name() + "'.");
+            }
+
+            // Return type checked when processing `function_definition`.
+
+            // Verify the argument list. (type-checking)
+            if (function->argument_list().size() != declared_func->argument_list().size()) {
+                throw syntax_error(@$, "Signature mismatch between function definition and declaration.");
+            }
+            auto pair = std::mismatch(
+                std::begin(function->argument_list()), std::end(function->argument_list()),
+                std::begin(declared_func->argument_list()),
+                [] (Symbol::Ptr a, Symbol::Ptr b) { return a->type() == b->type(); }
+            );
+            if (pair.first != std::end(function->argument_list())) {
+                throw syntax_error(@$, "Signature mismatch between function definition and declaration.");
             }
         }
 
@@ -211,9 +205,10 @@ decl_glb_fct : {
             symbol_table
         );
 
-        // NOTE: compound_instruction will have not yet already taken care of creating a
-        //       new symbol-table for the new scope. However, it will not add
-        //       the function parameters to this scope. We must do that here.
+        // NOTE: compound_instruction will have not yet already taken care of
+        //       creating a new symbol-table for the new scope. However, it will
+        //       not add the function parameters to this scope. We must do that
+        //       here.
         for (auto& symbol : function->argument_list()) {
             symbol_table->add(symbol->name(), symbol);
         }
@@ -227,16 +222,12 @@ declaration :
             symbol->type($1);
 
             if (symbol_table->is_in_this_scope(symbol->name())) {
-                // TODO (Emery): Move this to some sort of centralized function
-                //               for handling semantic errors.
-                std::cerr
-                    << "ERROR: Duplicate declaration of symbol '"
-                    << symbol->name() << "'" << std::endl
-                    ;
-            } else {
-                symbol_table->add(symbol->name(), symbol);
-                symbol->print_semantic_action();
+                throw syntax_error(@$, "Duplicate declaration of symbol '" +
+                    symbol->name() + "'");
             }
+
+            symbol_table->add(symbol->name(), symbol);
+            symbol->print_semantic_action();  // TODO: Remove for Part 3.
         }
     }
 ;
@@ -272,12 +263,12 @@ declarator :
 
 function_declarator :
     IDENT '(' ')' {
-        last_function_ = std::make_shared<Function>(std::move($1));
-        $$ = last_function_;
+        $$ = std::make_shared<Function>(std::move($1));
+        last_function_ = $$;
     }
   | IDENT '(' parameter_list ')'  {
-        last_function_ = std::make_shared<Function>(std::move($1));
-        $$ = last_function_;
+        $$ = std::make_shared<Function>(std::move($1));
+        last_function_ = $$;
         for (auto& symbol : $3) {
             symbol->set(Symbol::Attribute::FUNCTION_PARAM);
             std::static_pointer_cast<Function>($$)->argument_list().push_back(symbol);
@@ -332,10 +323,10 @@ assignment :
                 } else {
                     expression_str = "expression is not defined.";
                 }
-                std::cout << "Type checking error. Assign " << tmp->type_str() << " to " << expression_str << std::endl;
+                throw syntax_error(@$, "Type checking error. Assign " + tmp->type_str() + " to " + expression_str + ".");
             }
         } else {
-            std::cout << "ERROR: " << $1 << " is not defined" << std::endl;
+            throw syntax_error(@$, $1 + " is not defined.");
         }
     }
 ;
@@ -412,18 +403,18 @@ additive_expression :
     multiplicative_expression                           { /* std::cout << "additive_expression: multiplicative_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
   | additive_expression PLUS multiplicative_expression  {
         /* std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; */
-        if ($1 == Type::INT && $3 == Type::INT) {
+        if ($1 == Type::INT and $3 == Type::INT) {
             std::cout << "- addition two integers" << std::endl;
         } else {
-            std::cout << "ERROR: only two integers can do '+' operation" << std::endl;
+            throw syntax_error(@$, "Only two integers can do '+' operation.");
         }
     }  // Compute expression
   | additive_expression MINUS multiplicative_expression {
         /* std::cout << "additive_expression: additive_expression MINUS multiplicative_expression" << std::endl; */
-        if ($1 == Type::INT && $3 == Type::INT) {
+        if ($1 == Type::INT and $3 == Type::INT) {
             std::cout << "- subtration two integers" << std::endl;
         } else {
-            std::cout << "ERROR: only two integers can do '-' operation" << std::endl;
+            throw syntax_error(@$, "Only two integers can do '-' operation.");
         }
     }  // Compute expression
 ;
@@ -435,26 +426,26 @@ multiplicative_expression :
     }  // {$$=$1;}
   | multiplicative_expression MULTIPLY unary_expression {
         /* std::cout << "multiplicative_expression: multiplicative_expression MULTIPLY unary_expression" << std::endl; */
-        if ($1 == Type::INT && $3 == Type::INT) {
+        if ($1 == Type::INT and $3 == Type::INT) {
             std::cout << "- multiplication two integers" << std::endl;
         } else {
-            std::cout << "ERROR: only two integers can do '*' operation" << std::endl;
+            throw syntax_error(@$, "Only two integers can do '*' operation.");
         }
     }
   | multiplicative_expression DIVIDE unary_expression   {
         /* std::cout << "multiplicative_expression: multiplicative_expression DIVIDE unary_expression" << std::endl; */
-        if ($1 == Type::INT && $3 == Type::INT) {
+        if ($1 == Type::INT and $3 == Type::INT) {
             std::cout << "- division two integers" << std::endl;
         } else {
-            std::cout << "ERROR: only two integers can do '/' operation" << std::endl;
+            throw syntax_error(@$, "Only two integers can do '/' operation.");
         }
     }
   | multiplicative_expression MODULO unary_expression   {
         /* std::cout << "multiplicative_expression: multiplicative_expression MODULO unary_expression" << std::endl; */
-        if ($1 == Type::INT && $3 == Type::INT) {
+        if ($1 == Type::INT and $3 == Type::INT) {
             std::cout << "- modulo two integers" << std::endl;
         } else {
-            std::cout << "ERROR: only two integers can do modulo operation" << std::endl;
+            throw syntax_error(@$, "Only two integers can do modulo operation.");
         }
     }
 ;
@@ -469,59 +460,61 @@ postfix_expression :
   | IDENT '(' argument_expression_list ')' {
         /* std::cout << "postfix_expression: IDENT '(' argument_expression_list ')'" << std::endl; */
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
-        if (symbol_table->is_visible($1)) {
-            Symbol::Ptr tmp = symbol_table->lookup($1);
-
-            Function::Ptr tmpFunction;
-            tmpFunction = std::dynamic_pointer_cast<Function>(tmp);
-            if(tmpFunction) {
-                // If we have the function
-                std::ostringstream oss1;
-                for (auto& tmpSymbol : tmpFunction->argument_list()) {
-                    oss1 << (tmpSymbol->type() == Type::INT ? "int" : "string") << ",";
-                }
-
-                std::ostringstream oss2;
-                for (auto& tmpType : $3) {
-                    oss2 << (tmpType == Type::INT ? "int" : "string") << ",";
-                }
-
-                if (oss1.str().compare(oss2.str()) != 0) {
-                    std::cout << "ERROR: " << "The argument list doesn't match the argument_list of the function" << std::endl;
-                } else {
-                    $$ = tmp->type();
-                }
-            } else {
-                // Not a function, then it's an error
-                std::cout << "ERROR: " << "Syntax error" << std::endl;
-            }
-
-        } else {
-            std::cout << "ERROR: " << $1 << " is not defined" << std::endl;
+        if (not symbol_table->is_visible($1)) {
+            throw syntax_error(@$, $1 + " is not defined");
         }
+
+        // Check if IDENT is defined.
+        auto symbol = symbol_table->lookup($1);
+        if (not symbol) {
+            throw syntax_error(@$, "Attempt to call function that is not defined '" + $1 + "'.");
+        }
+
+        // Check if IDENT is a function.
+        auto declared_func = std::dynamic_pointer_cast<Function>(symbol);
+        if (not declared_func) {
+            throw syntax_error(@$, "'" + $1 + "' identifies a variable, not a function.");
+        }
+
+        // Verify the argument list. (type-checking)
+        if ($3.size() != declared_func->argument_list().size()) {
+            throw syntax_error(@$, "Signature mismatch between function definition and function call.");
+        }
+        auto pair = std::mismatch(
+            std::begin($3), std::end($3),
+            std::begin(declared_func->argument_list()),
+            [] (Type a, Symbol::Ptr b) { return a == b->type(); }
+        );
+        if (pair.first != std::end($3)) {
+            throw syntax_error(@$, "Signature mismatch between function definition and function call.");
+        }
+
+        $$ = declared_func->type();
     }
   | IDENT '(' ')'                          {
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
-        if (symbol_table->is_visible($1)) {
-            Symbol::Ptr tmp = symbol_table->lookup($1);
-
-            Function::Ptr tmpFunction;
-            tmpFunction = std::dynamic_pointer_cast<Function>(tmp);
-            if(tmpFunction) {
-                if (tmpFunction->type_str().compare("function") == 0) {
-                    std::cout << "ERROR: " << "The argument list doesn't match the argument_list of the function" << std::endl;
-                } else {
-                    $$ = tmp->type();
-                }
-            } else {
-                // Not a function, then it's an error
-                std::cout << "ERROR: " << "Syntax error" << std::endl;
-            }
-
-
-        } else {
-            std::cout << "ERROR: " << $1 << " is not defined" << std::endl;
+        if (not symbol_table->is_visible($1)) {
+            throw syntax_error(@$, $1 + " is not defined");
         }
+
+        // Check if IDENT is defined.
+        auto symbol = symbol_table->lookup($1);
+        if (not symbol) {
+            throw syntax_error(@$, "Attempt to call function that is not defined '" + $1 + "'.");
+        }
+
+        // Check if IDENT is a function.
+        auto declared_func = std::dynamic_pointer_cast<Function>(symbol);
+        if (not declared_func) {
+            throw syntax_error(@$, "'" + $1 + "' identifies a variable, not a function.");
+        }
+
+        // Verify the argument list. (type-checking)
+        if (0 != declared_func->argument_list().size()) {
+            throw syntax_error(@$, "Signature mismatch between function definition and function call.");
+        }
+
+        $$ = declared_func->type();
     }
 ;
 
@@ -540,12 +533,17 @@ argument_expression_list:
 primary_expression :
     IDENT              {
         /* std::cout << "primary_expression: IDENT " << *$1 << std::endl; */
-        if (symbol_table->is_visible($1)) {
-            Symbol::Ptr tmp = symbol_table->lookup($1);
-            $$ = tmp->type();
-        } else {
-            std::cerr << "ERROR: " << $1 << " is not defined" << std::endl;
+        if (not symbol_table->is_visible($1)) {
+            throw syntax_error(@$, $1 + " is not defined");
         }
+
+        // Check if IDENT is defined.
+        auto symbol = symbol_table->lookup($1);
+        if (not symbol) {
+            throw syntax_error(@$, "Attempt to call function that is not defined '" + $1 + "'.");
+        }
+
+        $$ = symbol->type();
     }
   | CONST_INT          { /* std::cout << "primary_expression: CONST_INT " << $1 << std::endl; */  $$ = Type::INT; }
   | CONST_STRING       { /* std::cout << "primary_expression: CONST_STRING " << $1 << std::endl; */ $$ = Type::STRING; }
