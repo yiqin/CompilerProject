@@ -33,6 +33,7 @@
 %parse-param { Symbol_Table::Ptr symbol_table }
 
 %code requires {
+    #include "ast.hpp"
     #include "symbol_table.hpp"
     namespace scanner { class Scanner; }
 }

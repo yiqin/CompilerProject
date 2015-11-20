@@ -2,6 +2,7 @@
 #ifndef __CSTR_COMPILER__SYMBOL_HPP
 #define __CSTR_COMPILER__SYMBOL_HPP
 
+
 #include <cstddef>
 
 #include <bitset>
