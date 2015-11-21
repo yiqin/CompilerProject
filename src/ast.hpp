@@ -1,11 +1,14 @@
 
 #include <memory>
-
+#include <string>
 #include "symbol.hpp"
 
 
 namespace ast {
 
+struct Operation {
+  /* data */
+};
 
 class Node {
   public:
@@ -42,17 +45,15 @@ class Unary_Expression : public Expression {
     Expression::Ptr expression;
 };
 
-
+// Binary_Expression - Expression class for a binary operator
 class Binary_Expression : public Expression {
   public:
     Operation op;
     Expression::Ptr left;
     Expression::Ptr right;
 
-    llvm::Value* build_llvm_ir (llvm::IRBuilder<>& builder) {
-        llvm::Value* lhs = left->build_llvm_ir(builder);
-        llvm::Value* rhs = right->build_llvm_ir(builder);
-        return builder.CreateBinOp(llvm::Instruction::Mul, left, right, temp_name_);
+    std::string build_llvm_ir () {
+        return "";
     }
 
   private:
