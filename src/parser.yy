@@ -394,13 +394,23 @@ comparison_operator :
 ;
 
 expression :
-    additive_expression                       { /* std::cout << "expression: additive_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
+    additive_expression                       { 
+    /* std::cout << "expression: additive_expression" << std::endl; */ 
+    
+    $$ = $1; 
+
+    }  // {$$=$1;}
   | expression SHIFTLEFT additive_expression  { /* std::cout << "expression: expression SHIFTLEFT additive_expression" << std::endl; */ }  //  Compute expression
   | expression SHIFTRIGHT additive_expression { /* std::cout << "expression: expression SHIFTRIGHT additive_expression" << std::endl; */ }  // Compute expression
 ;
 
 additive_expression :
-    multiplicative_expression                           { /* std::cout << "additive_expression: multiplicative_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
+    multiplicative_expression                           { 
+
+    /* std::cout << "additive_expression: multiplicative_expression" << std::endl; */ 
+    $$ = $1; 
+
+    }  // {$$=$1;}
   | additive_expression PLUS multiplicative_expression  {
         /* std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; */
         if ($1 == Type::INT and $3 == Type::INT) {
@@ -408,6 +418,9 @@ additive_expression :
         } else {
             throw syntax_error(@$, "Only two integers can do '+' operation.");
         }
+
+
+
     }  // Compute expression
   | additive_expression MINUS multiplicative_expression {
         /* std::cout << "additive_expression: additive_expression MINUS multiplicative_expression" << std::endl; */
@@ -416,6 +429,9 @@ additive_expression :
         } else {
             throw syntax_error(@$, "Only two integers can do '-' operation.");
         }
+        
+
+
     }  // Compute expression
 ;
 
@@ -488,6 +504,8 @@ postfix_expression :
         if (pair.first != std::end($3)) {
             throw syntax_error(@$, "Signature mismatch between function definition and function call.");
         }
+
+        std::cout << "- call function " << $1 <<std::endl;
 
         $$ = declared_func->type();
     }

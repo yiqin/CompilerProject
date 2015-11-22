@@ -6,8 +6,10 @@
 
 namespace ast {
 
+// TODO: maybe another data structure.
 struct Operation {
   /* data */
+  char value;
 };
 
 class Node {
@@ -45,6 +47,7 @@ class Unary_Expression : public Expression {
     Expression::Ptr expression;
 };
 
+// TODO: Yi - this is complicated, and come back later.
 // Binary_Expression - Expression class for a binary operator
 class Binary_Expression : public Expression {
   public:
@@ -53,20 +56,31 @@ class Binary_Expression : public Expression {
     Expression::Ptr right;
 
     std::string build_llvm_ir () {
-        return "";
+        return "hello world";
     }
 
   private:
     std::string temp_name_;
 };
 
-
+// For example: a = 1;
 class Assignment : public Expression {
   public:
     Variable::Ptr variable;
     Expression::Ptr expression;
+
+    std::string build_llvm_ir () {
+
+      // i = 450;
+      return "store i32 450, i32* %i, align 4";
+    }
+
 };
 
+class Define_Function : public Node {
+  public:
+
+}
 
 class Function_Call : public Node {
   public:

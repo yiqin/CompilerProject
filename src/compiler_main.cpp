@@ -5,6 +5,7 @@
 #include "scanner.hpp"
 #include "symbol_table.hpp"
 #include "parser.tab.hpp"
+
 #include "ast.hpp"
 
 int main (int argc, char** argv) {
@@ -23,6 +24,18 @@ int main (int argc, char** argv) {
     // Test here.
     // TODO: build unit test
     
+
+
+    std::cout << std::endl << "AST" << std::endl << std::endl;
+
+    ast::Binary_Expression tmp = ast::Binary_Expression();
+    tmp.char = "+";
+
+    std::cout << tmp.build_llvm_ir() << std::endl;
+
+
+
+
 
     return 0;
 }
