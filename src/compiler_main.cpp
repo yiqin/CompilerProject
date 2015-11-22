@@ -6,6 +6,7 @@
 #include "symbol_table.hpp"
 #include "parser.tab.hpp"
 
+#include "ast.hpp"
 
 int main (int argc, char** argv) {
     scanner::Scanner scanner;
@@ -17,6 +18,24 @@ int main (int argc, char** argv) {
 
     std::cout << std::endl << "SYMBOL TABLES" << std::endl << std::endl;
     parser::Symbol_Table::print_tables();
+
+
+    // TEMP: implement the building llvm IR
+    // Test here.
+    // TODO: build unit test
+    
+
+
+    std::cout << std::endl << "AST" << std::endl << std::endl;
+
+    ast::Binary_Expression tmp = ast::Binary_Expression();
+    tmp.char = "+";
+
+    std::cout << tmp.build_llvm_ir() << std::endl;
+
+
+
+
 
     return 0;
 }

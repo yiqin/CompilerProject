@@ -4,7 +4,7 @@
 
 
 #include <memory>
-
+#include <string>
 #include "symbol.hpp"
 
 
@@ -110,6 +110,8 @@ class Unary_Expression : public Expression {
 };
 
 
+// TODO: Yi - this is complicated, and come back later.
+// Binary_Expression - Expression class for a binary operator
 class Binary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Binary_Expression> Ptr;
@@ -118,11 +120,9 @@ class Binary_Expression : public Expression {
         Operation op, Expression::Ptr lhs, Expression::Ptr rhs)
           : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
-    // llvm::Value* build_llvm_ir (llvm::IRBuilder<>& builder) {
-    //     llvm::Value* lhs = left->build_llvm_ir(builder);
-    //     llvm::Value* rhs = right->build_llvm_ir(builder);
-    //     return builder.CreateBinOp(llvm::Instruction::Mul, left, right, temp_name_);
-    // }
+    std::string build_llvm_ir () {
+        return "hello world";
+    }
 
   private:
     Operation op_;  // <Operation> is a placeholder type.
@@ -133,6 +133,7 @@ class Binary_Expression : public Expression {
 };
 
 
+// For example: a = 1;
 class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
@@ -140,6 +141,12 @@ class Assignment : public Expression {
     Assignment (const parser::Type& type,
         Variable::Ptr lhs, Expression::Ptr rhs)
           : Expression(type), lhs_(lhs), rhs_(rhs) {}
+
+    std::string build_llvm_ir () {
+
+      // i = 450;
+      return "store i32 450, i32* %i, align 4";
+    }
 
   private:
     Variable::Ptr lhs_;

@@ -14,6 +14,14 @@ symbol.
 
 This project will give you the grammar that you will use for this compiler.
 
+===============================================================================
+System Requirement:
+* flex 2.5.39
+* bison 3.0.2
+* clang 3.6.2-1
+* llvm 3.6.2
+* Operating system is 64 bit
+
 
 ===============================================================================
 
@@ -27,10 +35,28 @@ Notes about the Scanner implementation:
     1) The Lexer has no notion of type, so when building the symbol table, it
        leaves that field blank.
 
+===============================================================================
+How to run LLVM
+
+```
+clang -Os -S -emit-llvm sample.c -o sample.ll
+opt-3.6 -S sample.ll
+llc-3.6 -O3 sample.ll -march=x86-64 -o sample-x86-64.s
+gcc sample-x86-64.s -o sample-x86-64
+./sample-x86-64
+```
+opt-3.6 is to optimize the code. 
+
+===============================================================================
+To Do:
+- [ ] Print variables when printf is called. printf is a special function.
 
 ===============================================================================
 
 REFERENCES:
 
-The usage pattern of Bison in this project (and also by extension Flex) is based
+* The usage pattern of Bison in this project (and also by extension Flex) is based
 on the example found at [https://panthema.net/2007/flex-bison-cpp-example/](https://panthema.net/2007/flex-bison-cpp-example/).
+
+* Quick Start LLVM Tutorial
+at [https://idea.popcount.org/2013-07-24-ir-is-better-than-assembly/](https://idea.popcount.org/2013-07-24-ir-is-better-than-assembly/).
