@@ -20,6 +20,7 @@ System Requirement:
 * bison 3.0.2
 * clang 3.6.2-1
 * llvm 3.6.2
+* Operating system is 64 bit
 
 
 ===============================================================================
@@ -40,10 +41,11 @@ How to run LLVM
 ```
 clang -Os -S -emit-llvm sample.c -o sample.ll
 opt-3.6 -S sample.ll
-llc-3.6 -O3 sample.ll -march=x86 -o sample-x86.s
+llc-3.6 -O3 sample.ll -march=x86-64 -o sample-x86-64.s
 gcc sample-x86-64.s -o sample-x86-64
 ./sample-x86-64
 ```
+opt-3.6 is to optimize the code. 
 
 ===============================================================================
 
