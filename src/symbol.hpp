@@ -54,11 +54,11 @@ class Symbol {
         attributes_.set(static_cast<std::size_t>(attribute), false);
     }
 
-    // TODO (Emery): Remove for production.
-    virtual void print_semantic_action () {
-        std::cout << "- declare variable '" << name_ << "' of type "
-            << (type_ == Type::INT ? "integer" : "string") << std::endl;
-    }
+    // // TODO (Emery): Remove for production.
+    // virtual void print_semantic_action () {
+    //     std::cout << "- declare variable '" << name_ << "' of type "
+    //         << (type_ == Type::INT ? "integer" : "string") << std::endl;
+    // }
 
   protected:
     std::string name_;
@@ -85,10 +85,10 @@ class Function : public Symbol {
 
     Argument_List& argument_list () { return argument_list_; }
 
-    // TODO (Emery): Remove for production.
-    virtual void print_semantic_action () {
-        std::cout << "- declare function '" << name_ << "'" << std::endl;
-    }
+    // // TODO (Emery): Remove for production.
+    // virtual void print_semantic_action () {
+    //     std::cout << "- declare function '" << name_ << "'" << std::endl;
+    // }
 
   private:
     Argument_List argument_list_;

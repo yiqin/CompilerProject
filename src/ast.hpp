@@ -80,7 +80,7 @@ class Assignment : public Expression {
 class Define_Function : public Node {
   public:
 
-}
+};
 
 class Function_Call : public Node {
   public:
