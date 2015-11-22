@@ -73,7 +73,8 @@ $(BINDIR)/compiler: $(BUILDDIR)/compiler_main.o \
 $(BINDIR)/preprocessor: $(BUILDDIR)/preprocessor.yy.o $(BUILDDIR)/macro.o
 
 $(TESTDIR)/$(BINDIR)/unit_test: $(TESTDIR)/$(BUILDDIR)/unit_test_main.o \
-	$(TESTDIR)/$(BUILDDIR)/unit_test_scanner.o $(BUILDDIR)/scanner.yy.o
+	$(TESTDIR)/$(BUILDDIR)/unit_test_scanner.o $(BUILDDIR)/scanner.yy.o \
+	$(TESTDIR)/$(BUILDDIR)/unit_test_ast.o $(BUILDDIR)/scanner.yy.o
 
 
 # SPECIFY SPECIAL DEPENDENCIES
@@ -86,7 +87,7 @@ $(SRCDIR)/scanner.yy.cpp: $(SRCDIR)/parser.tab.hpp
 $(SRCDIR)/symbol_table.cpp: $(SRCDIR)/location.hh
 
 $(TESTDIR)/$(SRCDIR)/unit_test_scanner.cpp: $(SRCDIR)/parser.tab.hpp
-
+$(TESTDIR)/$(SRCDIR)/unit_test_ast.cpp: $(SRCDIR)/symbol_table.cpp
 
 # RULE PATTERNS
 
