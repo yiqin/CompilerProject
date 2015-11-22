@@ -48,6 +48,10 @@ gcc sample-x86-64.s -o sample-x86-64
 opt-3.6 is to optimize the code. 
 
 ===============================================================================
+To Do:
+- [] Print variables when printf is called. printf is a special function.
+
+===============================================================================
 
 REFERENCES:
 
