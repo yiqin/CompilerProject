@@ -97,33 +97,55 @@
 %type <Symbol::Ptr> parameter_declaration
 %type <Type> type
 
-%type <Type> primary_expression
-%type <Type> postfix_expression
-%type <Type> unary_expression
-%type <Type> multiplicative_expression
-%type <Type> additive_expression
-%type <Type> expression
+%type <ast::Expression::Ptr> primary_expression
+%type <ast::Expression::Ptr> postfix_expression
+%type <ast::Expression::Ptr> unary_expression
+%type <ast::Expression::Ptr> multiplicative_expression
+%type <ast::Expression::Ptr> additive_expression
+%type <ast::Expression::Ptr> assignment
+%type <ast::Expression::Ptr> expression
 
-%type <std::vector<Type>> argument_expression_list
+%type <ast::Operation> comparison_operator
+%type <ast::Expression::Ptr> condition
+%type <ast::Expression::Ptr> cond_instruction
+
+%type <ast::Instruction::Ptr> instruction
+%type <ast::Instruction::Ptr> compound_instruction
+%type <ast::Instruction::Ptr> expression_instruction
+%type <ast::Instruction::Ptr> iteration_instruction
+%type <ast::Instruction::Ptr> select_instruction
+%type <ast::Instruction::Ptr> jump_instruction
+
+%type <std::vector<ast::Expression::Ptr>> argument_expression_list
+%type <std::vector<ast::Instruction::Ptr>> instruction_list
 
 
 %%
 
 
 program :
-    external_declaration         { /* std::cout << "program: external_declaration" << std::endl; */ }
-  | program external_declaration { /* std::cout << "program: program external_declaration" << std::endl; */ }
+    external_declaration         {
+        /* std::cout << "program: external_declaration" << std::endl; */
+    }
+  | program external_declaration {
+        /* std::cout << "program: program external_declaration" << std::endl; */
+    }
 ;
 
 external_declaration :
-    declaration { /* Nothing to do. Symbol was already added to symbol_table. */ }
-  | EXTERN declaration {
+    declaration         {
+        /* Nothing to do. Symbol was already added to symbol_table. */
+    }
+  | EXTERN declaration  {
         for (auto& symbol : $2) {
             symbol->set(Symbol::Attribute::EXTERN);
-            std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
+            // std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
         }
     }
-  | function_definition { /* std::cout << "external_declaration: function_definition" << std::endl; */ }
+  | function_definition {
+        /* std::cout << "external_declaration: function_definition" << std::endl; */
+        // TODO: Generate code.
+    }
 ;
 
 function_definition :
@@ -228,18 +250,22 @@ declaration :
             }
 
             symbol_table->add(symbol->name(), symbol);
-            symbol->print_semantic_action();  // TODO: Remove for Part 3.
+            // symbol->print_semantic_action();  // TODO: Remove for Part 3.
         }
     }
 ;
 
 type :
-    INT    { $$ = Type::INT; }
-  | STRING { $$ = Type::STRING; }
+    INT    {
+        $$ = Type::INT;
+    }
+  | STRING {
+        $$ = Type::STRING;
+    }
 ;
 
 declarator_list :
-    declarator {
+    declarator                     {
         $$.push_back($1);
     }
   | declarator_list ',' declarator {
@@ -249,7 +275,7 @@ declarator_list :
 ;
 
 declaration_list :
-    declaration {
+    declaration                   {
         // Nothing to do. Semantic action of "declaration" handles symbol creation.
     }
   | declaration_list declaration  {
@@ -258,12 +284,16 @@ declaration_list :
 ;
 
 declarator :
-    IDENT { $$ = std::make_shared<Symbol>(std::move($1)); }
-  | function_declarator { $$ = $1; }
+    IDENT               {
+        $$ = std::make_shared<Symbol>(std::move($1));
+    }
+  | function_declarator {
+        $$ = $1;
+    }
 ;
 
 function_declarator :
-    IDENT '(' ')' {
+    IDENT '(' ')'                 {
         $$ = std::make_shared<Function>(std::move($1));
         last_function_ = $$;
     }
@@ -278,7 +308,7 @@ function_declarator :
 ;
 
 parameter_list :
-    parameter_declaration {
+    parameter_declaration                    {
         $$.push_back($1);
     }
   | parameter_list ',' parameter_declaration {
@@ -295,48 +325,87 @@ parameter_declaration :
 ;
 
 instruction :
-    ';'                    { /* std::cout << "instruction: ';'"                    << std::endl; */ }
-  | compound_instruction   { /* std::cout << "instruction: compound_instruction"   << std::endl; */ }  // {$$=$1;}
-  | expression_instruction { /* std::cout << "instruction: expression_instruction" << std::endl; */ }  // {$$=$1;}
-  | iteration_instruction  { /* std::cout << "instruction: iteration_instruction"  << std::endl; */ }  // {$$=$1;}
-  | select_instruction     { /* std::cout << "instruction: select_instruction"     << std::endl; */ }  // {$$=$1;}
-  | jump_instruction       { /* std::cout << "instruction: jump_instruction"       << std::endl; */ }  // {$$=$1;}
+    ';'                    {
+        /* std::cout << "instruction: ';'"                    << std::endl; */
+        // No instruction to forward up. Nothing to do.
+    }
+  | compound_instruction   {
+        /* std::cout << "instruction: compound_instruction"   << std::endl; */
+        $$ = $1;
+    }
+  | expression_instruction {
+        /* std::cout << "instruction: expression_instruction" << std::endl; */
+        $$ = $1;
+    }
+  | iteration_instruction  {
+        /* std::cout << "instruction: iteration_instruction"  << std::endl; */
+        $$ = $1;
+    }
+  | select_instruction     {
+        /* std::cout << "instruction: select_instruction"     << std::endl; */
+        $$ = $1;
+    }
+  | jump_instruction       {
+        /* std::cout << "instruction: jump_instruction"       << std::endl; */
+        $$ = $1;
+    }
 ;
 
 expression_instruction :
-    expression ';' { /* std::cout << "expression_instruction: expression ';'" << std::endl; */ }
-  | assignment ';' { /* std::cout << "expression_instruction: assignment ';'" << std::endl; */ }
+    expression ';' {
+        /* std::cout << "expression_instruction: expression ';'" << std::endl; */
+        $$ = std::make_shared<ast::Expression_Instruction>($1);
+    }
+  | assignment ';' {
+        /* std::cout << "expression_instruction: assignment ';'" << std::endl; */
+        $$ = std::make_shared<ast::Expression_Instruction>($1);
+    }
 ;
 
 assignment :
     IDENT '=' expression {
         /* std::cout << "assignment: IDENT '=' expression" << std::endl; */
-        std::cout << "- assignment " << $1 << std::endl;
+        // std::cout << "- assignment " << $1 << std::endl;
 
-        if (symbol_table->is_visible($1)) {
-            Symbol::Ptr tmp = symbol_table->lookup($1);
-            if (tmp->type() != $3) {
-                std::string expression_str;
-                if ($3 == Type::INT) {
-                    expression_str = "int";
-                } else if ($3 == Type::STRING) {
-                    expression_str = "string";
-                } else {
-                    expression_str = "expression is not defined.";
-                }
-                throw syntax_error(@$, "Type checking error. Assign " + tmp->type_str() + " to " + expression_str + ".");
-            }
-        } else {
+        if (not symbol_table->is_visible($1)) {
             throw syntax_error(@$, $1 + " is not defined.");
         }
+
+        Symbol::Ptr symbol = symbol_table->lookup($1);
+        if (symbol->type() != $3) {
+            std::string expression_str;
+            if ($3 == Type::INT) {
+                expression_str = "int";
+            } else if ($3 == Type::STRING) {
+                expression_str = "string";
+            } else {
+                expression_str = "expression is not defined.";
+            }
+            throw syntax_error(@$, "Type checking error. Assign " + symbol->type_str() + " to " + expression_str + ".");
+        }
+
+        auto variable = std::make_shared<ast::Variable>(symbol);
+        $$ = std::make_shared<ast::Assignment>(symbol->type(), variable, $3);
     }
 ;
 
 compound_instruction :
-    block_start declaration_list instruction_list block_end { /* std::cout << "compound_instruction: block_start declaration_list instruction_list block_end" << std::endl; */ }  // {$$=$3;}
-  | block_start declaration_list block_end { /* std::cout << "compound_instruction: block_start declaration_list block_end" << std::endl; */ }
-  | block_start instruction_list block_end { /* std::cout << "compound_instruction: block_start instruction_list block_end" << std::endl; */ }  // {$$=$2;}
-  | block_start block_end { /* std::cout << "compound_instruction: block_start block_end" << std::endl; */ }
+    block_start declaration_list instruction_list block_end {
+        /* std::cout << "compound_instruction: block_start declaration_list instruction_list block_end" << std::endl; */
+        $$ = ast::Compound_Instruction(std::move($2));
+    }
+  | block_start declaration_list block_end {
+        /* std::cout << "compound_instruction: block_start declaration_list block_end" << std::endl; */
+        // No instructions to foward up. Nothing to do.
+    }
+  | block_start instruction_list block_end {
+        /* std::cout << "compound_instruction: block_start instruction_list block_end" << std::endl; */
+        $$ = ast::Compound_Instruction(std::move($2));
+    }
+  | block_start block_end {
+        /* std::cout << "compound_instruction: block_start block_end" << std::endl; */
+        // No instructions to forward up. Nothing to do.
+    }
 ;
 
 
@@ -358,93 +427,144 @@ block_end :
 ;
 
 instruction_list :
-    instruction                  { /* std::cout << "instruction_list: instruction" << std::endl; */ }  // {$$=$1;}
-  | instruction_list instruction { /* std::cout << "instruction_list: instruction_list instruction" << std::endl; */ }
+    instruction                  {
+        /* std::cout << "instruction_list: instruction" << std::endl; */
+        $$.push_back($1);
+    }
+  | instruction_list instruction {
+        /* std::cout << "instruction_list: instruction_list instruction" << std::endl; */
+        $$ = std::move($1);
+        $$.push_back($2);
+    }
 ;
 
 select_instruction :
-    cond_instruction instruction                  { /* std::cout << "select_instruction: cond_instruction instruction" << std::endl; */ }
-  | cond_instruction instruction ELSE instruction { /* std::cout << "select_instruction: cond_instruction instruction ELSE instruction" << std::endl; */ }
+    cond_instruction instruction                  {
+        /* std::cout << "select_instruction: cond_instruction instruction" << std::endl; */
+        $$ = std::make_shared<ast::Conditional_Instruction>($1, $2);
+    }
+  | cond_instruction instruction ELSE instruction {
+        /* std::cout << "select_instruction: cond_instruction instruction ELSE instruction" << std::endl; */
+        $$ = std::make_shared<ast::Conditional_Instruction>($1, $2, $4);
+    }
 ;
 
 cond_instruction :
-    IF '(' condition ')' { /* std::cout << "cond_instruction: IF '(' condition ')'" << std::endl; */ }  // {$$=$3;}
+    IF '(' condition ')' {
+        /* std::cout << "cond_instruction: IF '(' condition ')'" << std::endl; */
+        $$ = $3;
+    }
 ;
 
 iteration_instruction :
-    WHILE '(' condition ')' instruction                             { /* std::cout << "iteration_instruction: WHILE '(' condition ')' instruction" << std::endl; */ }  // Handle while loop
-  | DO instruction WHILE '(' condition ')'                          { /* std::cout << "iteration_instruction: DO instruction WHILE '(' condition ')'" << std::endl; */ }
-  | FOR '(' assignment ';' condition ';' assignment ')' instruction { /* std::cout << "iteration_instruction: FOR '(' assignment ';' condition ';' assignment ')' instruction" << std::endl; */ }
+    WHILE '(' condition ')' instruction                             {
+        /* std::cout << "iteration_instruction: WHILE '(' condition ')' instruction" << std::endl; */
+        $$ = std::make_shared<ast::While_Instruction>($3, $5);
+    }
+  | DO instruction WHILE '(' condition ')'                          {
+        /* std::cout << "iteration_instruction: DO instruction WHILE '(' condition ')'" << std::endl; */
+        $$ = std::make_shared<ast::Do_Instruction>($5, $2);
+    }
+  | FOR '(' assignment ';' condition ';' assignment ')' instruction {
+        /* std::cout << "iteration_instruction: FOR '(' assignment ';' condition ';' assignment ')' instruction" << std::endl; */
+        $$ = std::make_shared<ast::For_Instruction>($3, $5, $7, $9);
+    }
 ;
 
 jump_instruction:
-    RETURN expression ';' { /* std::cout << "jump_instruction: RETURN expression ';'" << std::endl; */ }
+    RETURN expression ';' {
+        /* std::cout << "jump_instruction: RETURN expression ';'" << std::endl; */
+        $$ = std::make_shared<ast::Return_Instruction>($2);
+    }
 ;
 
 condition :
-    expression comparison_operator expression { /* std::cout << "condition: expression comparison_operator expression" << std::endl; */ }
+    expression comparison_operator expression {
+        /* std::cout << "condition: expression comparison_operator expression" << std::endl; */
+        $$ = std::make_shared<ast::Binary_Expression>(Type::INT, $2, $1, $3);
+    }
 ;
 
 comparison_operator :
-    EQUAL        { /* std::cout << "comparison_operator: EQUAL"        << std::endl; */ }  // { $$.entier = EQUAL;        }  // equal
-  | NEQUAL       { /* std::cout << "comparison_operator: NEQUAL"       << std::endl; */ }  // { $$.entier = NEQUAL;       }  // not-equal
-  | LESS         { /* std::cout << "comparison_operator: LESS"         << std::endl; */ }  // { $$.entier = LESS;         }  // less-than
-  | GREATER      { /* std::cout << "comparison_operator: GREATER"      << std::endl; */ }  // { $$.entier = GREATER;      }  // greater-than
-  | LESSEQUAL    { /* std::cout << "comparison_operator: LESSEQUAL"    << std::endl; */ }  // { $$.entier = LESSEQUAL;    }  // less-than-or-equal
-  | GREATEREQUAL { /* std::cout << "comparison_operator: GREATEREQUAL" << std::endl; */ }  // { $$.entier = GREATEREQUAL; }  // greater-than-or-equal
+    EQUAL        { /* std::cout << "comparison_operator: EQUAL"        << std::endl; */ $$ = EQUAL;                 }
+  | NEQUAL       { /* std::cout << "comparison_operator: NEQUAL"       << std::endl; */ $$ = NOT_EQUAL;             }
+  | LESS         { /* std::cout << "comparison_operator: LESS"         << std::endl; */ $$ = LESS_THAN;             }
+  | GREATER      { /* std::cout << "comparison_operator: GREATER"      << std::endl; */ $$ = GREATER_THAN;          }
+  | LESSEQUAL    { /* std::cout << "comparison_operator: LESSEQUAL"    << std::endl; */ $$ = LESS_THAN_OR_EQUAL;    }
+  | GREATEREQUAL { /* std::cout << "comparison_operator: GREATEREQUAL" << std::endl; */ $$ = GREATER_THAN_OR_EQUAL; }
 ;
 
 expression :
-    additive_expression                       { /* std::cout << "expression: additive_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
-  | expression SHIFTLEFT additive_expression  { /* std::cout << "expression: expression SHIFTLEFT additive_expression" << std::endl; */ }  //  Compute expression
-  | expression SHIFTRIGHT additive_expression { /* std::cout << "expression: expression SHIFTRIGHT additive_expression" << std::endl; */ }  // Compute expression
+    additive_expression                       {
+        /* std::cout << "expression: additive_expression" << std::endl; */
+        $$ = $1;
+    }
+  | expression SHIFTLEFT additive_expression  {
+        /* std::cout << "expression: expression SHIFTLEFT additive_expression" << std::endl; */
+        if ($1->type() == Type::INT and $3->type() == Type::INT) {
+            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::LEFT_SHIFT, $1, $3);
+        } else {
+            throw syntax_error(@$, "Only two integers can do '<<' operation.");
+        }
+    }
+  | expression SHIFTRIGHT additive_expression {
+        /* std::cout << "expression: expression SHIFTRIGHT additive_expression" << std::endl; */
+        if ($1->type() == Type::INT and $3->type() == Type::INT) {
+            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::RIGHT_SHIFT, $1, $3);
+        } else {
+            throw syntax_error(@$, "Only two integers can do '>>' operation.");
+        }
+    }
 ;
 
 additive_expression :
-    multiplicative_expression                           { /* std::cout << "additive_expression: multiplicative_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
+    multiplicative_expression                           {
+        /* std::cout << "additive_expression: multiplicative_expression" << std::endl; */
+        $$ = $1;
+    }
   | additive_expression PLUS multiplicative_expression  {
         /* std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; */
-        if ($1 == Type::INT and $3 == Type::INT) {
-            std::cout << "- addition two integers" << std::endl;
+        if ($1->type() == Type::INT and $3->type() == Type::INT) {
+            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::ADDITION, $1, $3);
         } else {
             throw syntax_error(@$, "Only two integers can do '+' operation.");
         }
-    }  // Compute expression
+    }
   | additive_expression MINUS multiplicative_expression {
         /* std::cout << "additive_expression: additive_expression MINUS multiplicative_expression" << std::endl; */
-        if ($1 == Type::INT and $3 == Type::INT) {
-            std::cout << "- subtration two integers" << std::endl;
+        if ($1->type() == Type::INT and $3->type() == Type::INT) {
+            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::SUBTRACTION, $1, $3);
         } else {
             throw syntax_error(@$, "Only two integers can do '-' operation.");
         }
-    }  // Compute expression
+    }
 ;
 
 multiplicative_expression :
     unary_expression                                    {
         /* std::cout << "multiplicative_expression: unary_expression" << std::endl; */
         $$ = $1;
-    }  // {$$=$1;}
+    }
   | multiplicative_expression MULTIPLY unary_expression {
         /* std::cout << "multiplicative_expression: multiplicative_expression MULTIPLY unary_expression" << std::endl; */
-        if ($1 == Type::INT and $3 == Type::INT) {
-            std::cout << "- multiplication two integers" << std::endl;
+        if ($1->type() == Type::INT and $3->type() == Type::INT) {
+            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::MULTIPLICATION, $1, $3);
         } else {
             throw syntax_error(@$, "Only two integers can do '*' operation.");
         }
     }
   | multiplicative_expression DIVIDE unary_expression   {
         /* std::cout << "multiplicative_expression: multiplicative_expression DIVIDE unary_expression" << std::endl; */
-        if ($1 == Type::INT and $3 == Type::INT) {
-            std::cout << "- division two integers" << std::endl;
+        if ($1->type() == Type::INT and $3->type() == Type::INT) {
+            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::DIVISION, $1, $3);
         } else {
             throw syntax_error(@$, "Only two integers can do '/' operation.");
         }
     }
   | multiplicative_expression MODULO unary_expression   {
         /* std::cout << "multiplicative_expression: multiplicative_expression MODULO unary_expression" << std::endl; */
-        if ($1 == Type::INT and $3 == Type::INT) {
-            std::cout << "- modulo two integers" << std::endl;
+        if ($1->type() == Type::INT and $3->type() == Type::INT) {
+            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::MODULUS, $1, $3);
         } else {
             throw syntax_error(@$, "Only two integers can do modulo operation.");
         }
@@ -452,12 +572,25 @@ multiplicative_expression :
 ;
 
 unary_expression:
-    postfix_expression     { /* std::cout << "unary_expression: postfix_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
-  | MINUS unary_expression { /* std::cout << "unary_expression: MINUS unary_expression" << std::endl; */ $$ = $2; }
+    postfix_expression     {
+        /* std::cout << "unary_expression: postfix_expression" << std::endl; */
+        $$ = $1;
+    }
+  | MINUS unary_expression {
+        /* std::cout << "unary_expression: MINUS unary_expression" << std::endl; */
+        if ($2->type() == Type::INT) {
+            $$ = std::make_shared<ast::Unary_Expression>(Type::INT, ast::Operation::SUBTRACTION, $2);
+        } else {
+            throw syntax_error(@$, "Unary MINUS is not defined for this type.");
+        }
+    }
 ;
 
 postfix_expression :
-    primary_expression                     { /* std::cout << "postfix_expression: primary_expression" << std::endl; */ $$ = $1; }  // {$$=$1;}
+    primary_expression                     {
+        /* std::cout << "postfix_expression: primary_expression" << std::endl; */
+        $$ = $1;
+    }
   | IDENT '(' argument_expression_list ')' {
         /* std::cout << "postfix_expression: IDENT '(' argument_expression_list ')'" << std::endl; */
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
@@ -490,7 +623,7 @@ postfix_expression :
             throw syntax_error(@$, "Signature mismatch between function definition and function call.");
         }
 
-        $$ = declared_func->type();
+        $$ = std::make_shared<ast::Function_Call>(declared_func, $3);
     }
   | IDENT '(' ')'                          {
         /* std::cout << "postfix_expression: IDENT '(' ')'" << *$1 << std::endl; */
@@ -515,7 +648,7 @@ postfix_expression :
             throw syntax_error(@$, "Signature mismatch between function definition and function call.");
         }
 
-        $$ = declared_func->type();
+        $$ = std::make_shared<ast::Function_Call>(declared_func);
     }
 ;
 
@@ -541,14 +674,23 @@ primary_expression :
         // Check if IDENT is defined.
         auto symbol = symbol_table->lookup($1);
         if (not symbol) {
-            throw syntax_error(@$, "Attempt to call function that is not defined '" + $1 + "'.");
+            throw syntax_error(@$, "Attempt to reference symbol that is not defined '" + $1 + "'.");
         }
 
-        $$ = symbol->type();
+        $$ = std::make_shared<ast::Variable>(symbol);
     }
-  | CONST_INT          { /* std::cout << "primary_expression: CONST_INT " << $1 << std::endl; */  $$ = Type::INT; }
-  | CONST_STRING       { /* std::cout << "primary_expression: CONST_STRING " << $1 << std::endl; */ $$ = Type::STRING; }
-  | '(' expression ')' { /* std::cout << "primary_expression: '(' expression ')'" << std::endl; */ $$ = $2; }
+  | CONST_INT          {
+        /* std::cout << "primary_expression: CONST_INT " << $1 << std::endl; */
+        $$ = std::make_shared<ast::Const_Integer>($1);
+    }
+  | CONST_STRING       {
+        /* std::cout << "primary_expression: CONST_STRING " << $1 << std::endl; */
+        $$ = std::make_shared<ast::Const_String>($1);
+    }
+  | '(' expression ')' {
+        /* std::cout << "primary_expression: '(' expression ')'" << std::endl; */
+        $$ = $2;
+    }
 ;
 
 

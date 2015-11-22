@@ -11,6 +11,24 @@
 namespace ast {
 
 
+enum class Operation {
+    ADDITION,
+    SUBTRACTION,
+    MULTIPLICATION,
+    DIVISION,
+    MODULUS,
+    LEFT_SHIFT,
+    RIGHT_SHIFT,
+
+    EQUAL,
+    NOT_EQUAL,
+    LESS_THAN,
+    GREATER_THAN,
+    LESS_THAN_OR_EQUAL,
+    GREATER_THAN_OR_EQUAL,
+};
+
+
 class Node {
   public:
     typedef std::shared_ptr<Node> Ptr;
@@ -22,9 +40,24 @@ class Node {
 };
 
 
-class Terminal : public Node {
+class Expression : public Node {
+  public:
+    typedef std::shared_ptr<Expression> Ptr;
+
+    Expression (const parser::Type& type) : type_(type) {}
+
+    const parser::Type& type () const { return type_; }
+
+  private:
+    const parser::Type& type_;
+};
+
+
+class Terminal : public Expression {
   public:
     typedef std::shared_ptr<Terminal> Ptr;
+
+    Terminal (const parser::Type& type) : Expression(type) {}
 };
 
 
@@ -32,28 +65,35 @@ class Variable : public Terminal {
   public:
     typedef std::shared_ptr<Variable> Ptr;
 
-    Variable (const parser::Symbol::Ptr& symbol) : symbol_(symbol) {}
+    Variable (const parser::Symbol::Ptr& symbol)
+          : Terminal(symbol->type()), symbol_(symbol) {}
 
   private:
     parser::Symbol::Ptr symbol_;
 };
 
 
-template <typename T>
-class Const : public Terminal {
+class Const_Integer : public Terminal {
   public:
-    typedef std::shared_ptr<Const> Ptr;
+    typedef std::shared_ptr<Const_Integer> Ptr;
 
-    Const (const T& value) : value_(value) {}
+    Const_Integer (const int& value)
+          : Terminal(parser::Type::INT) value_(value) {}
 
   private:
-    T value_;
+    int value_;
 };
 
 
-class Expression : public Node {
+class Const_String : public Terminal {
   public:
-    typedef std::shared_ptr<Expression> Ptr;
+    typedef std::shared_ptr<Const_String> Ptr;
+
+    Const_String (const std::string& value)
+          : Terminal(parser::Type::STRING) value_(value) {}
+
+  private:
+    std::string value_;
 };
 
 
@@ -61,11 +101,11 @@ class Unary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Unary_Expression> Ptr;
 
-    Unary_Expression (int op, Expression::Ptr rhs)
-          : op_(op), rhs_(rhs) {}
+    Unary_Expression (const parser::Type& type, Operation op, Expression::Ptr rhs)
+          : Expression(type), op_(op), rhs_(rhs) {}
 
   private:
-    int op_;  // <int> is a placeholder type.
+    Operation op_;  // <Operation> is a placeholder type.
     Expression::Ptr rhs_;
 };
 
@@ -74,8 +114,9 @@ class Binary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Binary_Expression> Ptr;
 
-    Binary_Expression (int op, Expression::Ptr lhs, Expression::Ptr rhs)
-          : op_(op), lhs_(lhs), rhs_(rhs) {}
+    Binary_Expression (const parser::Type& type,
+        Operation op, Expression::Ptr lhs, Expression::Ptr rhs)
+          : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
     // llvm::Value* build_llvm_ir (llvm::IRBuilder<>& builder) {
     //     llvm::Value* lhs = left->build_llvm_ir(builder);
@@ -84,7 +125,7 @@ class Binary_Expression : public Expression {
     // }
 
   private:
-    int op_;  // <int> is a placeholder type.
+    Operation op_;  // <Operation> is a placeholder type.
     Expression::Ptr lhs_;
     Expression::Ptr rhs_;
 
@@ -96,8 +137,9 @@ class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
 
-    Assignment (Variable::Ptr lhs, Expression::Ptr rhs)
-          : lhs_(lhs), rhs_(rhs) {}
+    Assignment (const parser::Type& type,
+        Variable::Ptr lhs, Expression::Ptr rhs)
+          : Expression(type), lhs_(lhs), rhs_(rhs) {}
 
   private:
     Variable::Ptr lhs_;
@@ -109,11 +151,16 @@ class Function_Call : public Expression {
   public:
     typedef std::shared_ptr<Function_Call> Ptr;
 
+    Function_Call (parser::Function::Ptr function)
+          : Expression(function->type()),
+            function_(function) {}
+
     Function_Call (
         parser::Function::Ptr function,
         const std::vector<Expression::Ptr>& argument_list
     )
-          : function_(function),
+          : Expression(function->type()),
+            function_(function),
             argument_list_(argument_list) {}
 
   private:
@@ -140,7 +187,31 @@ class Expression_Instruction : public Instruction {
 };
 
 
-// class Iteration_Instruction :
+class Conditional_Instruction : public Instruction {
+  public:
+    typedef std::shared_ptr<Conditional_Instruction> Ptr;
+
+    Conditional_Instruction (
+        Expression::Ptr condition,
+        Instruction::Ptr instruction
+    )
+          : condition_(condition),
+            instruction_(instruction) {}
+
+    Conditional_Instruction (
+        Expression::Ptr condition,
+        Instruction::Ptr instruction,
+        Instruction::Ptr else_instruction
+    )
+          : condition_(condition),
+            instruction_(instruction),
+            else_instruction_(else_instruction) {}
+
+  private:
+    Expression::Ptr condition_;
+    Instruction::Ptr instruction_;
+    Instruction::Ptr else_instruction_;
+};
 
 
 class While_Instruction : public Instruction {
