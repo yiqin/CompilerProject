@@ -102,7 +102,7 @@
 %type <ast::Expression::Ptr> unary_expression
 %type <ast::Expression::Ptr> multiplicative_expression
 %type <ast::Expression::Ptr> additive_expression
-%type <ast::Expression::Ptr> assignment
+%type <ast::Assignment::Ptr> assignment
 %type <ast::Expression::Ptr> expression
 
 %type <ast::Operation> comparison_operator
@@ -179,7 +179,7 @@ function_definition :
         // Or it can be declared for the first time here.
         else {
             symbol_table->add($2->name(), Symbol::Ptr($2));
-            $2->print_semantic_action();
+            // $2->print_semantic_action();
         }
     }
 ;
@@ -372,11 +372,11 @@ assignment :
         }
 
         Symbol::Ptr symbol = symbol_table->lookup($1);
-        if (symbol->type() != $3) {
+        if (symbol->type() != $3->type()) {
             std::string expression_str;
-            if ($3 == Type::INT) {
+            if ($3->type() == Type::INT) {
                 expression_str = "int";
-            } else if ($3 == Type::STRING) {
+            } else if ($3->type() == Type::STRING) {
                 expression_str = "string";
             } else {
                 expression_str = "expression is not defined.";
@@ -392,7 +392,7 @@ assignment :
 compound_instruction :
     block_start declaration_list instruction_list block_end {
         /* std::cout << "compound_instruction: block_start declaration_list instruction_list block_end" << std::endl; */
-        $$ = ast::Compound_Instruction(std::move($2));
+        $$ = std::make_shared<ast::Compound_Instruction>(std::move($3));
     }
   | block_start declaration_list block_end {
         /* std::cout << "compound_instruction: block_start declaration_list block_end" << std::endl; */
@@ -400,7 +400,7 @@ compound_instruction :
     }
   | block_start instruction_list block_end {
         /* std::cout << "compound_instruction: block_start instruction_list block_end" << std::endl; */
-        $$ = ast::Compound_Instruction(std::move($2));
+        $$ = std::make_shared<ast::Compound_Instruction>(std::move($2));
     }
   | block_start block_end {
         /* std::cout << "compound_instruction: block_start block_end" << std::endl; */
@@ -617,7 +617,7 @@ postfix_expression :
         auto pair = std::mismatch(
             std::begin($3), std::end($3),
             std::begin(declared_func->argument_list()),
-            [] (Type a, Symbol::Ptr b) { return a == b->type(); }
+            [] (ast::Expression::Ptr a, Symbol::Ptr b) { return a->type() == b->type(); }
         );
         if (pair.first != std::end($3)) {
             throw syntax_error(@$, "Signature mismatch between function definition and function call.");
