@@ -486,12 +486,12 @@ condition :
 ;
 
 comparison_operator :
-    EQUAL        { /* std::cout << "comparison_operator: EQUAL"        << std::endl; */ $$ = EQUAL;                 }
-  | NEQUAL       { /* std::cout << "comparison_operator: NEQUAL"       << std::endl; */ $$ = NOT_EQUAL;             }
-  | LESS         { /* std::cout << "comparison_operator: LESS"         << std::endl; */ $$ = LESS_THAN;             }
-  | GREATER      { /* std::cout << "comparison_operator: GREATER"      << std::endl; */ $$ = GREATER_THAN;          }
-  | LESSEQUAL    { /* std::cout << "comparison_operator: LESSEQUAL"    << std::endl; */ $$ = LESS_THAN_OR_EQUAL;    }
-  | GREATEREQUAL { /* std::cout << "comparison_operator: GREATEREQUAL" << std::endl; */ $$ = GREATER_THAN_OR_EQUAL; }
+    EQUAL        { /* std::cout << "comparison_operator: EQUAL"        << std::endl; */ $$ = ast::Operation::EQUAL;                 }
+  | NEQUAL       { /* std::cout << "comparison_operator: NEQUAL"       << std::endl; */ $$ = ast::Operation::NOT_EQUAL;             }
+  | LESS         { /* std::cout << "comparison_operator: LESS"         << std::endl; */ $$ = ast::Operation::LESS_THAN;             }
+  | GREATER      { /* std::cout << "comparison_operator: GREATER"      << std::endl; */ $$ = ast::Operation::GREATER_THAN;          }
+  | LESSEQUAL    { /* std::cout << "comparison_operator: LESSEQUAL"    << std::endl; */ $$ = ast::Operation::LESS_THAN_OR_EQUAL;    }
+  | GREATEREQUAL { /* std::cout << "comparison_operator: GREATEREQUAL" << std::endl; */ $$ = ast::Operation::GREATER_THAN_OR_EQUAL; }
 ;
 
 expression :

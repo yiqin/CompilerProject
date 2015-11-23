@@ -78,7 +78,7 @@ class Const_Integer : public Terminal {
     typedef std::shared_ptr<Const_Integer> Ptr;
 
     Const_Integer (const int& value)
-          : Terminal(parser::Type::INT) value_(value) {}
+          : Terminal(parser::Type::INT), value_(value) {}
 
   private:
     int value_;
@@ -90,7 +90,7 @@ class Const_String : public Terminal {
     typedef std::shared_ptr<Const_String> Ptr;
 
     Const_String (const std::string& value)
-          : Terminal(parser::Type::STRING) value_(value) {}
+          : Terminal(parser::Type::STRING), value_(value) {}
 
   private:
     std::string value_;
