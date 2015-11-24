@@ -67,6 +67,65 @@ class Terminal : public Expression {
     Terminal (const parser::Type& type) : Expression(type) {}
 };
 
+// Declaration, external_declaration 
+// It corresponds to Symbol class and Function class
+
+// For a single declarator, may not be used in the future.
+class Symbol_Declarator : public Node {
+  public:
+    typedef std::shared_ptr<Symbol_Declarator> Ptr;
+    
+    Symbol_Declarator (const parser::Symbol::Ptr& symbol)
+          : symbol_(symbol) {}
+    
+    std::string emit_llvm_ir () {
+      if (symbol_->type() == parser::Type::INT) {
+        return std::string("%") + symbol_->name() + " = alloca i32, align 4";
+      } else {
+        return "undefined symbol with string type";
+      }
+    }
+    
+  private:
+    parser::Symbol::Ptr symbol_;
+};
+
+// Declarate a list of symbol
+class Declaration : public Node {
+  public:
+    typedef std::shared_ptr<Declaration> Ptr;
+    
+    Declaration (const parser::Symbol_List& symbol_list)
+          : symbol_list_(symbol_list) {}
+    
+    std::string emit_llvm_ir () {
+      std::string ir;
+      
+      for (auto& symbol : symbol_list_) { 
+        Symbol_Declarator::Ptr symbol_declarator = std::make_shared<Symbol_Declarator>(symbol);
+        ir += symbol_declarator->emit_llvm_ir()+"\n";
+      }
+      // remove the last \n
+      if (ir.size() > 0) {
+        ir.pop_back();
+      }
+      
+      return ir;
+    }
+    
+  private:
+    parser::Symbol_List symbol_list_;
+};
+
+// FIXME: I hesitate to use Function class or function_definition.
+// But I think function_definition is better. 
+class Function_Definition : public Node {
+  public:
+    typedef std::shared_ptr<Function_Definition> Ptr;
+    
+    
+};
+
 
 class Variable : public Terminal {
   public:
