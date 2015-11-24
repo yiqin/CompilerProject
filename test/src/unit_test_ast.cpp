@@ -51,6 +51,24 @@ TEST_CASE ("Abstract Syntax Tree") {
 		REQUIRE (declaration->emit_llvm_ir() == expected_output);
 	}
 	
+	SECTION ("Declare function: int main(int a)") {
+		// int main(int a)
+		// define i32 @main(i32 %a) #0
+		
+		std::string expected_output = std::string("define i32 @main(i32 %a) #0");
+
+		// Function_Definition (const parser::Type& type, parser::Function::Ptr& function_declarator, Compound_Instruction::Ptr& compound_instruction)
+        //  : type_(type), function_declarator_(function_declarator), compound_instruction_(compound_instruction) {}
+		
+		parser::Type type = parser::Type::INT;
+		parser::Function::Ptr function_declarator = std::make_shared<parser::Function>(std::move("main"));
+		
+		
+		
+		ast::Function_Definition::Ptr function_definition = std::make_shared<ast::Function_Definition>(type, function_declarator);
+		REQUIRE (function_definition->emit_llvm_ir() == expected_output);    
+	}
+	
 
 	SECTION ("Assignment: i = 450;") {
 		// i = 450;

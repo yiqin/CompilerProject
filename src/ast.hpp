@@ -117,14 +117,32 @@ class Declaration : public Node {
     parser::Symbol_List symbol_list_;
 };
 
+// e.g. int main(int a)
 // FIXME: I hesitate to use Function class or function_definition.
 // But I think function_definition is better. 
 class Function_Definition : public Node {
   public:
     typedef std::shared_ptr<Function_Definition> Ptr;
     
+    Function_Definition (const parser::Type& type, parser::Function::Ptr& function_declarator)
+          : type_(type), function_declarator_(function_declarator) {}
     
+    std::string emit_llvm_ir () {
+      std::string ir;
+      
+      ir += "define";
+      
+      return ir;
+    }
+    
+  private:
+    parser::Type type_;
+    parser::Function::Ptr function_declarator_;
+    // decl_glb_fct
 };
+
+// Todo: with function, we need a block_start and a block_end
+
 
 
 class Variable : public Terminal {
@@ -218,7 +236,7 @@ class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
 
-    // Why type is an argument?
+    // Why is type an argument in the constructor? 
     Assignment (const parser::Type& type,
         Variable::Ptr lhs, Expression::Ptr rhs)
           : Expression(type), lhs_(lhs), rhs_(rhs) {}
@@ -256,6 +274,7 @@ class Function_Call : public Expression {
 };
 
 
+// What is an instruction?
 class Instruction : public Node {
   public:
     typedef std::shared_ptr<Instruction> Ptr;
@@ -362,8 +381,10 @@ class Return_Instruction : public Instruction {
     Expression::Ptr expression_;
 };
 
-
-// Block
+// For example
+// {
+//    // a lot of code.....  
+// }
 class Compound_Instruction : public Instruction {
   public:
     typedef std::shared_ptr<Compound_Instruction> Ptr;
@@ -374,6 +395,8 @@ class Compound_Instruction : public Instruction {
   private:
     std::vector<Instruction::Ptr> instruction_list_;
 };
+
+
 
 
 }  // namespace ast
