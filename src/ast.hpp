@@ -36,10 +36,12 @@ class Node {
     virtual ~Node () {}
 
     // virtual std::string emit_llvm_ir ();
+    
+    // We don't need this.
     // virtual void build_llvm_ir ();
 };
 
-
+// 
 class Expression : public Node {
   public:
     typedef std::shared_ptr<Expression> Ptr;
@@ -47,12 +49,17 @@ class Expression : public Node {
     Expression (const parser::Type& type) : type_(type) {}
 
     const parser::Type& type () const { return type_; }
+    
+    virtual std::string emit_llvm_ir () {
+      // Assume all integers are %32
+      return std::string("undefine Expression");
+    }
 
   private:
     const parser::Type& type_;
 };
 
-
+// 
 class Terminal : public Expression {
   public:
     typedef std::shared_ptr<Terminal> Ptr;
@@ -67,12 +74,21 @@ class Variable : public Terminal {
 
     Variable (const parser::Symbol::Ptr& symbol)
           : Terminal(symbol->type()), symbol_(symbol) {}
+          
+    std::string emit_llvm_ir () {
+      if (symbol_->type() == parser::Type::INT) {
+        return "i32* %" + symbol_->name();
+      } else {
+        return "undefined";
+      }
+    }
 
   private:
     parser::Symbol::Ptr symbol_;
 };
 
-
+// e.g. 1, 2, 3, ...
+// For example: 1, 2, 3, ...
 class Const_Integer : public Terminal {
   public:
     typedef std::shared_ptr<Const_Integer> Ptr;
@@ -80,11 +96,16 @@ class Const_Integer : public Terminal {
     Const_Integer (const int& value)
           : Terminal(parser::Type::INT), value_(value) {}
 
+    std::string emit_llvm_ir () {
+      // Assume all integers are %32
+      return std::string("i32 ") + std::to_string(value_);
+    }
+    
   private:
     int value_;
 };
 
-
+// For example: "hello world"
 class Const_String : public Terminal {
   public:
     typedef std::shared_ptr<Const_String> Ptr;
@@ -120,7 +141,7 @@ class Binary_Expression : public Expression {
         Operation op, Expression::Ptr lhs, Expression::Ptr rhs)
           : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
-    std::string build_llvm_ir () {
+    std::string emit_llvm_ir () {
         return "hello world";
     }
 
@@ -138,14 +159,14 @@ class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
 
+    // Why type is an argument?
     Assignment (const parser::Type& type,
         Variable::Ptr lhs, Expression::Ptr rhs)
           : Expression(type), lhs_(lhs), rhs_(rhs) {}
 
-    std::string build_llvm_ir () {
-
-      // i = 450;
-      return "store i32 450, i32* %i, align 4";
+    std::string emit_llvm_ir () {
+      std::string ir = std::string("store ") + rhs_->emit_llvm_ir()+ ", " + lhs_->emit_llvm_ir() + ", align 4";
+      return ir;
     }
 
   private:
