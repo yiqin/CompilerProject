@@ -39,7 +39,7 @@ Notes about the Scanner implementation:
 How to run LLVM
 
 ```
-clang -Os -S -emit-llvm sample.c -o sample.ll
+clang -S -emit-llvm sample.c -o sample.ll
 opt-3.6 -S sample.ll
 llc-3.6 -O3 sample.ll -march=x86-64 -o sample-x86-64.s
 gcc sample-x86-64.s -o sample-x86-64
