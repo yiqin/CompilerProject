@@ -132,6 +132,17 @@ class Function_Definition : public Node {
       
       ir += "define";
       
+      if (type_ == parser::Type::INT) {
+        ir += " i32";
+      }
+      
+      
+      ir += " @"+function_declarator_->name();
+      
+      ir += "()";
+      
+      ir += " #0";
+      
       return ir;
     }
     
