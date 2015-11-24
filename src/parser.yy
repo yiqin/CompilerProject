@@ -252,6 +252,8 @@ declaration :
             symbol_table->add(symbol->name(), symbol);
             // symbol->print_semantic_action();  // TODO: Remove for Part 3.
         }
+        
+        
     }
 ;
 

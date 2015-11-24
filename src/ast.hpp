@@ -59,7 +59,7 @@ class Expression : public Node {
     const parser::Type& type_;
 };
 
-// 
+// Yi: What is Terminal? I always forget...
 class Terminal : public Expression {
   public:
     typedef std::shared_ptr<Terminal> Ptr;
@@ -79,7 +79,7 @@ class Variable : public Terminal {
       if (symbol_->type() == parser::Type::INT) {
         return "i32* %" + symbol_->name();
       } else {
-        return "undefined";
+        return "undefined symbol with string type";
       }
     }
 
@@ -290,7 +290,8 @@ class For_Instruction : public Instruction {
     Instruction::Ptr instruction_;
 };
 
-
+// jump_instruction
+// RETURN expression ';'
 class Return_Instruction : public Instruction {
   public:
     typedef std::shared_ptr<Return_Instruction> Ptr;
