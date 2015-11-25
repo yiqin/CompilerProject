@@ -171,8 +171,7 @@ class Function_Definition : public Node {
 };
 
 // Todo: with function, we need a block_start and a block_end
-
-
+// Maybe not.
 
 class Variable : public Terminal {
   public:
