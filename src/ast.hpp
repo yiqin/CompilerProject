@@ -409,8 +409,35 @@ class Return_Instruction : public Instruction {
           : expression_(expression) {}
           
     std::string emit_llvm_ir () {
-      // auto ??
       std::string ir;
+      
+      // dynamic pointer cast
+      // const_integer
+      auto const_integer = std::dynamic_pointer_cast<ast::Const_Integer>(expression_);
+      if (const_integer) {
+        ir += "ret "+ const_integer->emit_llvm_ir();
+        return ir;
+      }
+      
+      // variable
+      auto variable = std::dynamic_pointer_cast<ast::Variable>(expression_);
+      if (variable) {
+        // TODO: we need a register tracker.
+        std::string next_register = std::string("%3");
+        // create a new register, this could be a symbol
+        
+        
+        ir += next_register + " = load "+ variable->emit_llvm_ir()+", align 4";
+        ir += "\n";
+        ir += "ret ";
+        
+        // TODO: user the emit_llvm_ir()
+        ir += "i32 %3";
+        
+        return ir;
+      }
+      
+      ir += "Undefined yet. Please wait.";
       
       return ir;
     }
