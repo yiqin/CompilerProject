@@ -139,6 +139,38 @@ TEST_CASE ("Abstract Syntax Tree") {
 	}
 
 
+	SECTION ("For Loop") {
+		//   for ( i = -10; i <= 10; i = i+1 )
+    	//		printd(i);
+		
+		std::string expected_output = std::string("");
+		
+		
+		// initialization
+		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
+		symbol->type(parser::Type::INT);
+		
+		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+		ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(-10));
+		
+		ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(const_integer->type(), variable, const_integer);
+		
+		// condition
+		
+		
+		// increment
+		
+		
+		// instruction
+		// It's the body of the loop. Only single instruction, not multiply lines.
+		
+		
+		// 
+		
+		REQUIRE (initialization->emit_llvm_ir() == expected_output);
+	}
+	
+
 	SECTION ("Binary_Expression") {
         REQUIRE (1   == 1);
     }

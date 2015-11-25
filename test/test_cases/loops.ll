@@ -15,6 +15,7 @@ define i32 @main() #0 {
   %i = alloca i32, align 4
   store i32 0, i32* %1
   store i32 0, i32* %i, align 4
+  
   store i32 -10, i32* %i, align 4
   br label %2
 
@@ -35,6 +36,8 @@ define i32 @main() #0 {
   br label %2
 
 ; <label>:11                                      ; preds = %2
+
+
   ret i32 0
 }
 

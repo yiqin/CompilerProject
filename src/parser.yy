@@ -450,11 +450,11 @@ instruction_list :
 select_instruction :
     cond_instruction instruction                  {
         /* std::cout << "select_instruction: cond_instruction instruction" << std::endl; */
-        $$ = std::make_shared<ast::Conditional_Instruction>($1, $2);
+        $$ = std::make_shared<ast::Cond_Instruction>($1, $2);
     }
   | cond_instruction instruction ELSE instruction {
         /* std::cout << "select_instruction: cond_instruction instruction ELSE instruction" << std::endl; */
-        $$ = std::make_shared<ast::Conditional_Instruction>($1, $2, $4);
+        $$ = std::make_shared<ast::Cond_Instruction>($1, $2, $4);
     }
 ;
 
@@ -477,6 +477,7 @@ iteration_instruction :
   | FOR '(' assignment ';' condition ';' assignment ')' instruction {
         /* std::cout << "iteration_instruction: FOR '(' assignment ';' condition ';' assignment ')' instruction" << std::endl; */
         $$ = std::make_shared<ast::For_Instruction>($3, $5, $7, $9);
+        
     }
 ;
 

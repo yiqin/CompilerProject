@@ -320,19 +320,22 @@ class Expression_Instruction : public Instruction {
     Expression::Ptr expression_;
 };
 
-
-class Conditional_Instruction : public Instruction {
+// If else ??
+// select_instruction
+// cond_instruction 
+//
+class Cond_Instruction : public Instruction {
   public:
-    typedef std::shared_ptr<Conditional_Instruction> Ptr;
+    typedef std::shared_ptr<Cond_Instruction> Ptr;
 
-    Conditional_Instruction (
+    Cond_Instruction (
         Expression::Ptr condition,
         Instruction::Ptr instruction
     )
           : condition_(condition),
             instruction_(instruction) {}
 
-    Conditional_Instruction (
+    Cond_Instruction (
         Expression::Ptr condition,
         Instruction::Ptr instruction,
         Instruction::Ptr else_instruction
@@ -388,13 +391,36 @@ class For_Instruction : public Instruction {
             condition_(condition),
             increment_(increment),
             instruction_(instruction) {}
+            
+    std::string emit_llvm_ir () {
+      std::string ir;
+      
+      
+      
+      return ir;
+    }
 
   private:
     Assignment::Ptr initialization_;
-    Expression::Ptr condition_;
+    Expression::Ptr condition_; // This may not be Expression...
     Assignment::Ptr increment_;
     Instruction::Ptr instruction_;
 };
+
+class Condition : public Node {
+  public:
+    typedef std::shared_ptr<Condition> Ptr;
+  
+  Condition (const Expression::Ptr lhs, Operation comparison_operator, 
+                   Expression::Ptr rhs) 
+          : lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
+  
+  private:
+    Expression::Ptr lhs_;
+    Operation comparison_operator_;
+    Expression::Ptr rhs_;
+};
+
 
 // jump_instruction in the parser
 // RETURN expression ';'
