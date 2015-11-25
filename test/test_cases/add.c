@@ -3,7 +3,7 @@ int printd( int i ) {
 }
 
 int foo(int a, int b) {
-  return 0;
+  return a;
 }
 
 int main() {

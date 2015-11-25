@@ -25,7 +25,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 	}
 
 	
-	SECTION ("Declaration a list of symbols: int i, j;") {
+	SECTION ("Declare a list of symbols: int i, j;") {
 		// int i, j;
 		// %i = alloca i32, align 4
 		// %j = alloca i32, align 4
@@ -73,8 +73,55 @@ TEST_CASE ("Abstract Syntax Tree") {
 		REQUIRE (function_definition->emit_llvm_ir() == expected_output);    
 	}
 	
+	SECTION ("Return const_int: return 0;") {
+		// return 0;
+		// ret i32 0
+		
+		std::string expected_output = std::string("ret i32 0");
+		
+		// Expression - Const_Integer
+		ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(0));
+		
+		// Return_Instruction
+		ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(const_integer);
+		
+		REQUIRE (return_instruction->emit_llvm_ir() == expected_output);
+	}
+	
+	
+	SECTION ("Return variable: return a;") {
+		// return a;
+		// %3 = load i32* %a, align 4
+		// ret i32 %3
+		
+		// %3 is the next register
+		std::string expected_output = std::string("%3 = load i32* %a, align 4");
+		expected_output += "\n";
+		expected_output += "ret i32 %3";
+		
+		// Expression - Variable
+		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("a"));
+		symbol->type(parser::Type::INT);
+		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+		
+		// Return_Instruction
+		ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(variable);
+		
+		REQUIRE (return_instruction->emit_llvm_ir() == expected_output);		
+	}
+	
+	
+	SECTION ("Return expression: return a+1-2;") {
+		// return a+1-2;
+		
+		// Expression
+		
+		
+		// Return_Instruction
+	}
+	
 
-	SECTION ("Assignment: i = 450;") {
+	SECTION ("Assignment viariable with const_int: i = 450;") {
 		// i = 450;
 		// store i32 450, i32* %i, align 4
 		

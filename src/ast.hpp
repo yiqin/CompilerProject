@@ -41,7 +41,7 @@ class Node {
     // virtual void build_llvm_ir ();
 };
 
-// 
+// e.g. 0, 0+1, 1-2, a, a+b, a-b, a+(c+d)
 class Expression : public Node {
   public:
     typedef std::shared_ptr<Expression> Ptr;
@@ -90,7 +90,7 @@ class Symbol_Declarator : public Node {
     parser::Symbol::Ptr symbol_;
 };
 
-// Declarate a list of symbol
+// Declarate a list of symbols
 class Declaration : public Node {
   public:
     typedef std::shared_ptr<Declaration> Ptr;
@@ -397,15 +397,24 @@ class For_Instruction : public Instruction {
     Instruction::Ptr instruction_;
 };
 
-// jump_instruction
+// jump_instruction in the parser
 // RETURN expression ';'
+// i.e. return 1;
+// i.e. return a;
 class Return_Instruction : public Instruction {
   public:
     typedef std::shared_ptr<Return_Instruction> Ptr;
 
     Return_Instruction (Expression::Ptr expression)
           : expression_(expression) {}
-
+          
+    std::string emit_llvm_ir () {
+      // auto ??
+      std::string ir;
+      
+      return ir;
+    }
+    
   private:
     Expression::Ptr expression_;
 };
@@ -424,8 +433,6 @@ class Compound_Instruction : public Instruction {
   private:
     std::vector<Instruction::Ptr> instruction_list_;
 };
-
-
 
 
 }  // namespace ast
