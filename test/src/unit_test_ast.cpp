@@ -149,13 +149,15 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// initialization
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
-		
 		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
-		ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(-10));
 		
-		ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(const_integer->type(), variable, const_integer);
+		ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
+		
+		ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(const_integer_1->type(), variable, const_integer_1);
 		
 		// condition
+		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
+		
 		
 		
 		// increment

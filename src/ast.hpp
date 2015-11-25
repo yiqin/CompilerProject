@@ -10,7 +10,8 @@
 
 namespace ast {
 
-
+// Operation relates to Abstract Syntax Tree.
+// Operation and Comparison Operation are in different mechanisms.
 enum class Operation {
     ADDITION,
     SUBTRACTION,
@@ -19,7 +20,9 @@ enum class Operation {
     MODULUS,
     LEFT_SHIFT,
     RIGHT_SHIFT,
+};
 
+enum class Comparison_Operation {
     EQUAL,
     NOT_EQUAL,
     LESS_THAN,
@@ -238,6 +241,7 @@ class Unary_Expression : public Expression {
 
 // TODO: Yi - this is complicated, and come back later.
 // Binary_Expression - Expression class for a binary operator
+// e.g. i <= 10, 1+2
 class Binary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Binary_Expression> Ptr;
@@ -247,7 +251,10 @@ class Binary_Expression : public Expression {
           : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-        return "hello world";
+      // Actually we have an abstract syntax tree 
+      // Not simply left and right, then operation.
+      
+      return "hello world";
     }
 
   private:
@@ -258,6 +265,33 @@ class Binary_Expression : public Expression {
     std::string temp_name_;
 };
 
+// TODO: Do we merge Binary_Expression and Condition?
+// Yi: One expression can have many +-*/(), but can only have one >=, ==
+// So we can seperate to two different class.
+class Condition : public Node {
+  public:
+    typedef std::shared_ptr<Condition> Ptr;
+  
+    Condition (const Expression::Ptr lhs, Operation comparison_operator, 
+                   Expression::Ptr rhs) 
+          : lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
+    
+    std::string emit_llvm_ir () {
+      // Step 1: lhs_ emit_llvm_ir
+      
+      // Step 2: rhs_ emit_llvm_ir
+      
+      // Step 3: Compare
+      
+      return "hello world";
+    }
+  
+  
+  private:
+    Expression::Ptr lhs_;
+    Operation comparison_operator_;
+    Expression::Ptr rhs_;
+};
 
 // For example: a = 1;
 class Assignment : public Expression {
@@ -405,20 +439,6 @@ class For_Instruction : public Instruction {
     Expression::Ptr condition_; // This may not be Expression...
     Assignment::Ptr increment_;
     Instruction::Ptr instruction_;
-};
-
-class Condition : public Node {
-  public:
-    typedef std::shared_ptr<Condition> Ptr;
-  
-  Condition (const Expression::Ptr lhs, Operation comparison_operator, 
-                   Expression::Ptr rhs) 
-          : lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
-  
-  private:
-    Expression::Ptr lhs_;
-    Operation comparison_operator_;
-    Expression::Ptr rhs_;
 };
 
 

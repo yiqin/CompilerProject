@@ -105,7 +105,7 @@
 %type <ast::Assignment::Ptr> assignment
 %type <ast::Expression::Ptr> expression
 
-%type <ast::Operation> comparison_operator
+%type <ast::Comparison_Operation> comparison_operator
 %type <ast::Expression::Ptr> condition
 %type <ast::Expression::Ptr> cond_instruction
 
@@ -491,17 +491,19 @@ jump_instruction:
 condition :
     expression comparison_operator expression {
         /* std::cout << "condition: expression comparison_operator expression" << std::endl; */
-        $$ = std::make_shared<ast::Binary_Expression>(Type::INT, $2, $1, $3);
+        
+        // FIXME: Broken, I will fix it soon. Yi
+        // $$ = std::make_shared<ast::Condition>($1, $2, $3);
     }
 ;
 
 comparison_operator :
-    EQUAL        { /* std::cout << "comparison_operator: EQUAL"        << std::endl; */ $$ = ast::Operation::EQUAL;                 }
-  | NEQUAL       { /* std::cout << "comparison_operator: NEQUAL"       << std::endl; */ $$ = ast::Operation::NOT_EQUAL;             }
-  | LESS         { /* std::cout << "comparison_operator: LESS"         << std::endl; */ $$ = ast::Operation::LESS_THAN;             }
-  | GREATER      { /* std::cout << "comparison_operator: GREATER"      << std::endl; */ $$ = ast::Operation::GREATER_THAN;          }
-  | LESSEQUAL    { /* std::cout << "comparison_operator: LESSEQUAL"    << std::endl; */ $$ = ast::Operation::LESS_THAN_OR_EQUAL;    }
-  | GREATEREQUAL { /* std::cout << "comparison_operator: GREATEREQUAL" << std::endl; */ $$ = ast::Operation::GREATER_THAN_OR_EQUAL; }
+    EQUAL        { /* std::cout << "comparison_operator: EQUAL"        << std::endl; */ $$ = ast::Comparison_Operation::EQUAL;                 }
+  | NEQUAL       { /* std::cout << "comparison_operator: NEQUAL"       << std::endl; */ $$ = ast::Comparison_Operation::NOT_EQUAL;             }
+  | LESS         { /* std::cout << "comparison_operator: LESS"         << std::endl; */ $$ = ast::Comparison_Operation::LESS_THAN;             }
+  | GREATER      { /* std::cout << "comparison_operator: GREATER"      << std::endl; */ $$ = ast::Comparison_Operation::GREATER_THAN;          }
+  | LESSEQUAL    { /* std::cout << "comparison_operator: LESSEQUAL"    << std::endl; */ $$ = ast::Comparison_Operation::LESS_THAN_OR_EQUAL;    }
+  | GREATEREQUAL { /* std::cout << "comparison_operator: GREATEREQUAL" << std::endl; */ $$ = ast::Comparison_Operation::GREATER_THAN_OR_EQUAL; }
 ;
 
 expression :
