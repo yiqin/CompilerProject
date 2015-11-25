@@ -130,17 +130,35 @@ class Function_Definition : public Node {
     std::string emit_llvm_ir () {
       std::string ir;
       
+      // step 1
       ir += "define";
       
+      // step 2: function return type
       if (type_ == parser::Type::INT) {
         ir += " i32";
       }
       
-      
+      // step 3: function name
       ir += " @"+function_declarator_->name();
       
-      ir += "()";
+      // step 4: function argument list
+      ir += "(";
+     
+      for (auto& symbol : function_declarator_->argument_list()) {
+        if(symbol->type() == parser::Type::INT) {
+          ir += "i32 %" + symbol->name();
+          ir += ", ";
+        }
+      }
+      // remove the last space and the last comma
+      if (function_declarator_->argument_list().size() > 0) {
+        ir.pop_back();
+        ir.pop_back();
+      }
+        
+      ir += ")";
       
+      // step 5
       ir += " #0";
       
       return ir;

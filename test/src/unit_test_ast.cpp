@@ -51,19 +51,23 @@ TEST_CASE ("Abstract Syntax Tree") {
 		REQUIRE (declaration->emit_llvm_ir() == expected_output);
 	}
 	
-	SECTION ("Declare function: int main(int a)") {
-		// int main(int a)
-		// define i32 @main(i32 %a) #0
+	SECTION ("Declare function: int foo(int a, int b)") {
+		// int foo(int a, int b)
+		// define i32 @foo(i32 %a, i32 %b) #0
 		
-		std::string expected_output = std::string("define i32 @main(i32 %a) #0");
+		std::string expected_output = std::string("define i32 @foo(i32 %a, i32 %b) #0");
 
-		// Function_Definition (const parser::Type& type, parser::Function::Ptr& function_declarator, Compound_Instruction::Ptr& compound_instruction)
-        //  : type_(type), function_declarator_(function_declarator), compound_instruction_(compound_instruction) {}
-		
 		parser::Type type = parser::Type::INT;
-		parser::Function::Ptr function_declarator = std::make_shared<parser::Function>(std::move("main"));
+		// function_declarator includes the argument list
+		parser::Function::Ptr function_declarator = std::make_shared<parser::Function>(std::move("foo"));
 		
+		parser::Symbol::Ptr argument1 = std::make_shared<parser::Symbol>(std::move("a"));
+		argument1->type(parser::Type::INT);
+		function_declarator->argument_list().push_back(argument1);
 		
+		parser::Symbol::Ptr argument2 = std::make_shared<parser::Symbol>(std::move("b"));
+		argument2->type(parser::Type::INT);
+		function_declarator->argument_list().push_back(argument2);		
 		
 		ast::Function_Definition::Ptr function_definition = std::make_shared<ast::Function_Definition>(type, function_declarator);
 		REQUIRE (function_definition->emit_llvm_ir() == expected_output);    

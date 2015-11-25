@@ -2,7 +2,11 @@ int printd( int i ) {
   return 1;
 }
 
-int main(int a) {
+int foo(int a, int b) {
+  return 0;
+}
+
+int main() {
   int i,j;
   i = 450;
   j = -123;
