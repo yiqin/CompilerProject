@@ -6,26 +6,11 @@
 #include <memory>
 #include <string>
 #include "symbol.hpp"
-
+#include "llvm.hpp"
 
 namespace ast {
 
-// We want the register number is only used by one time.
-// They are never the same.
-static int register_number = 0;
-static int get_register_number() {
-  return register_number++;
-};
 
-static int label_number = 0;
-static int get_label_number() {
-  return label_number++;
-}
-
-static void reset() {
-  register_number = 0;
-  label_number = 0;
-}
 
 static std::string end_of_line = ", align 4\n";
 
@@ -75,7 +60,7 @@ class Expression : public Node {
     // If you don't agree, please let me know.
     // (const parser::Type& type) doesn't save the type information.
     Expression (const parser::Type type) 
-          : type_(type), register_number_of_result_(get_register_number()) {}
+          : type_(type), register_number_of_result_(llvm::get_register_number()) {}
 
     const parser::Type type () const { return type_; }
     const int register_number_of_result () const { return register_number_of_result_; }
@@ -331,7 +316,7 @@ class Binary_Expression : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
-      int register_lhs = get_register_number();
+      int register_lhs = llvm::get_register_number();
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
       ir += lhs_->register_result_pointer_llvm_ir();
@@ -340,7 +325,7 @@ class Binary_Expression : public Expression {
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       
-      int register_rhs = get_register_number();
+      int register_rhs = llvm::get_register_number();
       
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
@@ -408,7 +393,7 @@ class Condition : public Expression {
     Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator, 
                    Expression::Ptr rhs) 
           : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
-            label_number_ = get_label_number();
+            label_number_ = llvm::get_label_number();
           }
     
     // for br
@@ -432,7 +417,7 @@ class Condition : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
-      int register_lhs = get_register_number();
+      int register_lhs = llvm::get_register_number();
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
       ir += lhs_->register_result_pointer_llvm_ir();
@@ -441,7 +426,7 @@ class Condition : public Expression {
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       
-      int register_rhs = get_register_number();
+      int register_rhs = llvm::get_register_number();
       
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
@@ -516,7 +501,7 @@ class Assignment : public Expression {
       std::string ir;
       
       // Step 1: load the expression data into the register
-      int tmp_register_number = get_register_number();
+      int tmp_register_number = llvm::get_register_number();
       
       ir += std::string("%") + std::to_string(tmp_register_number); // register_number_of_result_ir();
       ir += " = load ";
@@ -685,7 +670,7 @@ class Return_Instruction : public Instruction {
       // Step 1: load the expression data into the register
       
       // this register is only used in the emit_llvm_ir. It's private.
-      int tmp_register_number = get_register_number();
+      int tmp_register_number = llvm::get_register_number();
       
       ir += std::string("%") + std::to_string(tmp_register_number); // register_number_of_result_ir();
       ir += " = load " + expression_->type_ir() + "* ";

@@ -2,6 +2,7 @@
 #include "catch.hpp"
 #include "symbol.hpp"
 #include "ast.hpp"
+#include "llvm.hpp"
 #include <sstream>
 #include <vector>
 
@@ -80,7 +81,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// %1 = load i32* %0, align 4
 		// ret i32 %1
 		
-		ast::reset();
+		llvm::reset();
 		
 		std::string expected_output = std::string("%0 = alloca i32, align 4\n");
 		expected_output += "store i32 0, i32* %0\n";
@@ -107,7 +108,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// %1 = load i32* %0, align 4
 		// ret i32 %1
 		
-		ast::reset();
+		llvm::reset();
 		
 		std::string expected_output = std::string("%1 = load i32* %0, align 4\n");
 		expected_output += "ret i32 %1\n";
@@ -143,7 +144,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// %3 = load i32* %1, align 4
 		// store i32 %3, i32* %i, align 4
 		
-		ast::reset();
+		llvm::reset();
 		
 		std::string expected_output = std::string("%1 = alloca i32, align 4\n");
 		expected_output += "store i32 450, i32* %1\n";
@@ -172,7 +173,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		//   for ( i = -10; i <= 10; j = 2 )
     	//		printd(i);
 		
-		ast::reset();
+		llvm::reset();
 		
 		std::string expected_output = std::string("");
 		
@@ -217,7 +218,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 	SECTION ("Binary_Expression") {
 		// i = 1+2;
 		
-		ast::reset();
+		llvm::reset();
 		
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
