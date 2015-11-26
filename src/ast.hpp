@@ -56,7 +56,9 @@ class Node {
 
     virtual ~Node () {}
 
-    // virtual std::string emit_llvm_ir ();
+    virtual std::string emit_llvm_ir () {
+      return std::string("/undefine Expression/");
+    };
     
     // We don't need this.
     // virtual void build_llvm_ir ();
@@ -88,7 +90,7 @@ class Expression : public Node {
       return "%"+std::to_string(register_number_of_result_);
     }
     
-    virtual std::string emit_llvm_ir () {
+    std::string emit_llvm_ir () {
       // Assume all integers are %32
       return std::string("/undefine Expression/");
     }
@@ -372,13 +374,13 @@ class Condition : public Expression {
           }
     
     // for br
-    const std::string label_name_inline () const { 
+    const std::string label_name_ir () const { 
       std::string str;
       str = std::string("label %") + std::to_string(label_number_);
       return str;
     }
     
-    // the destination label
+    // the destination label for the jump instruction
     const std::string label_name_destination () const { 
       std::string str;
       str = std::string("; <label>:") + std::to_string(label_number_) + "\n";
