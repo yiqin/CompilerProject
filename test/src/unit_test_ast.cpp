@@ -75,9 +75,17 @@ TEST_CASE ("Abstract Syntax Tree") {
 	SECTION ("Return const_int: return 0;") {
 		// return 0;
 		// 
-		// ret i32 0
+		// %0 = alloca i32, align 4
+		// store i32 0, i32* %0
+		// %1 = load i32* %0, align 4
+		// ret i32* %a
 		
-		std::string expected_output = std::string("ret i32 0");
+		ast::reset_register();
+		
+		std::string expected_output = std::string("%0 = alloca i32, align 4\n");
+		expected_output += "store i32 0, i32* %0\n";
+		expected_output += "%1 = load i32* %0, align 4\n";
+		expected_output += "ret i32 %1\n";
 		
 		std::string output = "";
 		
@@ -95,13 +103,16 @@ TEST_CASE ("Abstract Syntax Tree") {
 	
 	SECTION ("Return variable: return a;") {
 		// return a;
-		// %3 = load i32* %a, align 4
-		// ret i32 %3
+		// 
+		// %1 = load i32* %0, align 4
+		// ret i32 %1
 		
-		// %3 is the next register
-		std::string expected_output = std::string("%3 = load i32* %a, align 4\n");
-		expected_output += "ret i32 %3";
+		ast::reset_register();
 		
+		std::string expected_output = std::string("%1 = load i32* %0, align 4\n");
+		expected_output += "ret i32 %1\n";
+		
+		// Prepare
 		// Expression - Variable
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("a"));
 		symbol->type(parser::Type::INT);

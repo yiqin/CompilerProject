@@ -62,6 +62,7 @@ class Node {
     
     // We don't need this.
     // virtual void build_llvm_ir ();
+    
 };
 
 // e.g. 0, 0+1, 1-2, a, a+b, a-b, a+(c+d)
@@ -239,8 +240,16 @@ class Const_Integer : public Terminal {
           : Terminal(parser::Type::INT), value_(value) {}
     
     std::string emit_llvm_ir () {
+      // %1 = alloca i32, align 4
       // store i32 0, i32* %1
-      std::string ir = std::string("store i32 ") + std::to_string(value_);
+      
+      // Step 1: create the register
+      std::string ir = register_number_of_result_ir();
+      ir += " = alloca i32";
+      ir += end_of_line;
+      
+      // Step 2: store the data into the register
+      ir += std::string("store i32 ") + std::to_string(value_);
       ir += ", i32* ";
       ir += register_number_of_result_ir();
       ir += "\n";
@@ -248,6 +257,7 @@ class Const_Integer : public Terminal {
       return ir;
     }
     
+    // used in other intructions
     std::string inline_llvm_ir () {
       // i32* %1
       return type_ir() + "* " + register_number_of_result_ir();
@@ -484,7 +494,12 @@ class Assignment : public Expression {
           : Expression(type), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
+      
+      
       std::string ir = std::string("store ") + rhs_->emit_llvm_ir()+ ", " + lhs_->emit_llvm_ir() + end_of_line;
+      
+      
+      
       return ir;
     }
 
@@ -636,6 +651,21 @@ class Return_Instruction : public Instruction {
     std::string emit_llvm_ir () {
       std::string ir;
       
+      // Step 1: load the expression data into the register
+      
+      // this register is only used in the emit_llvm_ir. It's private.
+      int tmp_register_number = get_register_number();
+      
+      ir += std::string("%") + std::to_string(tmp_register_number); // register_number_of_result_ir();
+      ir += " = load " + expression_->type_ir() + "* ";
+      ir += expression_->register_number_of_result_ir();
+      ir += end_of_line;
+      
+      // Step 2: return the register
+      ir += "ret " + expression_->type_ir() + " %" + std::to_string(tmp_register_number);
+      ir += "\n";
+      
+      /*
       // dynamic pointer cast
       // const_integer
       auto const_integer = std::dynamic_pointer_cast<ast::Const_Integer>(expression_);
@@ -662,6 +692,7 @@ class Return_Instruction : public Instruction {
       }
       
       ir += "Undefined yet. Please wait.";
+      */
       
       return ir;
     }
