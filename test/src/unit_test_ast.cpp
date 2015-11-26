@@ -143,6 +143,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 		//   for ( i = -10; i <= 10; i = i+1 )
     	//		printd(i);
 		
+		ast::register_number = 0;
+		
 		std::string expected_output = std::string("");
 		
 		// initialization
@@ -156,9 +158,6 @@ TEST_CASE ("Abstract Syntax Tree") {
 		
 		// condition
 		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
-		// if (const_integer_2->type() == parser::Type::INT) {
-		// 	REQUIRE(1==0);
-		// }
 		
 		ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
 		

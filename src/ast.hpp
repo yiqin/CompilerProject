@@ -61,31 +61,34 @@ class Expression : public Node {
   public:
     typedef std::shared_ptr<Expression> Ptr;
 
-    Expression (const parser::Type& type) 
+    // Yi: I remove (const parser::Type& type) to (const parser::Type type)
+    // If you don't agree, please let me know.
+    // (const parser::Type& type) doesn't save the type information.
+    Expression (const parser::Type type) 
           : type_(type), register_number_of_result_(get_register_number()) {}
 
-    const parser::Type& type () const { return type_; }
+    const parser::Type type () const { return type_; }
     const int register_number_of_result () const { return register_number_of_result_; }
     
     // ir is used directly in the code generation.
     std::string type_ir () {
-      if (type() == parser::Type::INT) {
+      if (type_ == parser::Type::INT) {
         return "i32";
       }
       return "/undefine type. Please wait./";
     }
     
-    std::string register_ir () {
+    std::string register_number_of_result_ir () {
       return "%"+std::to_string(register_number_of_result_);
     }
     
     virtual std::string emit_llvm_ir () {
       // Assume all integers are %32
-      return std::string("undefine Expression");
+      return std::string("/undefine Expression/");
     }
 
   private:
-    const parser::Type& type_;
+    const parser::Type type_;
     const int register_number_of_result_;
 };
 
@@ -94,7 +97,7 @@ class Terminal : public Expression {
   public:
     typedef std::shared_ptr<Terminal> Ptr;
 
-    Terminal (const parser::Type& type) : Expression(type) {}
+    Terminal (const parser::Type type) : Expression(type) {}
 };
 
 // Declaration, external_declaration 
@@ -214,7 +217,7 @@ class Variable : public Terminal {
       if (symbol_->type() == parser::Type::INT) {
         return "i32* %" + symbol_->name();
       } else {
-        return "undefined symbol with string type";
+        return "/undefined symbol with string type/";
       }
     }
 
@@ -233,7 +236,7 @@ class Const_Integer : public Terminal {
 
     std::string emit_llvm_ir () {
       // Assume all integers are %32
-      return std::string("i32 ") + std::to_string(value_);
+      return type_ir() + " " + std::to_string(value_);
     }
     
   private:
@@ -302,7 +305,7 @@ class Condition : public Expression {
     Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator, 
                    Expression::Ptr rhs) 
           : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
-            label_number_ = 1000;
+            label_number_ = get_label_number();
           }
     
     // for br
@@ -329,7 +332,7 @@ class Condition : public Expression {
       int register_lhs = get_register_number();
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
-      ir += lhs_->type_ir() + " " + lhs_->register_ir();
+      ir += lhs_->type_ir() + " " + lhs_->register_number_of_result_ir();
       ir += ", algin 4\n";
       
       // Step 2: rhs_ emit_llvm_ir
@@ -339,16 +342,12 @@ class Condition : public Expression {
       
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
-      if(rhs_->type() == parser::Type::INT) {
-        ir += "\nsomething wrong.....\n";
-      } else {
-        ir += "this is not good at all.";
-      }
-      ir += rhs_->type_ir() + " " + rhs_->register_ir();
+      ir += rhs_->type_ir() + " " + rhs_->register_number_of_result_ir();
       ir += ", algin 4\n";
       
       // Step 3: Compare
-      ir += "%4 = icmp ";
+      ir += register_number_of_result_ir();
+      ir += " = icmp ";
       
       // eq: equal
       // ne: not equal
@@ -382,7 +381,10 @@ class Condition : public Expression {
           break;
       }
       
-      ir += " i32 %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
+      ir += " ";
+      ir += type_ir();
+      // register_lhs is tmp register number. So it doesn't have register_ir();
+      ir += " %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
       ir += "\n";
       return ir;
     }
