@@ -158,9 +158,10 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// condition
 		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
 		
+		ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN, const_integer_2);
 		
+		// increment - Assignment with expression.
 		
-		// increment
 		
 		
 		// instruction

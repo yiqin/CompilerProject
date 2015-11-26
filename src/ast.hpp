@@ -268,13 +268,13 @@ class Binary_Expression : public Expression {
 // TODO: Do we merge Binary_Expression and Condition?
 // Yi: One expression can have many +-*/(), but can only have one >=, ==
 // So we can seperate to two different class.
-class Condition : public Node {
+class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;
   
-    Condition (const Expression::Ptr lhs, Operation comparison_operator, 
+    Condition (const Expression::Ptr lhs, Comparison_Operation comparison_operator, 
                    Expression::Ptr rhs) 
-          : lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
+          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
     
     std::string emit_llvm_ir () {
       // Step 1: lhs_ emit_llvm_ir
@@ -289,7 +289,7 @@ class Condition : public Node {
   
   private:
     Expression::Ptr lhs_;
-    Operation comparison_operator_;
+    Comparison_Operation comparison_operator_;
     Expression::Ptr rhs_;
 };
 

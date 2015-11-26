@@ -490,10 +490,8 @@ jump_instruction:
 
 condition :
     expression comparison_operator expression {
-        /* std::cout << "condition: expression comparison_operator expression" << std::endl; */
-        
-        // FIXME: Broken, I will fix it soon. Yi
-        // $$ = std::make_shared<ast::Condition>($1, $2, $3);
+        /* std::cout << "condition: expression comparison_operator expression" << std::endl; */        
+        $$ = std::make_shared<ast::Condition>($1, $2, $3);
     }
 ;
 
