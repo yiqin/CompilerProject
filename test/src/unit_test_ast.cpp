@@ -14,7 +14,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// int i;
 		// %i = alloca i32, align 4
 		
-		std::string expected_output = std::string("%i = alloca i32, align 4");
+		std::string expected_output = std::string("%i = alloca i32, align 4\n");
 		
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
@@ -30,9 +30,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// %i = alloca i32, align 4
 		// %j = alloca i32, align 4
 		
-		std::string expected_output = std::string("%i = alloca i32, align 4");
-		expected_output += "\n";
-		expected_output += "%j = alloca i32, align 4";
+		std::string expected_output = std::string("%i = alloca i32, align 4\n");
+		expected_output += "%j = alloca i32, align 4\n";
 		
 		std::string str1 = "i";
 		parser::Symbol::Ptr symbol1 = std::make_shared<parser::Symbol>(std::move(str1));
@@ -95,8 +94,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// ret i32 %3
 		
 		// %3 is the next register
-		std::string expected_output = std::string("%3 = load i32* %a, align 4");
-		expected_output += "\n";
+		std::string expected_output = std::string("%3 = load i32* %a, align 4\n");
 		expected_output += "ret i32 %3";
 		
 		// Expression - Variable
@@ -125,7 +123,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// i = 450;
 		// store i32 450, i32* %i, align 4
 		
-		std::string expected_output = std::string("store i32 450, i32* %i, align 4");
+		std::string expected_output = std::string("store i32 450, i32* %i, align 4\n");
 		
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
@@ -143,7 +141,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		//   for ( i = -10; i <= 10; j = 2 )
     	//		printd(i);
 		
-		ast::register_number = 0;
+		ast::reset_register();
 		
 		std::string expected_output = std::string("");
 		
@@ -166,8 +164,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 		ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
 		
 		std::string expected_output_1 = std::string("; <label>:0\n");
-		expected_output_1 += "%5 = load i32 %0, algin 4\n";
-		expected_output_1 += "%6 = load i32 %3, algin 4\n";
+		expected_output_1 += "%5 = load i32 %0, align 4\n";
+		expected_output_1 += "%6 = load i32 %3, align 4\n";
 		expected_output_1 += "%4 = icmp sle i32 %5, %6\n";
 		
 		REQUIRE (condition->emit_llvm_ir() == expected_output_1);
@@ -175,10 +173,10 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// increment - Assignment with expression.
 		// 
 		
+		// We can't continue until we setup binary expression.
 		
 		// instruction
 		// It's the body of the loop. Only single instruction, not multiply lines.
-		
 		
 		
 		REQUIRE (initialization->emit_llvm_ir() == expected_output);
@@ -186,7 +184,20 @@ TEST_CASE ("Abstract Syntax Tree") {
 	
 
 	SECTION ("Binary_Expression") {
-        REQUIRE (1   == 1);
+		// i = 1+2;
+		
+		ast::reset_register();
+		
+		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
+		symbol->type(parser::Type::INT);
+		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+		
+		ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(1));
+		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
+		
+		ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, const_integer_1, const_integer_2);
+				
+        REQUIRE (add_expression->emit_llvm_ir() == "");
     }
 	
 

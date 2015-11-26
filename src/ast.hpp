@@ -22,6 +22,12 @@ static int get_label_number() {
   return label_number++;
 }
 
+static void reset_register() {
+  register_number = 0;
+}
+
+static std::string end_of_line = ", align 4";
+
 // Operation relates to Abstract Syntax Tree.
 // Operation and Comparison Operation are in different mechanisms.
 enum class Operation {
@@ -113,7 +119,7 @@ class Symbol_Declarator : public Node {
     
     std::string emit_llvm_ir () {
       if (symbol_->type() == parser::Type::INT) {
-        return std::string("%") + symbol_->name() + " = alloca i32, align 4";
+        return std::string("%") + symbol_->name() + " = alloca i32, align 4\n";
       } else {
         return "undefined symbol with string type";
       }
@@ -136,11 +142,7 @@ class Declaration : public Node {
       
       for (auto& symbol : symbol_list_) { 
         Symbol_Declarator::Ptr symbol_declarator = std::make_shared<Symbol_Declarator>(symbol);
-        ir += symbol_declarator->emit_llvm_ir()+"\n";
-      }
-      // remove the last \n
-      if (ir.size() > 0) {
-        ir.pop_back();
+        ir += symbol_declarator->emit_llvm_ir();
       }
       
       return ir;
@@ -269,7 +271,6 @@ class Unary_Expression : public Expression {
 };
 
 
-// TODO: Yi - this is complicated, and come back later.
 // Binary_Expression - Expression class for a binary operator
 // e.g. i <= 10, 1+2
 class Binary_Expression : public Expression {
@@ -283,8 +284,69 @@ class Binary_Expression : public Expression {
     std::string emit_llvm_ir () {
       // Actually we have an abstract syntax tree 
       // Not simply left and right, then operation.
+      // No. We can simple left and right.
       
-      return "hello world";
+      std::string ir;
+      
+      // Step 1: lhs_ emit_llvm_ir
+      // Get the lhs data into one register
+      
+      int register_lhs = get_register_number();
+      ir += std::string("%") + std::to_string(register_lhs);
+      ir += " = load ";
+      ir += lhs_->type_ir() + " " + lhs_->register_number_of_result_ir();
+      ir += ", align 4\n";
+
+      // Step 2: rhs_ emit_llvm_ir
+      // Get the rhs data into another register
+      
+      int register_rhs = get_register_number();
+      
+      ir += std::string("%") + std::to_string(register_rhs);
+      ir += " = load ";
+      ir += rhs_->type_ir() + " " + rhs_->register_number_of_result_ir();
+      ir += ", align 4\n";
+      
+      // Step 3: Operation
+      
+      ir += register_number_of_result_ir();
+      ir += " = ";
+      
+      // add
+      // sub 
+      // mul
+      // udiv
+      // urem
+      switch (op_) {
+        case Operation::ADDITION:
+          ir += "add";
+          break;
+        case Operation::SUBTRACTION:
+          ir += "sub";
+          break;
+        case Operation::MULTIPLICATION:
+          ir += "mul";
+          break;
+        case Operation::DIVISION:
+          ir += "udiv";
+          break;
+        case Operation::MODULUS:
+          ir += "urem";
+          break;
+       case Operation::LEFT_SHIFT:
+          ir += "/Undefine. Please wait./";
+          break;
+       case Operation::RIGHT_SHIFT:
+          ir += "/Undefine. Please wait./";
+          break;
+      }
+      
+      ir += " ";
+      ir += type_ir();
+      // register_lhs is tmp register number. So it doesn't have register_ir();
+      ir += " %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
+      ir += "\n";
+      return ir;
     }
 
   private:
@@ -298,6 +360,7 @@ class Binary_Expression : public Expression {
 // TODO: Do we merge Binary_Expression and Condition?
 // Yi: One expression can have many +-*/(), but can only have one >=, ==
 // So we can seperate to two different class.
+// But they are quite similar.
 class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;
@@ -333,7 +396,7 @@ class Condition : public Expression {
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
       ir += lhs_->type_ir() + " " + lhs_->register_number_of_result_ir();
-      ir += ", algin 4\n";
+      ir += ", align 4\n";
       
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
@@ -343,7 +406,7 @@ class Condition : public Expression {
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
       ir += rhs_->type_ir() + " " + rhs_->register_number_of_result_ir();
-      ir += ", algin 4\n";
+      ir += ", align 4\n";
       
       // Step 3: Compare
       ir += register_number_of_result_ir();
@@ -409,7 +472,7 @@ class Assignment : public Expression {
           : Expression(type), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-      std::string ir = std::string("store ") + rhs_->emit_llvm_ir()+ ", " + lhs_->emit_llvm_ir() + ", align 4";
+      std::string ir = std::string("store ") + rhs_->emit_llvm_ir()+ ", " + lhs_->emit_llvm_ir() + ", align 4\n";
       return ir;
     }
 
@@ -577,8 +640,7 @@ class Return_Instruction : public Instruction {
         // create a new register, this could be a symbol
         
         
-        ir += next_register + " = load "+ variable->emit_llvm_ir()+", align 4";
-        ir += "\n";
+        ir += next_register + " = load "+ variable->emit_llvm_ir()+", align 4\n";
         ir += "ret ";
         
         // TODO: user the emit_llvm_ir()
