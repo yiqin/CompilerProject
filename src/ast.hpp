@@ -88,8 +88,17 @@ class Expression : public Node {
       return "/undefine type. Please wait./";
     }
     
+    // TODO: Create a register class to hold this.
     std::string register_number_of_result_ir () {
       return "%"+std::to_string(register_number_of_result_);
+    }
+    
+    std::string register_result_value_llvm_ir() {
+      return type_ir() + " " + register_number_of_result_ir();
+    }
+    
+    std::string register_result_pointer_llvm_ir() {
+      return type_ir() + "* " + register_number_of_result_ir();
     }
     
     std::string emit_llvm_ir () {
@@ -219,6 +228,7 @@ class Variable : public Terminal {
     Variable (const parser::Symbol::Ptr& symbol)
           : Terminal(symbol->type()), symbol_(symbol) {}
           
+    // FIXME: this is wrong.
     std::string emit_llvm_ir () {
       if (symbol_->type() == parser::Type::INT) {
         return "i32* %" + symbol_->name();
@@ -228,8 +238,15 @@ class Variable : public Terminal {
     }
     
     // used in other intructions
-    std::string inline_llvm_ir () {
-      // i32* %1
+    // value-type
+    std::string inline_value_llvm_ir () {
+      // i32 %1
+      return type_ir() + " %" + symbol_->name();
+    }
+    
+    // reference-type
+    std::string inline_pointer_llvm_ir () {
+      // i32* %
       return type_ir() + "* %" + symbol_->name();
     }
 
@@ -257,17 +274,11 @@ class Const_Integer : public Terminal {
       
       // Step 2: store the data into the register
       ir += std::string("store i32 ") + std::to_string(value_);
-      ir += ", i32* ";
-      ir += register_number_of_result_ir();
+      ir += ", ";
+      ir += register_result_pointer_llvm_ir();
       ir += "\n";
       
       return ir;
-    }
-    
-    // used in other intructions
-    std::string inline_llvm_ir () {
-      // i32* %1
-      return type_ir() + " " + register_number_of_result_ir();
     }
     
   private:
@@ -323,7 +334,7 @@ class Binary_Expression : public Expression {
       int register_lhs = get_register_number();
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
-      ir += lhs_->type_ir() + " " + lhs_->register_number_of_result_ir();
+      ir += lhs_->register_result_pointer_llvm_ir();
       ir += end_of_line;
 
       // Step 2: rhs_ emit_llvm_ir
@@ -333,7 +344,7 @@ class Binary_Expression : public Expression {
       
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
-      ir += rhs_->type_ir() + " " + rhs_->register_number_of_result_ir();
+      ir += rhs_->register_result_pointer_llvm_ir();
       ir += end_of_line;
       
       // Step 3: Operation
@@ -424,7 +435,7 @@ class Condition : public Expression {
       int register_lhs = get_register_number();
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
-      ir += lhs_->type_ir() + " " + lhs_->register_number_of_result_ir();
+      ir += lhs_->register_result_pointer_llvm_ir();
       ir += end_of_line;
       
       // Step 2: rhs_ emit_llvm_ir
@@ -434,7 +445,7 @@ class Condition : public Expression {
       
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
-      ir += rhs_->type_ir() + " " + rhs_->register_number_of_result_ir();
+      ir += rhs_->register_result_pointer_llvm_ir();
       ir += end_of_line;
       
       // Step 3: Compare
@@ -508,8 +519,8 @@ class Assignment : public Expression {
       int tmp_register_number = get_register_number();
       
       ir += std::string("%") + std::to_string(tmp_register_number); // register_number_of_result_ir();
-      ir += " = load " + rhs_->type_ir() + "* ";
-      ir += rhs_->register_number_of_result_ir();
+      ir += " = load ";
+      ir += rhs_->register_result_pointer_llvm_ir();
       ir += end_of_line;
       
       // Step 2: assignment the register to the variable
@@ -517,7 +528,7 @@ class Assignment : public Expression {
       ir += "store " + rhs_->type_ir();
       ir += " %" + std::to_string(tmp_register_number);
       ir += ", ";
-      ir += lhs_->inline_llvm_ir();
+      ir += lhs_->inline_pointer_llvm_ir();
       ir += end_of_line;
       
       return ir;

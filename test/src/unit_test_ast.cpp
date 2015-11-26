@@ -195,8 +195,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 		ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
 		
 		std::string expected_output_1 = std::string("; <label>:0\n");
-		expected_output_1 += "%5 = load i32 %0, align 4\n";
-		expected_output_1 += "%6 = load i32 %3, align 4\n";
+		expected_output_1 += "%5 = load i32* %0, align 4\n";
+		expected_output_1 += "%6 = load i32* %3, align 4\n";
 		expected_output_1 += "%4 = icmp sle i32 %5, %6\n";
 		
 		REQUIRE (condition->emit_llvm_ir() == expected_output_1);
