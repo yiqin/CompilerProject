@@ -10,6 +10,18 @@
 
 namespace ast {
 
+// We want the register number is only used by one time.
+// They are never the same.
+static int register_number = 0;
+static int get_register_number() {
+  return register_number++;
+};
+
+static int label_number = 0;
+static int get_label_number() {
+  return label_number++;
+}
+
 // Operation relates to Abstract Syntax Tree.
 // Operation and Comparison Operation are in different mechanisms.
 enum class Operation {
@@ -49,9 +61,23 @@ class Expression : public Node {
   public:
     typedef std::shared_ptr<Expression> Ptr;
 
-    Expression (const parser::Type& type) : type_(type) {}
+    Expression (const parser::Type& type) 
+          : type_(type), register_number_of_result_(get_register_number()) {}
 
     const parser::Type& type () const { return type_; }
+    const int register_number_of_result () const { return register_number_of_result_; }
+    
+    // ir is used directly in the code generation.
+    std::string type_ir () {
+      if (type() == parser::Type::INT) {
+        return "i32";
+      }
+      return "/undefine type. Please wait./";
+    }
+    
+    std::string register_ir () {
+      return "%"+std::to_string(register_number_of_result_);
+    }
     
     virtual std::string emit_llvm_ir () {
       // Assume all integers are %32
@@ -60,6 +86,7 @@ class Expression : public Node {
 
   private:
     const parser::Type& type_;
+    const int register_number_of_result_;
 };
 
 // Yi: What is Terminal? I always forget...
@@ -272,7 +299,7 @@ class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;
   
-    Condition (const Expression::Ptr lhs, Comparison_Operation comparison_operator, 
+    Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator, 
                    Expression::Ptr rhs) 
           : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
             label_number_ = 1000;
@@ -299,16 +326,29 @@ class Condition : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
-      // 3
+      int register_lhs = get_register_number();
+      ir += std::string("%") + std::to_string(register_lhs);
+      ir += " = load ";
+      ir += lhs_->type_ir() + " " + lhs_->register_ir();
+      ir += ", algin 4\n";
       
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       
-      // 4
+      int register_rhs = get_register_number();
+      
+      ir += std::string("%") + std::to_string(register_rhs);
+      ir += " = load ";
+      if(rhs_->type() == parser::Type::INT) {
+        ir += "\nsomething wrong.....\n";
+      } else {
+        ir += "this is not good at all.";
+      }
+      ir += rhs_->type_ir() + " " + rhs_->register_ir();
+      ir += ", algin 4\n";
       
       // Step 3: Compare
       ir += "%4 = icmp ";
-      
       
       // eq: equal
       // ne: not equal
@@ -342,11 +382,8 @@ class Condition : public Expression {
           break;
       }
       
-      ir += " ";
-      ir += lhs_->emit_llvm_ir();
-      ir += ", ";
-      ir += rhs_->emit_llvm_ir();
-      
+      ir += " i32 %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
+      ir += "\n";
       return ir;
     }
   

@@ -145,7 +145,6 @@ TEST_CASE ("Abstract Syntax Tree") {
 		
 		std::string expected_output = std::string("");
 		
-		
 		// initialization
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
@@ -157,6 +156,9 @@ TEST_CASE ("Abstract Syntax Tree") {
 		
 		// condition
 		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
+		// if (const_integer_2->type() == parser::Type::INT) {
+		// 	REQUIRE(1==0);
+		// }
 		
 		ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
 		
