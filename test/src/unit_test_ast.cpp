@@ -78,9 +78,9 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// %0 = alloca i32, align 4
 		// store i32 0, i32* %0
 		// %1 = load i32* %0, align 4
-		// ret i32* %a
+		// ret i32 %1
 		
-		ast::reset_register();
+		ast::reset();
 		
 		std::string expected_output = std::string("%0 = alloca i32, align 4\n");
 		expected_output += "store i32 0, i32* %0\n";
@@ -107,7 +107,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		// %1 = load i32* %0, align 4
 		// ret i32 %1
 		
-		ast::reset_register();
+		ast::reset();
 		
 		std::string expected_output = std::string("%1 = load i32* %0, align 4\n");
 		expected_output += "ret i32 %1\n";
@@ -137,19 +137,34 @@ TEST_CASE ("Abstract Syntax Tree") {
 
 	SECTION ("Assignment viariable with const_int: i = 450;") {
 		// i = 450;
-		// store i32 450, i32* %i, align 4
+		//
+		// %1 = alloca i32, align 4
+		// store i32 450, i32* %1
+		// %3 = load i32* %1, align 4
+		// store i32 %3, i32* %i, align 4
 		
-		std::string expected_output = std::string("store i32 450, i32* %i, align 4\n");
+		ast::reset();
 		
+		std::string expected_output = std::string("%1 = alloca i32, align 4\n");
+		expected_output += "store i32 450, i32* %1\n";
+		expected_output += "%3 = load i32* %1, align 4\n";
+		expected_output += "store i32 %3, i32* %i, align 4\n";
+				
+		std::string output = "";
+		
+		// rhs
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
-		
 		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+		
+		// lhs
 		ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(450));
+		output += const_integer->emit_llvm_ir();
 		
 		ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(const_integer->type(), variable, const_integer);
+		output += assignment->emit_llvm_ir(); 
 		
-		REQUIRE (assignment->emit_llvm_ir() == expected_output);
+		REQUIRE ( output == expected_output );
 	}
 
 
@@ -157,7 +172,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		//   for ( i = -10; i <= 10; j = 2 )
     	//		printd(i);
 		
-		ast::reset_register();
+		ast::reset();
 		
 		std::string expected_output = std::string("");
 		
@@ -202,7 +217,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 	SECTION ("Binary_Expression") {
 		// i = 1+2;
 		
-		ast::reset_register();
+		ast::reset();
 		
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);

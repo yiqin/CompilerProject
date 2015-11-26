@@ -22,8 +22,9 @@ static int get_label_number() {
   return label_number++;
 }
 
-static void reset_register() {
+static void reset() {
   register_number = 0;
+  label_number = 0;
 }
 
 static std::string end_of_line = ", align 4\n";
@@ -225,6 +226,12 @@ class Variable : public Terminal {
         return "/undefined symbol with string type/";
       }
     }
+    
+    // used in other intructions
+    std::string inline_llvm_ir () {
+      // i32* %1
+      return type_ir() + "* %" + symbol_->name();
+    }
 
   private:
     parser::Symbol::Ptr symbol_;
@@ -260,7 +267,7 @@ class Const_Integer : public Terminal {
     // used in other intructions
     std::string inline_llvm_ir () {
       // i32* %1
-      return type_ir() + "* " + register_number_of_result_ir();
+      return type_ir() + " " + register_number_of_result_ir();
     }
     
   private:
@@ -495,10 +502,23 @@ class Assignment : public Expression {
 
     std::string emit_llvm_ir () {
       
+      std::string ir;
       
-      std::string ir = std::string("store ") + rhs_->emit_llvm_ir()+ ", " + lhs_->emit_llvm_ir() + end_of_line;
+      // Step 1: load the expression data into the register
+      int tmp_register_number = get_register_number();
       
+      ir += std::string("%") + std::to_string(tmp_register_number); // register_number_of_result_ir();
+      ir += " = load " + rhs_->type_ir() + "* ";
+      ir += rhs_->register_number_of_result_ir();
+      ir += end_of_line;
       
+      // Step 2: assignment the register to the variable
+      // store i32 %1, i32* %a, align 4
+      ir += "store " + rhs_->type_ir();
+      ir += " %" + std::to_string(tmp_register_number);
+      ir += ", ";
+      ir += lhs_->inline_llvm_ir();
+      ir += end_of_line;
       
       return ir;
     }
