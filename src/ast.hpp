@@ -237,10 +237,20 @@ class Const_Integer : public Terminal {
 
     Const_Integer (const int& value)
           : Terminal(parser::Type::INT), value_(value) {}
-
+    
     std::string emit_llvm_ir () {
-      // Assume all integers are %32
-      return type_ir() + " " + std::to_string(value_);
+      // store i32 0, i32* %1
+      std::string ir = std::string("store i32 ") + std::to_string(value_);
+      ir += ", i32* ";
+      ir += register_number_of_result_ir();
+      ir += "\n";
+      
+      return ir;
+    }
+    
+    std::string inline_llvm_ir () {
+      // i32* %1
+      return type_ir() + "* " + register_number_of_result_ir();
     }
     
   private:
@@ -630,7 +640,7 @@ class Return_Instruction : public Instruction {
       // const_integer
       auto const_integer = std::dynamic_pointer_cast<ast::Const_Integer>(expression_);
       if (const_integer) {
-        ir += "ret "+ const_integer->emit_llvm_ir();
+        ir += "ret "+ const_integer->inline_llvm_ir();
         return ir;
       }
       

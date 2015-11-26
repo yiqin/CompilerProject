@@ -74,17 +74,22 @@ TEST_CASE ("Abstract Syntax Tree") {
 	
 	SECTION ("Return const_int: return 0;") {
 		// return 0;
+		// 
 		// ret i32 0
 		
 		std::string expected_output = std::string("ret i32 0");
 		
+		std::string output = "";
+		
 		// Expression - Const_Integer
 		ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(0));
+		output += const_integer->emit_llvm_ir();
 		
 		// Return_Instruction
 		ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(const_integer);
+		output += return_instruction->emit_llvm_ir();
 		
-		REQUIRE (return_instruction->emit_llvm_ir() == expected_output);
+		REQUIRE ( output == expected_output );
 	}
 	
 	
@@ -109,14 +114,14 @@ TEST_CASE ("Abstract Syntax Tree") {
 	}
 	
 	
-	SECTION ("Return expression: return a+1-2;") {
+	// SECTION ("Return expression: return a+1-2;") {
 		// return a+1-2;
 		
 		// Expression
 		
 		
 		// Return_Instruction
-	}
+	// }
 	
 
 	SECTION ("Assignment viariable with const_int: i = 450;") {
