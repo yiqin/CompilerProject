@@ -26,7 +26,7 @@ static void reset_register() {
   register_number = 0;
 }
 
-static std::string end_of_line = ", align 4";
+static std::string end_of_line = ", align 4\n";
 
 // Operation relates to Abstract Syntax Tree.
 // Operation and Comparison Operation are in different mechanisms.
@@ -119,7 +119,7 @@ class Symbol_Declarator : public Node {
     
     std::string emit_llvm_ir () {
       if (symbol_->type() == parser::Type::INT) {
-        return std::string("%") + symbol_->name() + " = alloca i32, align 4\n";
+        return std::string("%") + symbol_->name() + " = alloca i32" + end_of_line;
       } else {
         return "undefined symbol with string type";
       }
@@ -295,7 +295,7 @@ class Binary_Expression : public Expression {
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
       ir += lhs_->type_ir() + " " + lhs_->register_number_of_result_ir();
-      ir += ", align 4\n";
+      ir += end_of_line;
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
@@ -305,7 +305,7 @@ class Binary_Expression : public Expression {
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
       ir += rhs_->type_ir() + " " + rhs_->register_number_of_result_ir();
-      ir += ", align 4\n";
+      ir += end_of_line;
       
       // Step 3: Operation
       
@@ -396,7 +396,7 @@ class Condition : public Expression {
       ir += std::string("%") + std::to_string(register_lhs);
       ir += " = load ";
       ir += lhs_->type_ir() + " " + lhs_->register_number_of_result_ir();
-      ir += ", align 4\n";
+      ir += end_of_line;
       
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
@@ -406,7 +406,7 @@ class Condition : public Expression {
       ir += std::string("%") + std::to_string(register_rhs);
       ir += " = load ";
       ir += rhs_->type_ir() + " " + rhs_->register_number_of_result_ir();
-      ir += ", align 4\n";
+      ir += end_of_line;
       
       // Step 3: Compare
       ir += register_number_of_result_ir();
@@ -472,7 +472,7 @@ class Assignment : public Expression {
           : Expression(type), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-      std::string ir = std::string("store ") + rhs_->emit_llvm_ir()+ ", " + lhs_->emit_llvm_ir() + ", align 4\n";
+      std::string ir = std::string("store ") + rhs_->emit_llvm_ir()+ ", " + lhs_->emit_llvm_ir() + end_of_line;
       return ir;
     }
 
@@ -640,7 +640,7 @@ class Return_Instruction : public Instruction {
         // create a new register, this could be a symbol
         
         
-        ir += next_register + " = load "+ variable->emit_llvm_ir()+", align 4\n";
+        ir += next_register + " = load "+ variable->emit_llvm_ir()+end_of_line;
         ir += "ret ";
         
         // TODO: user the emit_llvm_ir()
