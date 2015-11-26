@@ -274,20 +274,86 @@ class Condition : public Expression {
   
     Condition (const Expression::Ptr lhs, Comparison_Operation comparison_operator, 
                    Expression::Ptr rhs) 
-          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
+          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
+            label_number_ = 1000;
+          }
+    
+    // for br
+    const std::string label_name_inline () const { 
+      std::string str;
+      str = std::string("label %") + std::to_string(label_number_);
+      return str;
+    }
+    
+    // the destination label
+    const std::string label_name_destination () const { 
+      std::string str;
+      str = std::string("; <label>:") + std::to_string(label_number_) + "\n";
+      return str;
+    }
     
     std::string emit_llvm_ir () {
+      std::string ir;
+      ir += label_name_destination();
+      
       // Step 1: lhs_ emit_llvm_ir
+      // Get the lhs data into one register
+      
+      // 3
       
       // Step 2: rhs_ emit_llvm_ir
+      // Get the rhs data into another register
+      
+      // 4
       
       // Step 3: Compare
+      ir += "%4 = icmp ";
       
-      return "hello world";
+      
+      // eq: equal
+      // ne: not equal
+      // ugt: unsigned greater than
+      // uge: unsigned greater or equal
+      // ult: unsigned less than
+      // ule: unsigned less or equal
+      // sgt: signed greater than
+      // sge: signed greater or equal
+      // slt: signed less than
+      // sle: signed less or equal
+
+      switch (comparison_operator_) {
+        case Comparison_Operation::EQUAL:
+          ir += "eq";
+          break;
+        case Comparison_Operation::NOT_EQUAL:
+          ir += "ne";
+          break;
+        case Comparison_Operation::LESS_THAN:
+          ir += "slt";
+          break;
+        case Comparison_Operation::GREATER_THAN:
+          ir += "sgt";
+          break;
+        case Comparison_Operation::LESS_THAN_OR_EQUAL:
+          ir += "sle";
+          break;
+       case Comparison_Operation::GREATER_THAN_OR_EQUAL:
+          ir += "sge";
+          break;
+      }
+      
+      ir += " ";
+      ir += lhs_->emit_llvm_ir();
+      ir += ", ";
+      ir += rhs_->emit_llvm_ir();
+      
+      return ir;
     }
   
   
   private:
+    int label_number_;
+    
     Expression::Ptr lhs_;
     Comparison_Operation comparison_operator_;
     Expression::Ptr rhs_;
@@ -505,6 +571,10 @@ class Compound_Instruction : public Instruction {
   private:
     std::vector<Instruction::Ptr> instruction_list_;
 };
+
+
+
+
 
 
 }  // namespace ast

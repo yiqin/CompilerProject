@@ -17,11 +17,14 @@ define i32 @main() #0 {
   store i32 0, i32* %i, align 4
   
   store i32 -10, i32* %i, align 4
+  
+  
   br label %2
 
 ; <label>:2                                       ; preds = %8, %0
   %3 = load i32* %i, align 4
   %4 = icmp sle i32 %3, 10
+  
   br i1 %4, label %5, label %11
 
 ; <label>:5                                       ; preds = %2
