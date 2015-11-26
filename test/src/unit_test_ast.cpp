@@ -140,7 +140,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 
 
 	SECTION ("For Loop") {
-		//   for ( i = -10; i <= 10; i = i+1 )
+		//   for ( i = -10; i <= 10; j = 2 )
     	//		printd(i);
 		
 		ast::register_number = 0;
@@ -152,26 +152,34 @@ TEST_CASE ("Abstract Syntax Tree") {
 		symbol->type(parser::Type::INT);
 		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
 		
+		// register 1
 		ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
 		
+		// register 2
 		ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(const_integer_1->type(), variable, const_integer_1);
 		
-		// condition
+		// register 3
 		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
 		
+		// condition
+		// register 4
 		ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
 		
-		REQUIRE (condition->emit_llvm_ir() == "....");
+		std::string expected_output_1 = std::string("; <label>:0\n");
+		expected_output_1 += "%5 = load i32 %0, algin 4\n";
+		expected_output_1 += "%6 = load i32 %3, algin 4\n";
+		expected_output_1 += "%4 = icmp sle i32 %5, %6\n";
+		
+		REQUIRE (condition->emit_llvm_ir() == expected_output_1);
 		
 		// increment - Assignment with expression.
-		
+		// 
 		
 		
 		// instruction
 		// It's the body of the loop. Only single instruction, not multiply lines.
 		
 		
-		// 
 		
 		REQUIRE (initialization->emit_llvm_ir() == expected_output);
 	}
