@@ -60,7 +60,9 @@ class Expression : public Node {
     // If you don't agree, please let me know.
     // (const parser::Type& type) doesn't save the type information.
     Expression (const parser::Type type) 
-          : type_(type), register_number_of_result_(llvm::get_register_number()) {}
+          : type_(type), register_number_of_result_(llvm::get_register_number()) {
+            result_register = std::make_shared<llvm::Register>(type_);
+          }
 
     const parser::Type type () const { return type_; }
     const int register_number_of_result () const { return register_number_of_result_; }
@@ -94,6 +96,7 @@ class Expression : public Node {
   private:
     const parser::Type type_;
     const int register_number_of_result_;
+    llvm::Register::Ptr result_register;
 };
 
 // Yi: What is Terminal? I always forget...

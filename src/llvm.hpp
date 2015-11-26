@@ -31,11 +31,30 @@ class Register {
     typedef std::shared_ptr<Register> Ptr;
 
     Register (const parser::Type type) 
-          : type_(type), register_number_of_result_(get_register_number()) {}
+          : type_(type), id_(get_register_number()) {}
+    
+    std::string type_ir () {
+      if (type_ == parser::Type::INT) {
+        return "i32";
+      }
+      return "/undefine type. Please wait./";
+    }
+    
+    std::string name_llvm_ir () {
+      return "%"+std::to_string(id_);
+    }
+    
+    std::string value_llvm_ir() {
+      return type_ir() + " " + name_llvm_ir();
+    }
+    
+    std::string pointer_llvm_ir() {
+      return type_ir() + "* " + name_llvm_ir();
+    }
     
   private:
     const parser::Type type_;
-    const int register_number_of_result_;
+    const int id_;
 };
 
 
