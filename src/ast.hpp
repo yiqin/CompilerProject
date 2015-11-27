@@ -62,29 +62,22 @@ class Expression : public Node {
     Expression (const parser::Type type) 
           : type_(type) {
             result_register_ = std::make_shared<llvm::Register>(type_);
-            has_been_declared_ = false;
           }
 
     const parser::Type type () const { return type_; }
     const llvm::Register::Ptr result_register () const { return result_register_; }
-    const bool has_been_declared () const { return has_been_declared_; }
     
     void update_result_register (llvm::Register::Ptr new_register) {
       result_register_ = new_register;
     }
     
     std::string emit_llvm_ir () {
-      // Assume all integers are %32
-      has_been_declared_ = true;
       return std::string("/undefine Expression/");
     }
 
   private:
     const parser::Type type_;
     llvm::Register::Ptr result_register_;
-    // TODO: Yi - Not sure about how to use this parameter.
-    // Maybe we dont' need to use this one.
-    bool has_been_declared_;
 };
 
 // Yi: What is Terminal? I always forget...

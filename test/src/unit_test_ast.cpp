@@ -127,14 +127,30 @@ TEST_CASE ("Abstract Syntax Tree") {
 	}
 	
 	
-	// SECTION ("Return expression: return a+1-2;") {
+	SECTION ("Return expression: return a+1-2;") {
 		// return a+1-2;
 		
-		// Expression
+		llvm::reset();
 		
+		std::string expected_output;
+		
+		// Prepare
+		// Expression - Variable
+		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("a"));
+		symbol->type(parser::Type::INT);
+		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+		
+		ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(1));
+		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
+		
+		ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, variable, const_integer_1);
+		ast::Binary_Expression::Ptr minus_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::SUBTRACTION, add_expression, const_integer_2);
 		
 		// Return_Instruction
-	// }
+		ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(minus_expression);
+		
+		REQUIRE (return_instruction->emit_llvm_ir() == expected_output);			
+	}
 	
 
 	SECTION ("Assignment viariable with const_int: i = 450;") {
@@ -217,8 +233,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 	
 
 	SECTION ("Binary_Expression") {
-		// i = 1+2;
-		// ast::Const_Integer::Ptr const_integer_0 = std::make_shared<ast::Const_Integer>(std::move(1));
+		// 1+2;
 		
 		// FIXME: This doesn't reset the register. Only effect the unit test.
 		llvm::reset();

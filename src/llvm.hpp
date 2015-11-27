@@ -51,10 +51,12 @@ class Register {
       return "%"+id_;
     }
     
+    // <value>
     std::string value_llvm_ir() {
       return type_llvm_ir() + " " + name_llvm_ir();
     }
     
+    // <pointer>
     std::string pointer_llvm_ir() {
       return type_llvm_ir() + "* " + name_llvm_ir();
     }
