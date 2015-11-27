@@ -82,6 +82,8 @@ class Expression : public Node {
   private:
     const parser::Type type_;
     llvm::Register::Ptr result_register_;
+    // TODO: Yi - Not sure about how to use this parameter.
+    // Maybe we dont' need to use this one.
     bool has_been_declared_;
 };
 
@@ -195,6 +197,7 @@ class Function_Definition : public Node {
 // Todo: with function, we need a block_start and a block_end
 // Maybe not.
 
+
 class Variable : public Terminal {
   public:
     typedef std::shared_ptr<Variable> Ptr;
@@ -205,8 +208,10 @@ class Variable : public Terminal {
     }
           
     // FIXME: this is wrong.
+    // This should return empty string.
     std::string emit_llvm_ir () {
-      return "/undefined symbol with string type/";
+      return "";
+      // return "/undefined symbol with string type/";
     }
     
   private:
@@ -353,6 +358,7 @@ class Binary_Expression : public Expression {
 // Yi: One expression can have many +-*/(), but can only have one >=, ==
 // So we can seperate to two different class.
 // But they are quite similar.
+// Currently it works, we can merge them in the future.
 class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;
@@ -465,10 +471,12 @@ class Assignment : public Expression {
 
       llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
       
+      ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(tmp_register, rhs_->result_register());
       
       // Step 2: assignment the register to the variable
-      
+      // 
+      // TODO: test this correct or not.
       // This is wrong.!
       // store i32 %1, i32* %a, align 4
       
@@ -505,7 +513,6 @@ class Function_Call : public Expression {
 };
 
 
-// What is an instruction?
 // Doesn't have a result register.
 class Instruction : public Node {
   public:
@@ -632,11 +639,9 @@ class Return_Instruction : public Instruction {
       // int tmp_register_number = llvm::get_register_number();
       llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
       
+      ir += expression_->emit_llvm_ir();
       
-      ir += tmp_register->name_llvm_ir();
-      ir += " = load ";
-      ir += expression_->result_register()->pointer_llvm_ir();
-      ir += end_of_line;
+      ir += llvm::load_instruction(tmp_register, expression_->result_register());
       
       // Step 2: return the register
       ir += "ret " + tmp_register->value_llvm_ir();

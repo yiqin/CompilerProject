@@ -74,6 +74,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		REQUIRE (function_definition->emit_llvm_ir() == expected_output);    
 	}
 	
+	
 	SECTION ("Return const_int: return 0;") {
 		// return 0;
 		// 
@@ -93,7 +94,6 @@ TEST_CASE ("Abstract Syntax Tree") {
 		
 		// Expression - Const_Integer
 		ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(0));
-		output += const_integer->emit_llvm_ir();
 		
 		// Return_Instruction
 		ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(const_integer);
@@ -147,6 +147,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 		
 		llvm::reset();
 		
+		// This may be wrong.
 		std::string expected_output = std::string("%1 = alloca i32, align 4\n");
 		expected_output += "store i32 450, i32* %1\n";
 		expected_output += "%3 = load i32* %1, align 4\n";
@@ -161,7 +162,6 @@ TEST_CASE ("Abstract Syntax Tree") {
 		
 		// lhs
 		ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(450));
-		output += const_integer->emit_llvm_ir();
 		
 		ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(const_integer->type(), variable, const_integer);
 		output += assignment->emit_llvm_ir(); 
@@ -222,10 +222,9 @@ TEST_CASE ("Abstract Syntax Tree") {
 		
 		// FIXME: This doesn't reset the register. Only effect the unit test.
 		llvm::reset();
-		llvm::register_number = 0;
 		
 		std::string expected_output = std::string("");
-		std::string output = std::string("");
+		std::string output;
 		
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
@@ -234,15 +233,10 @@ TEST_CASE ("Abstract Syntax Tree") {
 		ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(1));
 		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
 		
-		// output += const_integer_1->emit_llvm_ir();
-		// output += const_integer_2->emit_llvm_ir();
-		
 		ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, const_integer_1, const_integer_2);
 		output += add_expression->emit_llvm_ir();
 		
         REQUIRE (output == "");
-		
-		
     }
 	
 
