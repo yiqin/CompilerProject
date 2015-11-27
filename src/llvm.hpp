@@ -37,7 +37,7 @@ class Register {
     Register (const parser::Type type, const std::string id)
           : type_(type), id_(id) {}
       
-    std::string type_ir () {
+    std::string type_llvm_ir () {
       if (type_ == parser::Type::INT) {
         return "i32";
       }
@@ -49,11 +49,11 @@ class Register {
     }
     
     std::string value_llvm_ir() {
-      return type_ir() + " " + name_llvm_ir();
+      return type_llvm_ir() + " " + name_llvm_ir();
     }
     
     std::string pointer_llvm_ir() {
-      return type_ir() + "* " + name_llvm_ir();
+      return type_llvm_ir() + "* " + name_llvm_ir();
     }
     
   private:
@@ -73,11 +73,11 @@ static Register::Ptr new_register(const parser::Type type, const std::string id)
 
 // Memory Access and Addressing Operations
 static std::string alloca_instruction (parser::Symbol::Ptr symbol) {
-  return std::string("%") + symbol->name() + " = alloca " + symbol->type_ir() + end_of_line;
+  return std::string("%") + symbol->name() + " = alloca " + symbol->type_llvm_ir() + end_of_line;
 }
 
 static std::string alloca_instruction (Register::Ptr tmp) {
-  return tmp->name_llvm_ir() + " = alloca " + tmp->type_ir() + end_of_line;
+  return tmp->name_llvm_ir() + " = alloca " + tmp->type_llvm_ir() + end_of_line;
 }
 
 static std::string load_instruction (llvm::Register::Ptr lhs, llvm::Register::Ptr rhs) {  
@@ -89,7 +89,8 @@ static std::string load_instruction (llvm::Register::Ptr lhs, llvm::Register::Pt
   return ir;
 }
 
-// 
+// TODO:
+// I kind of confused about this one.
 static std::string store_instruction (llvm::Register::Ptr lhs, int integer_value) {
   std::string ir;
   ir += std::string("store i32 ") + std::to_string(integer_value);
