@@ -76,19 +76,37 @@ static std::string alloca_instruction (parser::Symbol::Ptr symbol) {
   return std::string("%") + symbol->name() + " = alloca " + symbol->type_ir() + end_of_line;
 }
 
-static std::string load_instruction (llvm::Register::Ptr lhs, llvm::Register::Ptr rhs) {
-  
+static std::string alloca_instruction (Register::Ptr tmp) {
+  return tmp->name_llvm_ir() + " = alloca " + tmp->type_ir() + end_of_line;
+}
+
+static std::string load_instruction (llvm::Register::Ptr lhs, llvm::Register::Ptr rhs) {  
   std::string ir;
   ir += lhs->name_llvm_ir();
   ir += " = load ";
   ir += rhs->pointer_llvm_ir();
   ir += end_of_line;
-  
   return ir;
 }
 
+// 
+static std::string store_instruction (llvm::Register::Ptr lhs, int integer_value) {
+  std::string ir;
+  ir += std::string("store i32 ") + std::to_string(integer_value);
+  ir += ", ";
+  ir += lhs->pointer_llvm_ir();
+  ir += "\n";
+  return ir;
+}
 
+  
 
 }
+
+// Binary Operations
+
+
+// Other Operations
+
 
 #endif  // __CSTR_COMPILER__LLVM_HPP

@@ -221,15 +221,18 @@ class Const_Integer : public Terminal {
       // store i32 0, i32* %1
       
       // Step 1: create the register
-      std::string ir = result_register()->name_llvm_ir();
-      ir += " = alloca i32";
-      ir += end_of_line;
+      // std::string ir = result_register()->name_llvm_ir();
+      // ir += " = alloca i32";
+      // ir += end_of_line;
+      
+      std::string ir = llvm::alloca_instruction(result_register());
       
       // Step 2: store the data into the register
-      ir += std::string("store i32 ") + std::to_string(value_);
-      ir += ", ";
-      ir += result_register()->pointer_llvm_ir();
-      ir += "\n";
+      // ir += std::string("store i32 ") + std::to_string(value_);
+      // ir += ", ";
+      // ir += result_register()->pointer_llvm_ir();
+      // ir += "\n";
+      ir += llvm::store_instruction(result_register(), value_);
       
       return ir;
     }
@@ -491,12 +494,17 @@ class Assignment : public Expression {
       ir += llvm::load_instruction(tmp_register, rhs_->result_register());
       
       // Step 2: assignment the register to the variable
+      
+      // This is wrong.!
       // store i32 %1, i32* %a, align 4
-      ir += "store ";
-      ir += tmp_register->value_llvm_ir();
-      ir += ", ";
-      ir += lhs_->result_register()->pointer_llvm_ir();
-      ir += end_of_line;
+      
+      ir += llvm::load_instruction(lhs_->result_register(), tmp_register);
+      
+      // ir += "store ";
+      // ir += tmp_register->value_llvm_ir();
+      // ir += ", ";
+      // ir += lhs_->result_register()->pointer_llvm_ir();
+      // ir += end_of_line;
       
       return ir;
     }
