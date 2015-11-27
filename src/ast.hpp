@@ -58,13 +58,11 @@ class Expression : public Node {
     // If you don't agree, please let me know.
     // (const parser::Type& type) doesn't save the type information.
     Expression (const parser::Type type) 
-          : type_(type), register_number_of_result_(llvm::get_register_number()) {
+          : type_(type) {
             result_register_ = std::make_shared<llvm::Register>(type_);
           }
 
     const parser::Type type () const { return type_; }
-    const int register_number_of_result () const { return register_number_of_result_; }
-    
     const llvm::Register::Ptr result_register () const { return result_register_; }
     
     void update_result_register (llvm::Register::Ptr new_register) {
@@ -78,7 +76,6 @@ class Expression : public Node {
 
   private:
     const parser::Type type_;
-    const int register_number_of_result_;
     llvm::Register::Ptr result_register_;
 };
 
@@ -203,28 +200,9 @@ class Variable : public Terminal {
           
     // FIXME: this is wrong.
     std::string emit_llvm_ir () {
-      if (symbol_->type() == parser::Type::INT) {
-        return "i32* %" + symbol_->name();
-      } else {
-        return "/undefined symbol with string type/";
-      }
+      return "/undefined symbol with string type/";
     }
     
-    /*
-    // used in other intructions
-    // value-type
-    std::string inline_value_llvm_ir () {
-      // i32 %1
-      return result_register()->value_llvm_ir();
-    }
-    
-    // reference-type
-    std::string inline_pointer_llvm_ir () {
-      // i32* %
-      // TODO: this is not result_register....
-      return result_register()->pointer_llvm_ir();
-    }
-    */
   private:
     parser::Symbol::Ptr symbol_;
 };
@@ -307,7 +285,6 @@ class Binary_Expression : public Expression {
       // Get the lhs data into one register
       
       llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
-      // ir += std::string("%") + std::to_string(register_lhs);
       ir += register_lhs->name_llvm_ir();
       ir += " = load ";
       ir += lhs_->result_register()->pointer_llvm_ir();
@@ -317,7 +294,6 @@ class Binary_Expression : public Expression {
       // Get the rhs data into another register
       llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
       
-      // ir += std::string("%") + std::to_string(register_rhs);
       ir += register_rhs->name_llvm_ir();
       ir += " = load ";
       ir += rhs_->result_register()->pointer_llvm_ir();
@@ -359,8 +335,6 @@ class Binary_Expression : public Expression {
       
       ir += " ";
       ir += result_register()->type_ir();
-      // register_lhs is tmp register number. So it doesn't have register_ir();
-      // ir += " %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
       ir += " ";
       ir += register_lhs->name_llvm_ir();
       ir += ", ";
@@ -468,7 +442,6 @@ class Condition : public Expression {
       
       ir += " ";
       ir += result_register()->type_ir();
-      // register_lhs is tmp register number. So it doesn't have register_ir();
       ir += " " + register_lhs->name_llvm_ir() + ", " + register_rhs->name_llvm_ir();
       ir += "\n";
       return ir;
