@@ -169,7 +169,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 	}
 
 
-	SECTION ("For Loop") {
+	SECTION ("For Loop \n- condition i<=10\n") {
 		//   for ( i = -10; i <= 10; j = 2 )
     	//		printd(i);
 		

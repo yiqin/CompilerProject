@@ -100,7 +100,7 @@ class Symbol_Declarator : public Node {
     
     std::string emit_llvm_ir () {
       if (symbol_->type() == parser::Type::INT) {
-        return llvm::alloca_llvm_ir(symbol_);
+        return llvm::alloca_instruction(symbol_);
       } else {
         return "undefined symbol with string type";
       }
@@ -285,19 +285,24 @@ class Binary_Expression : public Expression {
       // Get the lhs data into one register
       
       llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
-      ir += register_lhs->name_llvm_ir();
-      ir += " = load ";
-      ir += lhs_->result_register()->pointer_llvm_ir();
-      ir += end_of_line;
+      
+      // ir += register_lhs->name_llvm_ir();
+      // ir += " = load ";
+      // ir += lhs_->result_register()->pointer_llvm_ir();
+      // ir += end_of_line;
+      
+      ir += llvm::load_instruction(register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
       
-      ir += register_rhs->name_llvm_ir();
-      ir += " = load ";
-      ir += rhs_->result_register()->pointer_llvm_ir();
-      ir += end_of_line;
+      // ir += register_rhs->name_llvm_ir();
+      // ir += " = load ";
+      // ir += rhs_->result_register()->pointer_llvm_ir();
+      // ir += end_of_line;
+      
+      ir += llvm::load_instruction(register_rhs, rhs_->result_register());
       
       // Step 3: Operation
       
@@ -389,20 +394,24 @@ class Condition : public Expression {
       
       llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
             
-      ir += register_lhs->name_llvm_ir();
-      ir += " = load ";
-      ir += lhs_->result_register()->pointer_llvm_ir();
-      ir += end_of_line;
+      // ir += register_lhs->name_llvm_ir();
+      // ir += " = load ";
+      // ir += lhs_->result_register()->pointer_llvm_ir();
+      // ir += end_of_line;
+      
+      ir += llvm::load_instruction(register_lhs, lhs_->result_register());
       
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       
       llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
       
-      ir += register_rhs->name_llvm_ir();
-      ir += " = load ";
-      ir += rhs_->result_register()->pointer_llvm_ir();
-      ir += end_of_line;
+      // ir += register_rhs->name_llvm_ir();
+      // ir += " = load ";
+      // ir += rhs_->result_register()->pointer_llvm_ir();
+      // ir += end_of_line;
+      
+      ir += llvm::load_instruction(register_rhs, rhs_->result_register());
       
       // Step 3: Compare
       ir += result_register()->name_llvm_ir();
@@ -474,10 +483,12 @@ class Assignment : public Expression {
 
       llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
             
-      ir += tmp_register->name_llvm_ir(); 
-      ir += " = load ";
-      ir += rhs_->result_register()->pointer_llvm_ir();
-      ir += end_of_line;
+      // ir += tmp_register->name_llvm_ir(); 
+      // ir += " = load ";
+      // ir += rhs_->result_register()->pointer_llvm_ir();
+      // ir += end_of_line;
+      
+      ir += llvm::load_instruction(tmp_register, rhs_->result_register());
       
       // Step 2: assignment the register to the variable
       // store i32 %1, i32* %a, align 4
@@ -519,6 +530,7 @@ class Function_Call : public Expression {
 
 
 // What is an instruction?
+// Doesn't have a result register.
 class Instruction : public Node {
   public:
     typedef std::shared_ptr<Instruction> Ptr;
