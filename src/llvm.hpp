@@ -25,6 +25,7 @@ static void reset() {
   label_number = 0;
 };
 
+static std::string end_of_line = ", align 4\n";
 
 class Register {
   public:
@@ -70,6 +71,10 @@ static Register::Ptr new_register(const parser::Type type, const std::string id)
   return tmp;
 }
 
+// Memory Access and Addressing Operations
+static std::string alloca_llvm_ir (parser::Symbol::Ptr symbol) {
+  return std::string("%") + symbol->name() + " = alloca " + symbol->type_ir() + end_of_line;
+}
 
 }
 

@@ -100,7 +100,7 @@ class Symbol_Declarator : public Node {
     
     std::string emit_llvm_ir () {
       if (symbol_->type() == parser::Type::INT) {
-        return std::string("%") + symbol_->name() + " = alloca i32" + end_of_line;
+        return llvm::alloca_llvm_ir(symbol_);
       } else {
         return "undefined symbol with string type";
       }
