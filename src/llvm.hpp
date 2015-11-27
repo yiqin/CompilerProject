@@ -20,6 +20,9 @@ static int get_label_number() {
   return label_number++;
 };
 
+// Something wrong with this case. 
+// Fails to reset the code. 
+// Create a headache to the unit test.
 static void reset() {
   llvm::register_number = 0;
   llvm::label_number = 0;
