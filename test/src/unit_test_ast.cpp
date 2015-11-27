@@ -105,13 +105,13 @@ TEST_CASE ("Abstract Syntax Tree") {
 	SECTION ("Return variable: return a;") {
 		// return a;
 		// 
-		// %1 = load i32* %0, align 4
-		// ret i32 %1
+		// %3 = load i32* %a, align 4
+		// ret i32 %3
 		
 		llvm::reset();
 		
-		std::string expected_output = std::string("%1 = load i32* %0, align 4\n");
-		expected_output += "ret i32 %1\n";
+		std::string expected_output = std::string("%3 = load i32* %a, align 4\n");
+		expected_output += "ret i32 %3\n";
 		
 		// Prepare
 		// Expression - Variable
