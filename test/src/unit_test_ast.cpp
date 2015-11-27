@@ -219,7 +219,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 	SECTION ("Binary_Expression") {
 		// i = 1+2;
 		// ast::Const_Integer::Ptr const_integer_0 = std::make_shared<ast::Const_Integer>(std::move(1));
-				
+		
+		// FIXME: This doesn't reset the register. Only effect the unit test.
 		llvm::reset();
 		llvm::register_number = 0;
 		
