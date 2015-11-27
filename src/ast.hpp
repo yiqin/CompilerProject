@@ -10,8 +10,6 @@
 
 namespace ast {
 
-
-
 static std::string end_of_line = ", align 4\n";
 
 // Operation relates to Abstract Syntax Tree.
@@ -68,6 +66,10 @@ class Expression : public Node {
     const int register_number_of_result () const { return register_number_of_result_; }
     
     const llvm::Register::Ptr result_register () const { return result_register_; }
+    
+    void update_result_register (llvm::Register::Ptr new_register) {
+      result_register_ = new_register;
+    }
     
     std::string emit_llvm_ir () {
       // Assume all integers are %32
@@ -195,7 +197,9 @@ class Variable : public Terminal {
     typedef std::shared_ptr<Variable> Ptr;
 
     Variable (const parser::Symbol::Ptr& symbol)
-          : Terminal(symbol->type()), symbol_(symbol) {}
+          : Terminal(symbol->type()), symbol_(symbol) {
+      update_result_register(llvm::new_register(parser::Type::INT, symbol_->name()));
+    }
           
     // FIXME: this is wrong.
     std::string emit_llvm_ir () {
@@ -206,6 +210,7 @@ class Variable : public Terminal {
       }
     }
     
+    /*
     // used in other intructions
     // value-type
     std::string inline_value_llvm_ir () {
@@ -216,9 +221,10 @@ class Variable : public Terminal {
     // reference-type
     std::string inline_pointer_llvm_ir () {
       // i32* %
+      // TODO: this is not result_register....
       return result_register()->pointer_llvm_ir();
     }
-
+    */
   private:
     parser::Symbol::Ptr symbol_;
 };
@@ -300,18 +306,19 @@ class Binary_Expression : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
-      int register_lhs = llvm::get_register_number();
-      ir += std::string("%") + std::to_string(register_lhs);
+      llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
+      // ir += std::string("%") + std::to_string(register_lhs);
+      ir += register_lhs->name_llvm_ir();
       ir += " = load ";
       ir += lhs_->result_register()->pointer_llvm_ir();
       ir += end_of_line;
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
+      llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
       
-      int register_rhs = llvm::get_register_number();
-      
-      ir += std::string("%") + std::to_string(register_rhs);
+      // ir += std::string("%") + std::to_string(register_rhs);
+      ir += register_rhs->name_llvm_ir();
       ir += " = load ";
       ir += rhs_->result_register()->pointer_llvm_ir();
       ir += end_of_line;
@@ -353,7 +360,12 @@ class Binary_Expression : public Expression {
       ir += " ";
       ir += result_register()->type_ir();
       // register_lhs is tmp register number. So it doesn't have register_ir();
-      ir += " %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
+      // ir += " %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
+      ir += " ";
+      ir += register_lhs->name_llvm_ir();
+      ir += ", ";
+      ir += register_rhs->name_llvm_ir();
+      
       ir += "\n";
       return ir;
     }
@@ -401,8 +413,9 @@ class Condition : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
-      int register_lhs = llvm::get_register_number();
-      ir += std::string("%") + std::to_string(register_lhs);
+      llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
+            
+      ir += register_lhs->name_llvm_ir();
       ir += " = load ";
       ir += lhs_->result_register()->pointer_llvm_ir();
       ir += end_of_line;
@@ -410,9 +423,9 @@ class Condition : public Expression {
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       
-      int register_rhs = llvm::get_register_number();
+      llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
       
-      ir += std::string("%") + std::to_string(register_rhs);
+      ir += register_rhs->name_llvm_ir();
       ir += " = load ";
       ir += rhs_->result_register()->pointer_llvm_ir();
       ir += end_of_line;
@@ -454,9 +467,9 @@ class Condition : public Expression {
       }
       
       ir += " ";
-      ir += result_register()->name_llvm_ir();
+      ir += result_register()->type_ir();
       // register_lhs is tmp register number. So it doesn't have register_ir();
-      ir += " %" + std::to_string(register_lhs) + ", %" + std::to_string(register_rhs);
+      ir += " " + register_lhs->name_llvm_ir() + ", " + register_rhs->name_llvm_ir();
       ir += "\n";
       return ir;
     }
@@ -485,19 +498,20 @@ class Assignment : public Expression {
       std::string ir;
       
       // Step 1: load the expression data into the register
-      int tmp_register_number = llvm::get_register_number();
-      
-      ir += std::string("%") + std::to_string(tmp_register_number); 
+
+      llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
+            
+      ir += tmp_register->name_llvm_ir(); 
       ir += " = load ";
       ir += rhs_->result_register()->pointer_llvm_ir();
       ir += end_of_line;
       
       // Step 2: assignment the register to the variable
       // store i32 %1, i32* %a, align 4
-      ir += "store " + rhs_->result_register()->type_ir();
-      ir += " %" + std::to_string(tmp_register_number);
+      ir += "store ";
+      ir += tmp_register->value_llvm_ir();
       ir += ", ";
-      ir += lhs_->inline_pointer_llvm_ir();
+      ir += lhs_->result_register()->pointer_llvm_ir();
       ir += end_of_line;
       
       return ir;
@@ -654,15 +668,17 @@ class Return_Instruction : public Instruction {
       // Step 1: load the expression data into the register
       
       // this register is only used in the emit_llvm_ir. It's private.
-      int tmp_register_number = llvm::get_register_number();
+      // int tmp_register_number = llvm::get_register_number();
+      llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
       
-      ir += std::string("%") + std::to_string(tmp_register_number); // register_number_of_result_ir();
+      
+      ir += tmp_register->name_llvm_ir();
       ir += " = load ";
       ir += expression_->result_register()->pointer_llvm_ir();
       ir += end_of_line;
       
       // Step 2: return the register
-      ir += "ret " + expression_->result_register()->type_ir() + " %" + std::to_string(tmp_register_number);
+      ir += "ret " + tmp_register->value_llvm_ir();
       ir += "\n";
       
       /*
