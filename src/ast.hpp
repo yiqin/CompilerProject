@@ -288,22 +288,12 @@ class Binary_Expression : public Expression {
       // Get the lhs data into one register
       
       llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
-      
-      // ir += register_lhs->name_llvm_ir();
-      // ir += " = load ";
-      // ir += lhs_->result_register()->pointer_llvm_ir();
-      // ir += end_of_line;
-      
+
       ir += llvm::load_instruction(register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
-      
-      // ir += register_rhs->name_llvm_ir();
-      // ir += " = load ";
-      // ir += rhs_->result_register()->pointer_llvm_ir();
-      // ir += end_of_line;
       
       ir += llvm::load_instruction(register_rhs, rhs_->result_register());
       
@@ -396,11 +386,6 @@ class Condition : public Expression {
       // Get the lhs data into one register
       
       llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
-            
-      // ir += register_lhs->name_llvm_ir();
-      // ir += " = load ";
-      // ir += lhs_->result_register()->pointer_llvm_ir();
-      // ir += end_of_line;
       
       ir += llvm::load_instruction(register_lhs, lhs_->result_register());
       
@@ -408,11 +393,6 @@ class Condition : public Expression {
       // Get the rhs data into another register
       
       llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
-      
-      // ir += register_rhs->name_llvm_ir();
-      // ir += " = load ";
-      // ir += rhs_->result_register()->pointer_llvm_ir();
-      // ir += end_of_line;
       
       ir += llvm::load_instruction(register_rhs, rhs_->result_register());
       
@@ -485,11 +465,6 @@ class Assignment : public Expression {
       // Step 1: load the expression data into the register
 
       llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
-            
-      // ir += tmp_register->name_llvm_ir(); 
-      // ir += " = load ";
-      // ir += rhs_->result_register()->pointer_llvm_ir();
-      // ir += end_of_line;
       
       ir += llvm::load_instruction(tmp_register, rhs_->result_register());
       
@@ -499,12 +474,6 @@ class Assignment : public Expression {
       // store i32 %1, i32* %a, align 4
       
       ir += llvm::load_instruction(lhs_->result_register(), tmp_register);
-      
-      // ir += "store ";
-      // ir += tmp_register->value_llvm_ir();
-      // ir += ", ";
-      // ir += lhs_->result_register()->pointer_llvm_ir();
-      // ir += end_of_line;
       
       return ir;
     }
