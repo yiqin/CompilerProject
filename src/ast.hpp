@@ -342,7 +342,7 @@ class Binary_Expression : public Expression {
       }
       
       ir += " ";
-      ir += result_register()->type_ir();
+      ir += result_register()->type_llvm_ir();
       ir += " ";
       ir += register_lhs->name_llvm_ir();
       ir += ", ";
@@ -453,7 +453,7 @@ class Condition : public Expression {
       }
       
       ir += " ";
-      ir += result_register()->type_ir();
+      ir += result_register()->type_llvm_ir();
       ir += " " + register_lhs->name_llvm_ir() + ", " + register_rhs->name_llvm_ir();
       ir += "\n";
       return ir;
