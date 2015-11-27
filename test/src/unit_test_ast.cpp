@@ -3,6 +3,7 @@
 #include "symbol.hpp"
 #include "ast.hpp"
 #include "llvm.hpp"
+
 #include <sstream>
 #include <vector>
 
@@ -217,8 +218,13 @@ TEST_CASE ("Abstract Syntax Tree") {
 
 	SECTION ("Binary_Expression") {
 		// i = 1+2;
-		
+		// ast::Const_Integer::Ptr const_integer_0 = std::make_shared<ast::Const_Integer>(std::move(1));
+				
 		llvm::reset();
+		llvm::register_number = 0;
+		
+		std::string expected_output = std::string("");
+		std::string output = std::string("");
 		
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
@@ -227,9 +233,15 @@ TEST_CASE ("Abstract Syntax Tree") {
 		ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(1));
 		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
 		
+		// output += const_integer_1->emit_llvm_ir();
+		// output += const_integer_2->emit_llvm_ir();
+		
 		ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, const_integer_1, const_integer_2);
-				
-        REQUIRE (add_expression->emit_llvm_ir() == "");
+		output += add_expression->emit_llvm_ir();
+		
+        REQUIRE (output == "");
+		
+		
     }
 	
 

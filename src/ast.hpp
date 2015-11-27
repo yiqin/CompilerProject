@@ -8,6 +8,8 @@
 #include "symbol.hpp"
 #include "llvm.hpp"
 
+#include <iostream>
+
 namespace ast {
 
 static std::string end_of_line = ", align 4\n";
@@ -60,10 +62,12 @@ class Expression : public Node {
     Expression (const parser::Type type) 
           : type_(type) {
             result_register_ = std::make_shared<llvm::Register>(type_);
+            has_been_declared_ = false;
           }
 
     const parser::Type type () const { return type_; }
     const llvm::Register::Ptr result_register () const { return result_register_; }
+    const bool has_been_declared () const { return has_been_declared_; }
     
     void update_result_register (llvm::Register::Ptr new_register) {
       result_register_ = new_register;
@@ -71,12 +75,14 @@ class Expression : public Node {
     
     std::string emit_llvm_ir () {
       // Assume all integers are %32
+      has_been_declared_ = true;
       return std::string("/undefine Expression/");
     }
 
   private:
     const parser::Type type_;
     llvm::Register::Ptr result_register_;
+    bool has_been_declared_;
 };
 
 // Yi: What is Terminal? I always forget...
@@ -219,19 +225,8 @@ class Const_Integer : public Terminal {
     std::string emit_llvm_ir () {
       // %1 = alloca i32, align 4
       // store i32 0, i32* %1
-      
-      // Step 1: create the register
-      // std::string ir = result_register()->name_llvm_ir();
-      // ir += " = alloca i32";
-      // ir += end_of_line;
-      
+
       std::string ir = llvm::alloca_instruction(result_register());
-      
-      // Step 2: store the data into the register
-      // ir += std::string("store i32 ") + std::to_string(value_);
-      // ir += ", ";
-      // ir += result_register()->pointer_llvm_ir();
-      // ir += "\n";
       ir += llvm::store_instruction(result_register(), value_);
       
       return ir;
@@ -284,17 +279,21 @@ class Binary_Expression : public Expression {
       
       std::string ir;
       
+      // ir += Expression::emit_llvm_ir();
+      
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
       llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
-
+      
+      ir += lhs_->emit_llvm_ir();
       ir += llvm::load_instruction(register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
       
+      ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(register_rhs, rhs_->result_register());
       
       // Step 3: Operation

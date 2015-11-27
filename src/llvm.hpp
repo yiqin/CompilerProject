@@ -21,8 +21,8 @@ static int get_label_number() {
 };
 
 static void reset() {
-  register_number = 0;
-  label_number = 0;
+  llvm::register_number = 0;
+  llvm::label_number = 0;
 };
 
 static std::string end_of_line = ", align 4\n";
@@ -61,6 +61,7 @@ class Register {
     const std::string id_;
 };
 
+// Create new register
 static Register::Ptr new_register(const parser::Type type) {
   Register::Ptr tmp = std::make_shared<Register>(type);
   return tmp;
