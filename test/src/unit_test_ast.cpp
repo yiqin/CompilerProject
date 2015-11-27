@@ -187,7 +187,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 
 
 	SECTION ("For Loop \n- condition i<=10\n") {
-		//   for ( i = -10; i <= 10; j = 2 )
+		//   for ( i = -10; i <= 10; i = i+1 )
     	//		printd(i);
 		
 		llvm::reset();
@@ -195,21 +195,25 @@ TEST_CASE ("Abstract Syntax Tree") {
 		std::string expected_output = std::string("");
 		
 		// initialization
+		// i = -10
+		// create i
 		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
 		symbol->type(parser::Type::INT);
 		ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
 		
-		// register 1
+		// -10
 		ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
 		
-		// register 2
+		// i = -10 Assignment
 		ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(const_integer_1->type(), variable, const_integer_1);
 		
-		// register 3
-		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
 		
 		// condition
-		// register 4
+		// i <= 10
+		// 10
+		ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
+		 
+		// i <= 10 Condition
 		ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
 		
 		std::string expected_output_1 = std::string("; <label>:0\n");
@@ -217,18 +221,26 @@ TEST_CASE ("Abstract Syntax Tree") {
 		expected_output_1 += "%6 = load i32* %3, align 4\n";
 		expected_output_1 += "%4 = icmp sle i32 %5, %6\n";
 		
-		REQUIRE (condition->emit_llvm_ir() == expected_output_1);
+		// REQUIRE (condition->emit_llvm_ir() == expected_output_1);
 		
 		// increment - Assignment with expression.
-		// 
+		// i = i + 1
+		// 1
+		ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
+		// i + 1
+		ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, variable, const_integer_3);
 		
-		// We can't continue until we setup binary expression.
+		// i = i + 1
+		ast::Assignment::Ptr increment = std::make_shared<ast::Assignment>(variable->type(), variable, add_expression);
+		
 		
 		// instruction
 		// It's the body of the loop. Only single instruction, not multiply lines.
+		ast::Instruction::Ptr instruction = std::make_shared<ast::Instruction>();		
 		
+		ast::For_Instruction::Ptr for_instruction = std::make_shared<ast::For_Instruction>(initialization, condition, increment, instruction);
 		
-		REQUIRE (initialization->emit_llvm_ir() == expected_output);
+		REQUIRE (for_instruction->emit_llvm_ir() == expected_output);
 	}
 	
 

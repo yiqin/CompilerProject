@@ -43,7 +43,7 @@ class Node {
     virtual ~Node () {}
 
     virtual std::string emit_llvm_ir () {
-      return std::string("/undefine Expression/");
+      return std::string("/undefine Expression - Node Class/");
     };
     
     // We don't need this.
@@ -72,7 +72,7 @@ class Expression : public Node {
     }
     
     std::string emit_llvm_ir () {
-      return std::string("/undefine Expression/");
+      return std::string("/undefine Expression - Expression Class/");
     }
 
   private:
@@ -361,7 +361,7 @@ class Condition : public Expression {
           : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
             label_number_ = llvm::get_label_number();
           }
-    
+    /*
     // for br
     const std::string label_name_ir () const { 
       std::string str;
@@ -375,10 +375,11 @@ class Condition : public Expression {
       str = std::string("; <label>:") + std::to_string(label_number_) + "\n";
       return str;
     }
-    
+    */
     std::string emit_llvm_ir () {
       std::string ir;
-      ir += label_name_destination();
+      
+      // ir += label_name_destination();
       
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
@@ -598,8 +599,19 @@ class For_Instruction : public Instruction {
             
     std::string emit_llvm_ir () {
       std::string ir;
+      ir += "initialization\n";
+      ir += initialization_->emit_llvm_ir();
       
+      ir += "condition\n";
+      ir += condition_->emit_llvm_ir();
       
+      ir += "increment\n";
+      ir += increment_->emit_llvm_ir();
+      
+      ir += "instruction\n";
+      ir += instruction_->emit_llvm_ir();
+      
+      ir += "end\n";
       
       return ir;
     }
