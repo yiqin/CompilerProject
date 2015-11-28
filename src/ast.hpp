@@ -363,28 +363,10 @@ class Condition : public Expression {
   
     Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator, 
                    Expression::Ptr rhs) 
-          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
-            label_number_ = llvm::get_label_number();
-          }
-    /*
-    // for br
-    const std::string label_name_ir () const { 
-      std::string str;
-      str = std::string("label %") + std::to_string(label_number_);
-      return str;
-    }
-    
-    // the destination label for the jump instruction
-    const std::string label_name_destination () const { 
-      std::string str;
-      str = std::string("; <label>:") + std::to_string(label_number_) + "\n";
-      return str;
-    }
-    */
+          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
+
     std::string emit_llvm_ir () {
       std::string ir;
-      
-      // ir += label_name_destination();
       
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
@@ -445,8 +427,6 @@ class Condition : public Expression {
   
   
   private:
-    int label_number_;
-    
     Expression::Ptr lhs_;
     Comparison_Operation comparison_operator_;
     Expression::Ptr rhs_;
@@ -604,19 +584,33 @@ class For_Instruction : public Instruction {
             
     std::string emit_llvm_ir () {
       std::string ir;
+      
+      llvm::Label::Ptr label_1 = llvm::new_label();
+      llvm::Label::Ptr label_2 = llvm::new_label();
+      llvm::Label::Ptr label_3 = llvm::new_label();
+      llvm::Label::Ptr label_4 = llvm::new_label();
+      
       ir += "initialization\n";
       ir += initialization_->emit_llvm_ir();
+      ir += llvm::br_instruction(label_1);
       
       ir += "condition\n";
+      ir += label_1->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
       
-      ir += "increment\n";
-      ir += increment_->emit_llvm_ir();
+      llvm::Value_Register::Ptr tmp = llvm::new_value_register(parser::Type::INT);
+      ir += llvm::br_instruction(tmp, label_2, label_4);
       
       ir += "instruction\n";
+      ir += label_2->destination_llvm_ir();
       ir += instruction_->emit_llvm_ir();
       
+      ir += "increment\n";
+      ir += label_3->destination_llvm_ir();
+      ir += increment_->emit_llvm_ir();
+      
       ir += "end\n";
+      ir += label_4->destination_llvm_ir();
       
       return ir;
     }

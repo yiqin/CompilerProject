@@ -7,7 +7,7 @@ define i32 @printd(i32 %i) #0 {
   %1 = alloca i32, align 4
   ; store i32 %i, i32* %1, align 4
   ; ret i32 1
-  
+  ; <label>:4
   %R.0 = alloca i32, align 4
   store i32 0, i32* %R.0
   %V.1 = load i32* %R.0, align 4
