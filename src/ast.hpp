@@ -513,10 +513,7 @@ class Expression_Instruction : public Instruction {
     Expression::Ptr expression_;
 };
 
-// If else ??
-// select_instruction
-// cond_instruction 
-//
+// If else, control flow
 class Cond_Instruction : public Instruction {
   public:
     typedef std::shared_ptr<Cond_Instruction> Ptr;
@@ -651,10 +648,7 @@ class Return_Instruction : public Instruction {
     std::string emit_llvm_ir () {
       std::string ir;
       
-      // Step 1: load the expression data into the register
-      
-      // this register is only used in the emit_llvm_ir. It's private.
-      // int tmp_register_number = llvm::get_register_number();
+      // Step 1: load the expression data into a value register
       llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
       
       ir += expression_->emit_llvm_ir();
@@ -664,35 +658,6 @@ class Return_Instruction : public Instruction {
       // Step 2: return the register
       ir += "ret " + tmp_value_register->value_llvm_ir();
       ir += "\n";
-      
-      /*
-      // dynamic pointer cast
-      // const_integer
-      auto const_integer = std::dynamic_pointer_cast<ast::Const_Integer>(expression_);
-      if (const_integer) {
-        ir += "ret "+ const_integer->inline_llvm_ir();
-        return ir;
-      }
-      
-      // variable
-      auto variable = std::dynamic_pointer_cast<ast::Variable>(expression_);
-      if (variable) {
-        // TODO: we need a register tracker.
-        std::string next_register = std::string("%3");
-        // create a new register, this could be a symbol
-        
-        
-        ir += next_register + " = load "+ variable->emit_llvm_ir()+end_of_line;
-        ir += "ret ";
-        
-        // TODO: user the emit_llvm_ir()
-        ir += "i32 %3";
-        
-        return ir;
-      }
-      
-      ir += "Undefined yet. Please wait.";
-      */
       
       return ir;
     }
