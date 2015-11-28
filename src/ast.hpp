@@ -61,13 +61,13 @@ class Expression : public Node {
     // (const parser::Type& type) doesn't save the type information.
     Expression (const parser::Type type) 
           : type_(type) {
-            result_register_ = std::make_shared<llvm::Register>(type_);
+            result_register_ = std::make_shared<llvm::Pointer_Register>(type_);
           }
 
     const parser::Type type () const { return type_; }
-    const llvm::Register::Ptr result_register () const { return result_register_; }
+    llvm::Pointer_Register::Ptr result_register () { return result_register_; }
     
-    void update_result_register (llvm::Register::Ptr new_register) {
+    void update_result_register (llvm::Pointer_Register::Ptr new_register) {
       result_register_ = new_register;
     }
     
@@ -77,7 +77,7 @@ class Expression : public Node {
 
   private:
     const parser::Type type_;
-    llvm::Register::Ptr result_register_;
+    llvm::Pointer_Register::Ptr result_register_;
 };
 
 // Yi: What is Terminal? I always forget...
@@ -197,7 +197,7 @@ class Variable : public Terminal {
 
     Variable (const parser::Symbol::Ptr& symbol)
           : Terminal(symbol->type()), symbol_(symbol) {
-      update_result_register(llvm::new_register(parser::Type::INT, symbol_->name()));
+      update_result_register(llvm::new_pointer_register(parser::Type::INT, symbol_->name()));
     }
           
     // FIXME: this is wrong.
@@ -225,7 +225,7 @@ class Const_Integer : public Terminal {
       // store i32 0, i32* %1
 
       std::string ir = llvm::alloca_instruction(result_register());
-      ir += llvm::store_instruction(result_register(), value_);
+      ir += llvm::store_instruction(value_, result_register());
       
       return ir;
     }
@@ -282,22 +282,22 @@ class Binary_Expression : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
-      llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_lhs = llvm::new_value_register(parser::Type::INT);
       
       ir += lhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(register_lhs, lhs_->result_register());
+      ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
-      llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_rhs = llvm::new_value_register(parser::Type::INT);
       
       ir += rhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(register_rhs, rhs_->result_register());
+      ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
       
       // Step 3: Operation
-      llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
+      llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
 
-      ir += tmp_register->name_llvm_ir();
+      ir += tmp_value_register->name_llvm_ir();
       ir += " = ";
       
       // add
@@ -332,14 +332,13 @@ class Binary_Expression : public Expression {
       ir += " ";
       ir += result_register()->type_llvm_ir();
       ir += " ";
-      ir += register_lhs->name_llvm_ir();
+      ir += value_register_lhs->name_llvm_ir();
       ir += ", ";
-      ir += register_rhs->name_llvm_ir();
+      ir += value_register_rhs->name_llvm_ir();
       
       ir += "\n";
       ir += llvm::alloca_instruction(result_register());
-      ir += llvm::store_instruction(tmp_register, result_register());
-      
+      ir += llvm::store_instruction(tmp_value_register, result_register());
       
       return ir;
     }
@@ -390,16 +389,16 @@ class Condition : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
-      llvm::Register::Ptr register_lhs = llvm::new_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_lhs = llvm::new_value_register(parser::Type::INT);
       
-      ir += llvm::load_instruction(register_lhs, lhs_->result_register());
+      ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
       
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       
-      llvm::Register::Ptr register_rhs = llvm::new_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_rhs = llvm::new_value_register(parser::Type::INT);
       
-      ir += llvm::load_instruction(register_rhs, rhs_->result_register());
+      ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
       
       // Step 3: Compare
       ir += result_register()->name_llvm_ir();
@@ -439,7 +438,7 @@ class Condition : public Expression {
       
       ir += " ";
       ir += result_register()->type_llvm_ir();
-      ir += " " + register_lhs->name_llvm_ir() + ", " + register_rhs->name_llvm_ir();
+      ir += " " + value_register_lhs->name_llvm_ir() + ", " + value_register_rhs->name_llvm_ir();
       ir += "\n";
       return ir;
     }
@@ -469,10 +468,10 @@ class Assignment : public Expression {
       
       // Step 1: load the expression data into the register
 
-      llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
+      llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
       
       ir += rhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(tmp_register, rhs_->result_register());
+      ir += llvm::load_instruction(tmp_value_register, rhs_->result_register());
       
       // Step 2: assignment the register to the variable
       // 
@@ -480,7 +479,7 @@ class Assignment : public Expression {
       // This is wrong.!
       // store i32 %1, i32* %a, align 4
       
-      ir += llvm::store_instruction(tmp_register, lhs_->result_register());
+      ir += llvm::store_instruction(tmp_value_register, lhs_->result_register());
       
       return ir;
     }
@@ -648,14 +647,14 @@ class Return_Instruction : public Instruction {
       
       // this register is only used in the emit_llvm_ir. It's private.
       // int tmp_register_number = llvm::get_register_number();
-      llvm::Value_Register::Ptr tmp_register = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
       
       ir += expression_->emit_llvm_ir();
       
-      ir += llvm::load_instruction(tmp_register, expression_->result_register());
+      ir += llvm::load_instruction(tmp_value_register, expression_->result_register());
       
       // Step 2: return the register
-      ir += "ret " + tmp_register->value_llvm_ir();
+      ir += "ret " + tmp_value_register->value_llvm_ir();
       ir += "\n";
       
       /*
