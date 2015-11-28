@@ -277,8 +277,6 @@ class Binary_Expression : public Expression {
       
       std::string ir;
       
-      // ir += Expression::emit_llvm_ir();
-      
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
       
@@ -293,6 +291,8 @@ class Binary_Expression : public Expression {
       
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
+      
+      // FIXME: Fails to put this part of code to llvm.hpp
       
       // Step 3: Operation
       llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
@@ -330,7 +330,7 @@ class Binary_Expression : public Expression {
       }
       
       ir += " ";
-      ir += result_register()->type_llvm_ir();
+      ir += tmp_value_register->type_llvm_ir();
       ir += " ";
       ir += value_register_lhs->name_llvm_ir();
       ir += ", ";
