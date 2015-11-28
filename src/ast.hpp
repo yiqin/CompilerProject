@@ -295,8 +295,9 @@ class Binary_Expression : public Expression {
       ir += llvm::load_instruction(register_rhs, rhs_->result_register());
       
       // Step 3: Operation
-      
-      ir += result_register()->name_llvm_ir();
+      llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
+
+      ir += tmp_register->name_llvm_ir();
       ir += " = ";
       
       // add
@@ -336,6 +337,10 @@ class Binary_Expression : public Expression {
       ir += register_rhs->name_llvm_ir();
       
       ir += "\n";
+      ir += llvm::alloca_instruction(result_register());
+      ir += llvm::store_instruction(tmp_register, result_register());
+      
+      
       return ir;
     }
 
@@ -352,6 +357,7 @@ class Binary_Expression : public Expression {
 // So we can seperate to two different class.
 // But they are quite similar.
 // Currently it works, we can merge them in the future.
+// Return are different
 class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;

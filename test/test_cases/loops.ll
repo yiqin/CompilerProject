@@ -5,8 +5,26 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: nounwind uwtable
 define i32 @printd(i32 %i) #0 {
   %1 = alloca i32, align 4
-  store i32 %i, i32* %1, align 4
-  ret i32 1
+  ; store i32 %i, i32* %1, align 4
+  ; ret i32 1
+  
+  %a = alloca i32, align 4
+  %R.11 = load i32* %a, align 4
+  %R.5 = alloca i32, align 4
+  store i32 1, i32* %R.5
+  %R.12 = load i32* %R.5, align 4
+  %R.13 = add i32 %R.11, %R.12
+  %R.7 = alloca i32, align 4
+  store i32 %R.13, i32* %R.7
+  %R.10 = load i32* %R.7, align 4
+  %R.6 = alloca i32, align 4
+  store i32 2, i32* %R.6
+  %R.14 = load i32* %R.6, align 4
+  %R.15 = sub i32 %R.10, %R.14
+  %R.8 = alloca i32, align 4
+  store i32 %R.15, i32* %R.8
+  %R.9 = load i32* %R.8, align 4
+  ret i32 %R.9
 }
 
 ; Function Attrs: nounwind uwtable
@@ -22,11 +40,6 @@ define i32 @main() #0 {
 ;  %i = load i32* %R.15, align 4
   %V.17 = load i32* %R.15, align 4
   store i32 %V.17, i32* %i, align 4
-
-
-  store i32 450, i32* %R.15
-  %R.17 = load i32* %R.15, align 4
-  store i32 %R.17, i32* %i
 
   
   store i32 -10, i32* %i, align 4

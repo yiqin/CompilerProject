@@ -244,7 +244,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 	}
 	
 
-	SECTION ("Binary_Expression") {
+	SECTION ("Binary_Expression: 1+2") {
 		// 1+2;
 		
 		// FIXME: This doesn't reset the register. Only effect the unit test.

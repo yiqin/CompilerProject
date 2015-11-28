@@ -80,21 +80,23 @@ static Register::Ptr new_register(const parser::Type type, const std::string id)
 }
 
 // Memory Access and Addressing Operations
+// alloca <pointer>
 static std::string alloca_instruction (parser::Symbol::Ptr symbol) {
   return std::string("%") + symbol->name() + " = alloca " + symbol->type_llvm_ir() + end_of_line;
 }
 
+// alloca <pointer>
 static std::string alloca_instruction (Register::Ptr tmp) {
   return tmp->name_llvm_ir() + " = alloca " + tmp->type_llvm_ir() + end_of_line;
 }
 
 // Return value
 // <value> = load <pointer>
-static std::string load_instruction (llvm::Register::Ptr lhs, llvm::Register::Ptr rhs) {  
+static std::string load_instruction (llvm::Register::Ptr op_1, llvm::Register::Ptr op_2) {  
   std::string ir;
-  ir += lhs->name_llvm_ir();
+  ir += op_1->name_llvm_ir();
   ir += " = load ";
-  ir += rhs->pointer_llvm_ir();
+  ir += op_2->pointer_llvm_ir();
   ir += end_of_line;
   return ir;
 }
