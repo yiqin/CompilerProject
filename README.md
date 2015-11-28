@@ -68,3 +68,6 @@ at [https://idea.popcount.org/2013-07-24-ir-is-better-than-assembly/](https://id
 
 * Run LLVM Assembly in Brower
 at [https://kripken.github.io/llvm.js/demo.html](https://kripken.github.io/llvm.js/demo.html).
+
+* Implement a String Data Type in LLVM?
+at [http://stackoverflow.com/questions/1061753/how-can-i-implement-a-string-data-type-in-llvm](http://stackoverflow.com/questions/1061753/how-can-i-implement-a-string-data-type-in-llvm).
