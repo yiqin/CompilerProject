@@ -37,7 +37,7 @@ class Register {
     typedef std::shared_ptr<Register> Ptr;
 
     Register (const parser::Type type) 
-          : type_(type), id_(std::string("R.")+std::to_string(get_register_number())) {}
+           : type_(type), id_(std::string("R.")+std::to_string(get_register_number())) {}
            
     Register (const parser::Type type, const std::string id)
           : type_(type), id_(id) {}
@@ -68,6 +68,39 @@ class Register {
     const std::string id_;
 };
 
+class Pointer_Register : public Register {
+  public:
+    typedef std::shared_ptr<Pointer_Register> Ptr;  
+    
+    Pointer_Register (const parser::Type type) 
+          : Register(type, (std::string("R.")+std::to_string(get_register_number()))) {}
+  
+    // <value>
+    std::string value_llvm_ir() {
+      return type_llvm_ir() + " " + name_llvm_ir();
+    }
+    
+    // <pointer>
+    std::string pointer_llvm_ir() {
+      return type_llvm_ir() + "* " + name_llvm_ir();
+    }
+    
+};
+
+class Value_Register : public Register {
+  public:
+    typedef std::shared_ptr<Value_Register> Ptr; 
+     
+    Value_Register (const parser::Type type) 
+          : Register(type, (std::string("V.")+std::to_string(get_register_number()))) {}
+
+    // <value>
+    std::string value_llvm_ir() {
+      return type_llvm_ir() + " " + name_llvm_ir();
+    }  
+    
+};
+
 // Create new register
 static Register::Ptr new_register(const parser::Type type) {
   Register::Ptr tmp = std::make_shared<Register>(type);
@@ -78,6 +111,12 @@ static Register::Ptr new_register(const parser::Type type, const std::string id)
   Register::Ptr tmp = std::make_shared<Register>(type, id);
   return tmp;
 }
+
+static Value_Register::Ptr new_value_register(const parser::Type type) {
+  Value_Register::Ptr tmp = std::make_shared<Value_Register>(type);
+  return tmp;
+};
+
 
 // Memory Access and Addressing Operations
 // alloca <pointer>

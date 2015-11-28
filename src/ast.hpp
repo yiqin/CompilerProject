@@ -648,7 +648,7 @@ class Return_Instruction : public Instruction {
       
       // this register is only used in the emit_llvm_ir. It's private.
       // int tmp_register_number = llvm::get_register_number();
-      llvm::Register::Ptr tmp_register = llvm::new_register(parser::Type::INT);
+      llvm::Value_Register::Ptr tmp_register = llvm::new_value_register(parser::Type::INT);
       
       ir += expression_->emit_llvm_ir();
       
