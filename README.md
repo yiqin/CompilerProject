@@ -49,6 +49,8 @@ opt-3.6 is to optimize the code.
 
 If you want to try LLVM online, [http://ellcc.org/demo/index.cgi](http://ellcc.org/demo/index.cgi).
 
+Due to the different version of LLVM compilers, sample.ll will be different. 
+
 ===============================================================================
 To Do:
 - [ ] Print variables when printf is called. printf is a special function.

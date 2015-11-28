@@ -3,11 +3,45 @@ target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
-define i32 @printd(i32 %i) #0 {
-  %1 = alloca i32, align 4
-  ; store i32 %i, i32* %1, align 4
-  ; ret i32 1
-  ; <label>:4
+define i32 @printd(i32 %ii) #0 {
+entry:
+  %i = alloca i32, align 4
+  
+ ; For_Instruction
+ 
+  %R.11 = alloca i32, align 4
+  store i32 -10, i32* %R.11
+  %V.11 = load i32* %R.11, align 4
+  store i32 %V.11, i32* %i
+  br label %Label_0
+  
+  Label_0:
+  %V.12 = load i32* %i, align 4
+  %R.13 = alloca i32, align 4
+  store i32 10, i32* %R.13
+  %V.13 = load i32* %R.13, align 4
+  %V.10 = icmp sle i32 %V.12, %V.13
+  br i1 %V.10, label %Label_1, label %Label_3
+  
+  Label_1:
+  ; /undefine Expression - Node Class/ 
+  br label %Label_2
+  
+  Label_2:
+  %V.15 = load i32* %i, align 4
+  %R.15 = alloca i32, align 4
+  store i32 1, i32* %R.15
+  %V.16 = load i32* %R.15, align 4
+  %V.17 = add i32 %V.15, %V.16
+  %R.16 = alloca i32, align 4
+  store i32 %V.17, i32* %R.16
+  %V.14 = load i32* %R.16, align 4
+  store i32 %V.14, i32* %i
+  br label %Label_0
+  
+  Label_3:
+
+  
   %R.0 = alloca i32, align 4
   store i32 0, i32* %R.0
   %V.1 = load i32* %R.0, align 4

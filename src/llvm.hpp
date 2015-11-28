@@ -41,7 +41,7 @@ class Label {
     typedef std::shared_ptr<Label> Ptr;
 
     Label () 
-           : id_(std::string("")+std::to_string(get_label_number())) {}
+           : id_(std::string("Label_")+std::to_string(get_label_number())) {}
            
     // for br
     const std::string name_llvm_ir () const { 
@@ -53,7 +53,7 @@ class Label {
     // the destination label for the jump instruction
     const std::string destination_llvm_ir () const { 
       std::string str;
-      str = std::string("; <label>:") + id_ + "\n";
+      str = id_ + ":" + "\n";
       return str;
     }
     
@@ -208,8 +208,8 @@ static std::string br_instruction (Label::Ptr label_1) {
 };
 
 // br i1 <cond>, label <iftrue>, label<iffailure>
-static std::string br_instruction (Value_Register::Ptr cond, Label::Ptr label_1, Label::Ptr label_2) {
-   return std::string("br i1 ") + cond->name_llvm_ir() + " " + label_1->name_llvm_ir() + ", " + label_2->name_llvm_ir() + "\n";  
+static std::string br_instruction (llvm::Value_Register::Ptr cond, Label::Ptr label_1, Label::Ptr label_2) {
+   return std::string("br i1 ") + cond->name_llvm_ir() + ", " + label_1->name_llvm_ir() + ", " + label_2->name_llvm_ir() + "\n";  
 };
 
 

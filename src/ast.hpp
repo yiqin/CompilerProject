@@ -43,7 +43,7 @@ class Node {
     virtual ~Node () {}
 
     virtual std::string emit_llvm_ir () {
-      return std::string("/undefine Expression - Node Class/");
+      return std::string("; /undefine Expression - Node Class/ \n");
     };
     
     // We don't need this.
@@ -330,7 +330,7 @@ class Binary_Expression : public Expression {
       }
       
       ir += " ";
-      ir += tmp_value_register->type_llvm_ir();
+      ir += value_register_lhs->type_llvm_ir();
       ir += " ";
       ir += value_register_lhs->name_llvm_ir();
       ir += ", ";
@@ -363,8 +363,13 @@ class Condition : public Expression {
   
     Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator, 
                    Expression::Ptr rhs) 
-          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {}
-
+          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
+            result_register_ = std::make_shared<llvm::Value_Register>(parser::Type::INT);            
+          }
+    
+    // override
+    llvm::Value_Register::Ptr result_register() { return result_register_; }
+    
     std::string emit_llvm_ir () {
       std::string ir;
       
@@ -373,13 +378,14 @@ class Condition : public Expression {
       
       llvm::Value_Register::Ptr value_register_lhs = llvm::new_value_register(parser::Type::INT);
       
+      ir += lhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
-      
+
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
-      
       llvm::Value_Register::Ptr value_register_rhs = llvm::new_value_register(parser::Type::INT);
       
+      ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
       
       // Step 3: Compare
@@ -419,7 +425,7 @@ class Condition : public Expression {
       }
       
       ir += " ";
-      ir += result_register()->type_llvm_ir();
+      ir += value_register_lhs->type_llvm_ir();
       ir += " " + value_register_lhs->name_llvm_ir() + ", " + value_register_rhs->name_llvm_ir();
       ir += "\n";
       return ir;
@@ -430,6 +436,8 @@ class Condition : public Expression {
     Expression::Ptr lhs_;
     Comparison_Operation comparison_operator_;
     Expression::Ptr rhs_;
+    // override
+    llvm::Value_Register::Ptr result_register_;
 };
 
 // For example: a = 1;
@@ -446,19 +454,14 @@ class Assignment : public Expression {
       
       std::string ir;
       
-      // Step 1: load the expression data into the register
+      // Step 1: load the expression data in to a value
 
       llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
       
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(tmp_value_register, rhs_->result_register());
       
-      // Step 2: assignment the register to the variable
-      // 
-      // TODO: test this correct or not.
-      // This is wrong.!
-      // store i32 %1, i32* %a, align 4
-      
+      // Step 2: assignment the value to the variable
       ir += llvm::store_instruction(tmp_value_register, lhs_->result_register());
       
       return ir;
@@ -573,7 +576,7 @@ class For_Instruction : public Instruction {
 
     For_Instruction (
         Assignment::Ptr initialization,
-        Expression::Ptr condition,
+        Condition::Ptr condition,
         Assignment::Ptr increment,
         Instruction::Ptr instruction
     )
@@ -584,32 +587,37 @@ class For_Instruction : public Instruction {
             
     std::string emit_llvm_ir () {
       std::string ir;
+      ir += "\n; For_Instruction\n\n";
       
       llvm::Label::Ptr label_1 = llvm::new_label();
       llvm::Label::Ptr label_2 = llvm::new_label();
       llvm::Label::Ptr label_3 = llvm::new_label();
       llvm::Label::Ptr label_4 = llvm::new_label();
       
-      ir += "initialization\n";
+      // Step 1: initialization
       ir += initialization_->emit_llvm_ir();
       ir += llvm::br_instruction(label_1);
       
-      ir += "condition\n";
+      // Step 2: condition
+      ir += "\n";
       ir += label_1->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
+      ir += llvm::br_instruction(condition_->result_register(), label_2, label_4);
       
-      llvm::Value_Register::Ptr tmp = llvm::new_value_register(parser::Type::INT);
-      ir += llvm::br_instruction(tmp, label_2, label_4);
-      
-      ir += "instruction\n";
+      // Step 3: instruction, the body of the for instruction
+      ir += "\n";
       ir += label_2->destination_llvm_ir();
       ir += instruction_->emit_llvm_ir();
+      ir += llvm::br_instruction(label_3);
       
-      ir += "increment\n";
+      // Step 4: increment
+      ir += "\n";
       ir += label_3->destination_llvm_ir();
       ir += increment_->emit_llvm_ir();
+      ir += llvm::br_instruction(label_1);
       
-      ir += "end\n";
+      // Step 5: the end
+      ir += "\n";
       ir += label_4->destination_llvm_ir();
       
       return ir;
@@ -617,7 +625,7 @@ class For_Instruction : public Instruction {
 
   private:
     Assignment::Ptr initialization_;
-    Expression::Ptr condition_; // This may not be Expression...
+    Condition::Ptr condition_;
     Assignment::Ptr increment_;
     Instruction::Ptr instruction_;
 };
