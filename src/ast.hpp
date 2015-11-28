@@ -100,11 +100,14 @@ class Symbol_Declarator : public Node {
           : symbol_(symbol) {}
     
     std::string emit_llvm_ir () {
+      return llvm::alloca_instruction(symbol_);
+      /*
       if (symbol_->type() == parser::Type::INT) {
         return llvm::alloca_instruction(symbol_);
       } else {
         return "undefined symbol with string type";
       }
+      */
     }
     
   private:
