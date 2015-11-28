@@ -536,6 +536,12 @@ class Cond_Instruction : public Instruction {
           : condition_(condition),
             instruction_(instruction),
             else_instruction_(else_instruction) {}
+            
+    std::string emit_llvm_ir () {
+      std::string ir;
+      
+      return ir;
+    }
 
   private:
     Expression::Ptr condition_;

@@ -266,5 +266,10 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (output == "");
     }
 	
+	
+	SECTION ("Condi_Instruction") {
+		
+	}
+	
 
 }
