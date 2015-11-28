@@ -16,6 +16,19 @@ define i32 @main() #0 {
   store i32 0, i32* %1
   store i32 0, i32* %i, align 4
   
+  %R.15 = alloca i32, align 4
+  store i32 450, i32* %R.15
+;  store i32 %R.15, i32* %R.17
+;  %i = load i32* %R.15, align 4
+  %V.17 = load i32* %R.15, align 4
+  store i32 %V.17, i32* %i, align 4
+
+
+  store i32 450, i32* %R.15
+  %R.17 = load i32* %R.15, align 4
+  store i32 %R.17, i32* %i
+
+  
   store i32 -10, i32* %i, align 4
   
   

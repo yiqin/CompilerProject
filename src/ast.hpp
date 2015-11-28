@@ -474,7 +474,7 @@ class Assignment : public Expression {
       // This is wrong.!
       // store i32 %1, i32* %a, align 4
       
-      ir += llvm::load_instruction(lhs_->result_register(), tmp_register);
+      ir += llvm::store_instruction(tmp_register, lhs_->result_register());
       
       return ir;
     }
