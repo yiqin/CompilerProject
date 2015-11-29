@@ -282,7 +282,7 @@ class Unary_Expression : public Expression {
           : Expression(type), op_(op), rhs_(rhs) {}
 
   private:
-    Operation op_;  // <Operation> is a placeholder type.
+    Operation op_;
     Expression::Ptr rhs_;
 };
 

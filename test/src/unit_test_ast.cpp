@@ -24,12 +24,13 @@ void reset_ids () {
 
 TEST_CASE ("Abstract Syntax Tree") {
     reset_ids();
-
+    std::string expected_output;
+    
     SECTION ("Symbol Declaration: int i;") {
         // int i;
         // %i = alloca i32, align 4
 
-        std::string expected_output = std::string("%i = alloca i32, align 4\n");
+        expected_output = std::string("%i = alloca i32, align 4\n");
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
@@ -40,26 +41,26 @@ TEST_CASE ("Abstract Syntax Tree") {
     }
 	
 	SECTION ("Symbol Declaration: string s;") {
-    // string s;
-    // %s = alloca i8*, align 8
+        // string s;
+        // %s = alloca i8*, align 8
 
-    std::string expected_output = std::string("%s = alloca i8*, align 8\n");
+        expected_output = std::string("%s = alloca i8*, align 8\n");
     
-    parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
-    symbol->type(parser::Type::STRING);
+        parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
+        symbol->type(parser::Type::STRING);
     
-    ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
+        ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
     
-    REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);    
+        REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);    
 	}
 
 	
 	SECTION ("Declare a list of symbols: string s, t;") {
-    // string s, t;
-    // %s = alloca i8*, align 4
-    // %t = alloca i8*, align 4
+       // string s, t;
+       // %s = alloca i8*, align 4
+       // %t = alloca i8*, align 4
     
-        std::string expected_output = std::string("%s = alloca i8*, align 8\n");
+        expected_output = std::string("%s = alloca i8*, align 8\n");
         expected_output += "%t = alloca i8*, align 8\n";
         
         std::string str1 = "s";
@@ -84,7 +85,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // %i = alloca i32, align 4
         // %j = alloca i32, align 4
 
-        std::string expected_output = std::string("%i = alloca i32, align 4\n");
+        expected_output = std::string("%i = alloca i32, align 4\n");
         expected_output += "%j = alloca i32, align 4\n";
 
         std::string str1 = "i";
@@ -108,7 +109,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // int foo(int a, int b)
         // define i32 @foo(i32 %a, i32 %b) #0
 
-        std::string expected_output = std::string("define i32 @foo(i32 %a, i32 %b) #0\n");
+        expected_output = std::string("define i32 @foo(i32 %a, i32 %b) #0\n");
 
         parser::Type type = parser::Type::INT;
         // function_declarator includes the argument list
@@ -135,7 +136,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // %V.1 = load i32* %P.0, align 4
         // ret i32 %1
 
-        std::string expected_output = std::string("%P.0 = alloca i32, align 4\n");
+        expected_output = std::string("%P.0 = alloca i32, align 4\n");
         expected_output += "store i32 0, i32* %P.0\n";
         expected_output += "%V.1 = load i32* %P.0, align 4\n";
         expected_output += "ret i32 %V.1\n";
@@ -196,8 +197,6 @@ TEST_CASE ("Abstract Syntax Tree") {
 
     SECTION ("Return expression: return a+1-2;") {
         // return a+1-2;
-
-        std::string expected_output;
         
         expected_output += "%V.7 = load i32* %a, align 4\n";
         expected_output += "%P.1 = alloca i32, align 4\n";
@@ -245,7 +244,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // %V.3 = load i32* %P.1, align 4
         // store i32 %V.3, i32* %i
 
-        std::string expected_output = std::string("%P.1 = alloca i32, align 4\n");
+        expected_output = std::string("%P.1 = alloca i32, align 4\n");
         expected_output += "store i32 450, i32* %P.1\n";
         expected_output += "%V.3 = load i32* %P.1, align 4\n";
         expected_output += "store i32 %V.3, i32* %i\n";
@@ -282,7 +281,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         //
         //
         //
-        std::string expected_output = "%P.1 = alloca i8*, align 8\n";
+        expected_output = "%P.1 = alloca i8*, align 8\n";
         expected_output += "store i8* getelementptr inbounds ([12 x i8]* @.str_0, i32 0, i32 0), i8** %P.1, align 8\n";
         expected_output += "%V.3 = load i8** %P.1, align 8\n";
         expected_output += "store i8* %V.3, i8** %s\n";
@@ -304,7 +303,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         //   for ( i = -10; i <= 10; i = i+1 )
         //      // printd(i); empty instruction now
 
-        std::string expected_output = 
+        expected_output = 
             "\n"
             "; For_Instruction\n"
             "\n"
@@ -420,7 +419,6 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Binary_Expression: 1+2") {
         // 1+2;
 
-        std::string expected_output;
         expected_output += "%P.1 = alloca i32, align 4\n";
         expected_output += "store i32 1, i32* %P.1\n";
         expected_output += "%V.4 = load i32* %P.1, align 4\n";
@@ -505,9 +503,6 @@ TEST_CASE ("Abstract Syntax Tree") {
         // else 
         //   i = -1;
         
-        std::string expected_output;
-        
-        
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
         ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
@@ -537,8 +532,6 @@ TEST_CASE ("Abstract Syntax Tree") {
         // while ( i < 10 ) {
         //   i = i+2;
         // }
-        
-        std::string expected_output;
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
@@ -562,8 +555,6 @@ TEST_CASE ("Abstract Syntax Tree") {
         // do {
         //   i = i + 2
         // } while ( i < 10 );
-        
-        std::string expected_output;
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
@@ -586,8 +577,6 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ( "Compound_Instruction" ) {
         // i = 1;
         // i = -1;
-        
-        std::string expected_output;
         
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
@@ -621,9 +610,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // i = foo(2, 4);
         // 
         // The test case is foo(2, 4);
-        // 
-        
-        std::string expected_output;
+        //
         
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));
         function->type(parser::Type::INT);
