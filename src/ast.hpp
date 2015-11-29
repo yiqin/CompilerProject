@@ -151,13 +151,16 @@ class Function_Definition : public Node {
       std::string ir;
 
       // step 1
-      ir += "define";
+      ir += "define ";
 
       // step 2: function return type
-      if (type_ == parser::Type::INT) {
-        ir += " i32";
-      } else {
-        ir += " i8*";
+      switch (type_) {
+        case parser::Type::INT:
+          ir += "i32";
+          break;
+        case parser::Type::STRING:
+          ir += "i8*";
+          break;
       }
 
       // step 3: function name
@@ -167,13 +170,17 @@ class Function_Definition : public Node {
       ir += "(";
 
       for (auto& symbol : function_declarator_->argument_list()) {
+        ir += symbol->type_llvm_ir() + " %" + symbol->name() + ", ";
+        /*
         if(symbol->type() == parser::Type::INT) {
           ir += "i32 %" + symbol->name();
           ir += ", ";
         } else {
           ir += "string type is not supported now ";
         }
+        */
       }
+      
       // remove the last space and the last comma
       if (function_declarator_->argument_list().size() > 0) {
         ir.pop_back();
@@ -184,7 +191,6 @@ class Function_Definition : public Node {
 
       // step 5
       ir += " #0";
-
       ir += "\n";
 
       return ir;
@@ -472,7 +478,6 @@ class Assignment : public Expression {
       std::string ir;
 
       // Step 1: load the expression data in to a value
-
       llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += rhs_->emit_llvm_ir();

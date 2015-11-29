@@ -377,14 +377,16 @@ TEST_CASE ("Abstract Syntax Tree") {
     
         ast::Function_Definition::Ptr function_definition = std::make_shared<ast::Function_Definition>(type, function_declarator);
         output += function_definition->emit_llvm_ir();
-        // REQUIRE (function_definition->emit_llvm_ir() == "" );
-        
         
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
         symbol->type(parser::Type::STRING);
     
         ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
         output += symbol_declarator->emit_llvm_ir();
+        
+        
+        
+        
         REQUIRE (output == "" );
     
 	}

@@ -6,7 +6,15 @@
 
 namespace llvm {
 
-std::string end_of_line = ", align 4\n";
+// The align 4 ensures that the address will be a multiple of 4
+std::string alignment_llvm_ir (parser::Type type) {
+  switch (type) {
+    case parser::Type::INT:
+      return "align 4";
+    case parser::Type::STRING:
+      return "align 8";
+  }
+}
 
 ID_Factory Label::id_factory_;
 ID_Factory Register::id_factory_;
@@ -15,12 +23,12 @@ ID_Factory Register::id_factory_;
 // Memory Access and Addressing Operations
 // alloca <pointer>
 std::string alloca_instruction (parser::Symbol::Ptr symbol) {
-  return std::string("%") + symbol->name() + " = alloca " + symbol->type_llvm_ir() + end_of_line;
+  return std::string("%") + symbol->name() + " = alloca " + symbol->type_llvm_ir() + ", " + alignment_llvm_ir(symbol->type()) + "\n";
 };
 
 // alloca <pointer>
 std::string alloca_instruction (Pointer_Register::Ptr op) {
-  return op->name_llvm_ir() + " = alloca " + op->type_llvm_ir() + end_of_line;
+  return op->name_llvm_ir() + " = alloca " + op->type_llvm_ir() + ", " + alignment_llvm_ir(op->type()) + "\n";
 };
 
 // Return value
@@ -30,7 +38,7 @@ std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Regi
   ir += op_1->name_llvm_ir();
   ir += " = load ";
   ir += op_2->pointer_llvm_ir();
-  ir += end_of_line;
+  ir += ", " + alignment_llvm_ir(op_1->type()) + "\n";
   return ir;
 };
 
