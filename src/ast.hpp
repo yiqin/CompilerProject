@@ -77,6 +77,9 @@ class Expression : public Node {
     }
 
   private:
+    // FIXME: Chnage to Register
+    // Argumnets in llvm ir instructions must be pointer_register, or value_register
+    // If it's changed to Register, check several errors llvm.hpp file. 
     llvm::Pointer_Register::Ptr result_register_;
 };
 
@@ -188,9 +191,6 @@ class Function_Definition : public Node {
     parser::Function::Ptr function_declarator_;
     // decl_glb_fct
 };
-
-// Todo: with function, we need a block_start and a block_end
-// Maybe not.
 
 
 class Variable : public Terminal {
@@ -371,7 +371,7 @@ class Binary_Expression : public Expression {
     }
 
   private:
-    Operation op_;  // <Operation> is a placeholder type.
+    Operation op_;
     Expression::Ptr lhs_;
     Expression::Ptr rhs_;
 };
