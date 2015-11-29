@@ -63,12 +63,6 @@ class Label {
     const std::string id_;
 };
 
-// Create label
-static Label::Ptr new_label() {
-  Label::Ptr tmp = std::make_shared<Label>();
-  return tmp;
-};
-
 class Register {
   public:
     typedef std::shared_ptr<Register> Ptr;

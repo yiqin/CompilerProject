@@ -39,43 +39,43 @@ TEST_CASE ("Abstract Syntax Tree") {
     }
 	
 	SECTION ("Symbol Declaration: string s;") {
-		// string s;
-		// %s = alloca i8*, align 8
+    // string s;
+    // %s = alloca i8*, align 8
 
-		std::string expected_output = std::string("%s = alloca i8*, align 8\n");
-		
-		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
-		symbol->type(parser::Type::STRING);
-		
-		ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
-		
-		REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);		
+    std::string expected_output = std::string("%s = alloca i8*, align 8\n");
+    
+    parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
+    symbol->type(parser::Type::STRING);
+    
+    ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
+    
+    REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);    
 	}
 
 	
 	SECTION ("Declare a list of symbols: string s, t;") {
-		// string s, t;
-		// %s = alloca i8*, align 4
-		// %t = alloca i8*, align 4
-		
-		std::string expected_output = std::string("%s = alloca i8*, align 8\n");
-		expected_output += "%t = alloca i8*, align 8\n";
-		
-		std::string str1 = "s";
-		parser::Symbol::Ptr symbol1 = std::make_shared<parser::Symbol>(std::move(str1));
-		symbol1->type(parser::Type::STRING);
-		
-		std::string str2 = "t";
-		parser::Symbol::Ptr symbol2 = std::make_shared<parser::Symbol>(std::move(str2));
-		symbol2->type(parser::Type::STRING);
-		
-		parser::Symbol_List symbol_list;
-		symbol_list.push_back(symbol1);
-		symbol_list.push_back(symbol2);
-		
-		ast::Declaration::Ptr declaration = std::make_shared<ast::Declaration>(symbol_list);
-		
-		REQUIRE (declaration->emit_llvm_ir() == expected_output);
+    // string s, t;
+    // %s = alloca i8*, align 4
+    // %t = alloca i8*, align 4
+    
+    std::string expected_output = std::string("%s = alloca i8*, align 8\n");
+    expected_output += "%t = alloca i8*, align 8\n";
+    
+    std::string str1 = "s";
+    parser::Symbol::Ptr symbol1 = std::make_shared<parser::Symbol>(std::move(str1));
+    symbol1->type(parser::Type::STRING);
+    
+    std::string str2 = "t";
+    parser::Symbol::Ptr symbol2 = std::make_shared<parser::Symbol>(std::move(str2));
+    symbol2->type(parser::Type::STRING);
+    
+    parser::Symbol_List symbol_list;
+    symbol_list.push_back(symbol1);
+    symbol_list.push_back(symbol2);
+    
+    ast::Declaration::Ptr declaration = std::make_shared<ast::Declaration>(symbol_list);
+    
+    REQUIRE (declaration->emit_llvm_ir() == expected_output);
 	}
 	
     SECTION ("Declare a list of symbols: string s, t;") {
@@ -306,10 +306,46 @@ TEST_CASE ("Abstract Syntax Tree") {
 
 
     SECTION ("Condi_Instruction") {
-		
+    
 	}
 	
 	// string type
+	SECTION ("Function return string type \n  string func() {\n    string s;\n    s=\"hello\";\n    return s;\n  }") {
+        // 
+        // string foo() {
+        //   string s;
+        //   s = "hello";
+        //   return s;	
+        // }
+        // 
+        
+        std::string output;
+    
+        parser::Type type = parser::Type::STRING;
+        // function_declarator includes the argument list
+        parser::Function::Ptr function_declarator = std::make_shared<parser::Function>(std::move("foo"));
+    
+        // parser::Symbol::Ptr argument1 = std::make_shared<parser::Symbol>(std::move("a"));
+        // argument1->type(parser::Type::INT);
+        // function_declarator->argument_list().push_back(argument1);
+    
+        // parser::Symbol::Ptr argument2 = std::make_shared<parser::Symbol>(std::move("b"));
+        // argument2->type(parser::Type::INT);
+        // function_declarator->argument_list().push_back(argument2);    
+    
+        ast::Function_Definition::Ptr function_definition = std::make_shared<ast::Function_Definition>(type, function_declarator);
+        output += function_definition->emit_llvm_ir();
+        // REQUIRE (function_definition->emit_llvm_ir() == "" );
+        
+        
+        parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
+        symbol->type(parser::Type::STRING);
+    
+        ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
+        output += symbol_declarator->emit_llvm_ir();
+        REQUIRE (output == "" );
+    
+	}
 
 	
 	

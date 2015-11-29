@@ -156,6 +156,8 @@ class Function_Definition : public Node {
       // step 2: function return type
       if (type_ == parser::Type::INT) {
         ir += " i32";
+      } else {
+        ir += " i8*";
       }
 
       // step 3: function name
@@ -168,6 +170,8 @@ class Function_Definition : public Node {
         if(symbol->type() == parser::Type::INT) {
           ir += "i32 %" + symbol->name();
           ir += ", ";
+        } else {
+          ir += "string type is not supported now ";
         }
       }
       // remove the last space and the last comma
@@ -180,6 +184,8 @@ class Function_Definition : public Node {
 
       // step 5
       ir += " #0";
+
+      ir += "\n";
 
       return ir;
     }
@@ -244,6 +250,13 @@ class Const_String : public Terminal {
 
     Const_String (const std::string& value)
           : Terminal(parser::Type::STRING), value_(value) {}
+    
+    std::string emit_llvm_ir () {
+      // declarated outside any scope.
+      // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
+      
+      return ir
+    }
 
   private:
     std::string value_;
@@ -350,8 +363,6 @@ class Binary_Expression : public Expression {
     Operation op_;  // <Operation> is a placeholder type.
     Expression::Ptr lhs_;
     Expression::Ptr rhs_;
-
-    std::string temp_name_;
 };
 
 // TODO: Do we merge Binary_Expression and Condition?
@@ -598,10 +609,10 @@ class For_Instruction : public Instruction {
       std::string ir;
       ir += "\n; For_Instruction\n\n";
 
-      llvm::Label::Ptr label_1 = llvm::new_label();
-      llvm::Label::Ptr label_2 = llvm::new_label();
-      llvm::Label::Ptr label_3 = llvm::new_label();
-      llvm::Label::Ptr label_4 = llvm::new_label();
+      llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
+      llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
+      llvm::Label::Ptr label_3 = std::make_shared<llvm::Label>();
+      llvm::Label::Ptr label_4 = std::make_shared<llvm::Label>();
 
       // Step 1: initialization
       ir += initialization_->emit_llvm_ir();
