@@ -318,6 +318,22 @@ TEST_CASE ("Abstract Syntax Tree") {
         //   return s;	
         // }
         // 
+        //
+        // define i8* @foo() #0 {
+        //   %s = alloca i8*, align 8
+        //
+        //   %R.1 = alloca i8*, align 8
+        //   store i8* getelementptr inbounds ([12 x i8]* @.str, i32 0, i32 0), i8** %R.1, align 8
+        //
+        //   %V.2 = load i8** %R.1, align 8
+        //   store i8* %V.2, i8** %s, align 8
+        //
+        //   %V.3 = load i8** %s, align 8
+        //   ret i8* %V.3
+        // }
+        //
+        // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
+        // 
         
         std::string output;
     
