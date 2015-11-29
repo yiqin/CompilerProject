@@ -604,4 +604,16 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (function_call->emit_llvm_ir() == expected_output);
     }
 
+    SECTION ( "Unary_Expression" ) {
+        // -a 
+        // a is int type.
+        
+        parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("a"));
+        symbol_1->type(parser::Type::INT);
+        ast::Variable::Ptr variable_1 = std::make_shared<ast::Variable>(symbol_1);
+        
+        ast::Unary_Expression::Ptr unary_expression = std::make_shared<ast::Unary_Expression>(variable_1);
+        
+        REQUIRE (unary_expression->emit_llvm_ir() == expected_output);
+    }
 }

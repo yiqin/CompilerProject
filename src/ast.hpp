@@ -277,9 +277,39 @@ class Const_String : public Terminal {
 class Unary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Unary_Expression> Ptr;
-
+    
+    // TODO: Yi - Remove if we don't use this constructor.
     Unary_Expression (const parser::Type& type, Operation op, Expression::Ptr rhs)
           : Expression(type), op_(op), rhs_(rhs) {}
+    
+    Unary_Expression (Expression::Ptr rhs)
+          : Expression(parser::Type::INT), op_(Operation::SUBTRACTION), rhs_(rhs) {}
+    
+    std::string emit_llvm_ir () {
+      std::string ir;
+      
+      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->type());      
+      ir += rhs_->emit_llvm_ir();
+      ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
+      
+      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(result_register()->type());
+
+      ir += tmp_value_register->name_llvm_ir();
+      ir += " = ";      
+      ir += "sub";
+      ir += " ";
+      ir += result_register()->type_llvm_ir();
+      ir += " ";
+      ir += "0";
+      ir += ", ";
+      ir += value_register_rhs->name_llvm_ir();
+      ir += "\n";
+
+      ir += llvm::alloca_instruction(result_register());
+      ir += llvm::store_instruction(tmp_value_register, result_register());
+      
+      return ir;
+    }
 
   private:
     Operation op_;

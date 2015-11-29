@@ -582,7 +582,8 @@ unary_expression:
   | MINUS unary_expression {
         /* std::cout << "unary_expression: MINUS unary_expression" << std::endl; */
         if ($2->type() == Type::INT) {
-            $$ = std::make_shared<ast::Unary_Expression>(Type::INT, ast::Operation::SUBTRACTION, $2);
+            // $$ = std::make_shared<ast::Unary_Expression>(Type::INT, ast::Operation::SUBTRACTION, $2);
+            $$ = std::make_shared<ast::Unary_Expression>($2);
         } else {
             throw syntax_error(@$, "Unary MINUS is not defined for this type.");
         }
