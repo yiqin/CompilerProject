@@ -59,24 +59,24 @@ TEST_CASE ("Abstract Syntax Tree") {
     // %s = alloca i8*, align 4
     // %t = alloca i8*, align 4
     
-    std::string expected_output = std::string("%s = alloca i8*, align 8\n");
-    expected_output += "%t = alloca i8*, align 8\n";
-    
-    std::string str1 = "s";
-    parser::Symbol::Ptr symbol1 = std::make_shared<parser::Symbol>(std::move(str1));
-    symbol1->type(parser::Type::STRING);
-    
-    std::string str2 = "t";
-    parser::Symbol::Ptr symbol2 = std::make_shared<parser::Symbol>(std::move(str2));
-    symbol2->type(parser::Type::STRING);
-    
-    parser::Symbol_List symbol_list;
-    symbol_list.push_back(symbol1);
-    symbol_list.push_back(symbol2);
-    
-    ast::Declaration::Ptr declaration = std::make_shared<ast::Declaration>(symbol_list);
-    
-    REQUIRE (declaration->emit_llvm_ir() == expected_output);
+        std::string expected_output = std::string("%s = alloca i8*, align 8\n");
+        expected_output += "%t = alloca i8*, align 8\n";
+        
+        std::string str1 = "s";
+        parser::Symbol::Ptr symbol1 = std::make_shared<parser::Symbol>(std::move(str1));
+        symbol1->type(parser::Type::STRING);
+        
+        std::string str2 = "t";
+        parser::Symbol::Ptr symbol2 = std::make_shared<parser::Symbol>(std::move(str2));
+        symbol2->type(parser::Type::STRING);
+        
+        parser::Symbol_List symbol_list;
+        symbol_list.push_back(symbol1);
+        symbol_list.push_back(symbol2);
+        
+        ast::Declaration::Ptr declaration = std::make_shared<ast::Declaration>(symbol_list);
+        
+        REQUIRE (declaration->emit_llvm_ir() == expected_output);
 	}
 	
     SECTION ("Declare a list of symbols: string s, t;") {
@@ -159,19 +159,36 @@ TEST_CASE ("Abstract Syntax Tree") {
         // %V.1 = load i32* %a, align 4
         // ret i32 %V.1
 
-        std::string expected_output = std::string("%V.1 = load i32* %a, align 4\n");
-        expected_output += "ret i32 %V.1\n";
+        // INT
+        std::string expected_output_1 = std::string("%V.1 = load i32* %a, align 4\n");
+        expected_output_1 += "ret i32 %V.1\n";
 
         // Prepare
         // Expression - Variable
-        parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("a"));
-        symbol->type(parser::Type::INT);
-        ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+        parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("a"));
+        symbol_1->type(parser::Type::INT);
+        ast::Variable::Ptr variable_1 = std::make_shared<ast::Variable>(symbol_1);
 
         // Return_Instruction
-        ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(variable);
+        ast::Return_Instruction::Ptr return_instruction_1 = std::make_shared<ast::Return_Instruction>(variable_1);
 
-        REQUIRE (return_instruction->emit_llvm_ir() == expected_output);
+        REQUIRE (return_instruction_1->emit_llvm_ir() == expected_output_1);
+        
+        
+        // STRING
+        std::string expected_output_2 = std::string("%V.3 = load i8** %a, align 8\n");
+        expected_output_2 += "ret i8* %V.3\n";
+
+        // Prepare
+        // Expression - Variable
+        parser::Symbol::Ptr symbol_2 = std::make_shared<parser::Symbol>(std::move("a"));
+        symbol_2->type(parser::Type::STRING);
+        ast::Variable::Ptr variable_2 = std::make_shared<ast::Variable>(symbol_2);
+
+        // Return_Instruction
+        ast::Return_Instruction::Ptr return_instruction_2 = std::make_shared<ast::Return_Instruction>(variable_2);
+
+        REQUIRE (return_instruction_2->emit_llvm_ir() == expected_output_2);
     }
 
 
@@ -278,12 +295,48 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (assignment->emit_llvm_ir() == expected_output );
     }
 
-
+    
     SECTION ("For Loop \n- condition i<=10\n") {
         //   for ( i = -10; i <= 10; i = i+1 )
         //      printd(i);
 
-        std::string expected_output = std::string("");
+        std::string expected_output = 
+            "\n"
+            "; For_Instruction\n"
+            "\n"
+            "%P.1 = alloca i32, align 4\n"
+            "store i32 -10, i32* %P.1\n"
+            "%V.9 = load i32* %P.1, align 4\n"
+            "store i32 %V.9, i32* %i\n"
+            "br label %Label_0\n"
+            "\n"
+            "Label_0:\n"
+            "%V.10 = load i32* %i, align 4\n"
+            "%P.3 = alloca i32, align 4\n"
+            "store i32 10, i32* %P.3\n"
+            "%V.11 = load i32* %P.3, align 4\n"
+            "%V.5 = icmp sle i32 %V.10, %V.11\n"
+            "br i1 %V.5, label %Label_1, label %Label_3\n"
+            "\n"
+            "Label_1:\n"
+            "; /undefine Expression - Node Class/ \n"
+            "br label %Label_2\n"
+            "\n"
+            "Label_2:\n"
+            "%V.13 = load i32* %i, align 4\n"
+            "%P.6 = alloca i32, align 4\n"
+            "store i32 1, i32* %P.6\n"
+            "%V.14 = load i32* %P.6, align 4\n"
+            "%V.15 = add i32 %V.13, %V.14\n"
+            "%P.7 = alloca i32, align 4\n"
+            "store i32 %V.15, i32* %P.7\n"
+            "%V.12 = load i32* %P.7, align 4\n"
+            "store i32 %V.12, i32* %i\n"
+            "br label %Label_0\n"
+            "\n"
+            "Label_3:\n"
+            ;
+            
 
         // initialization
         // i = -10
@@ -298,6 +351,16 @@ TEST_CASE ("Abstract Syntax Tree") {
         // i = -10 Assignment
         ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(const_integer_1->type(), variable, const_integer_1);
 
+        // We are not going to test several expressions in for_intruction.
+        // Registers are different.
+
+        // std::string expected_output_1 = 
+        //     "%P.1 = alloca i32, align 4\n"
+        //     "store i32 -10, i32* %P.1\n"
+        //     "%V.9 = load i32* %P.1, align 4\n"
+        //     "store i32 %V.9, i32* %i\n"
+        //     ;
+        // REQUIRE ( initialization->emit_llvm_ir() == expected_output_1 );
 
         // condition
         // i <= 10
@@ -306,14 +369,16 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         // i <= 10 Condition
         ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
-
-        std::string expected_output_1 = std::string("; <label>:0\n");
-        expected_output_1 += "%5 = load i32* %0, align 4\n";
-        expected_output_1 += "%6 = load i32* %3, align 4\n";
-        expected_output_1 += "%4 = icmp sle i32 %5, %6\n";
-
-        // REQUIRE (condition->emit_llvm_ir() == expected_output_1);
-
+        
+        // std::string expected_output_2 = 
+        //     "%V.10 = load i32* %i, align 4\n"
+        //     "%P.3 = alloca i32, align 4\n"
+        //     "store i32 10, i32* %P.3\n"
+        //     "%V.11 = load i32* %P.3, align 4\n"
+        //     "%V.5 = icmp sle i32 %V.10, %V.11\n"
+        //     ;
+        // REQUIRE ( condition->emit_llvm_ir() == expected_output_2 );        
+        
         // increment - Assignment with expression.
         // i = i + 1
         // 1
@@ -324,11 +389,24 @@ TEST_CASE ("Abstract Syntax Tree") {
         // i = i + 1
         ast::Assignment::Ptr increment = std::make_shared<ast::Assignment>(variable->type(), variable, add_expression);
 
+        // std::string expected_output_3 = 
+        //     "%V.13 = load i32* %i, align 4\n"
+        //     "%P.6 = alloca i32, align 4\n"
+        //     "store i32 1, i32* %P.6\n"
+        //     "%V.14 = load i32* %P.6, align 4\n"
+        //     "%V.15 = add i32 %V.13, %V.14\n"
+        //     "%P.7 = alloca i32, align 4\n"
+        //     "store i32 %V.15, i32* %P.7\n"
+        //     "%V.12 = load i32* %P.7, align 4\n"
+        //     "store i32 %V.12, i32* %i\n"
+        //     ;
+        // REQUIRE ( increment->emit_llvm_ir() == expected_output_3 );
 
         // instruction
         // It's the body of the loop. Only single instruction, not multiply lines.
         ast::Instruction::Ptr instruction = std::make_shared<ast::Instruction>();
 
+        // for_instruction
         ast::For_Instruction::Ptr for_instruction = std::make_shared<ast::For_Instruction>(initialization, condition, increment, instruction);
 
         REQUIRE (for_instruction->emit_llvm_ir() == expected_output);
@@ -419,10 +497,9 @@ TEST_CASE ("Abstract Syntax Tree") {
         output += symbol_declarator->emit_llvm_ir();
         
         
+        // Unfinished....
         
-        
-        REQUIRE (output == "" );
-    
+        // REQUIRE (output == "" );
 	}
 
 	
