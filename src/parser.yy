@@ -135,24 +135,16 @@ program :
 
 external_declaration :
     declaration         {
-        /* Nothing to do. Symbol was already added to symbol_table. */
-        // TODO: Generate code. 
-        // ast::Declaration
-        
+        /* Nothing to do. Symbol was already added to symbol_table. */        
     }
   | EXTERN declaration  {
         for (auto& symbol : $2) {
             symbol->set(Symbol::Attribute::EXTERN);
             // std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
-            // TODO: Generate code
-            // ast::
         }
     }
   | function_definition {
         /* std::cout << "external_declaration: function_definition" << std::endl; */
-        // TODO: Generate code.
-        // ast::Function_Definition
-        
     }
 ;
 

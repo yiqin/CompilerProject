@@ -512,6 +512,48 @@ class Function_Call : public Expression {
           : Expression(function->type()),
             function_(function),
             argument_list_(argument_list) {}
+            
+    std::string emit_llvm_ir () {
+      std::string ir;
+
+      // Step 1: Prepare arguments
+      // Store the value of arguments in value registers
+      std::vector<llvm::Value_Register::Ptr> value_registers_for_argument_list;
+      
+      for (auto& argument : argument_list_) {
+        ir += argument->emit_llvm_ir();
+        llvm::Value_Register::Ptr tmp = std::make_shared<llvm::Value_Register>(argument->type());
+        ir += llvm::load_instruction(tmp, argument->result_register());
+        value_registers_for_argument_list.push_back(tmp);
+      }
+      
+      // Step 2: call the function
+      // The return value is stored in a value register
+      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(function_->type());
+      ir += tmp_value_register->name_llvm_ir();
+      ir += " = call ";
+      ir += function_->type_llvm_ir();
+      ir += " @";
+      ir += function_->name();
+      ir += "(";
+      for (auto& value_register_argument : value_registers_for_argument_list) {
+        ir += value_register_argument->value_llvm_ir();
+        ir += ", ";
+      }
+      // remove the last space and the last comma
+      if (value_registers_for_argument_list.size() > 0) {
+        ir.pop_back();
+        ir.pop_back();
+      }
+      
+      ir += ")";
+      ir += "\n";
+      
+      // Step 3: put the value to the result register
+      ir += llvm::store_instruction(tmp_value_register, result_register());
+      
+      return ir;
+    }
 
   private:
     parser::Function::Ptr function_;

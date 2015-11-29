@@ -613,4 +613,35 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (compound_instruction->emit_llvm_ir()==expected_output);
     }
     
+    SECTION ( "Function_Call" ) {
+        // int foo(int x, int y) {
+        //   return x+y;    
+        // }
+        // 
+        // i = foo(2, 4);
+        // 
+        // The test case is foo(2, 4);
+        // 
+        
+        std::string expected_output;
+        
+        parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));
+        function->type(parser::Type::INT);
+        
+        ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
+        ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(4));
+        ast::Const_String::Ptr const_string_1 = std::make_shared<ast::Const_String>(std::string("hello world"));
+        
+        
+        std::vector<ast::Expression::Ptr> argument_list;
+        argument_list.push_back(const_integer_1);
+        argument_list.push_back(const_integer_2);
+        argument_list.push_back(const_string_1);
+        
+        ast::Function_Call::Ptr function_call = std::make_shared<ast::Function_Call>(function, argument_list);
+        
+        REQUIRE (function_call->emit_llvm_ir() == expected_output);
+    }
+    
+    
 }
