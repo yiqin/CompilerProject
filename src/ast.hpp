@@ -13,7 +13,7 @@
 
 namespace ast {
 
-std::string end_of_line = ", align 4\n";
+const std::string end_of_line = ", align 4\n";
 
 // Operation relates to Abstract Syntax Tree.
 // Operation and Comparison Operation are in different mechanisms.
@@ -63,10 +63,10 @@ class Expression : public Node {
     // If you don't agree, please let me know.
     // (const parser::Type& type) doesn't save the type information.
     Expression (const parser::Type type)
-          : result_register_(std::make_shared<llvm::Register>(type_)) {}
+          : result_register_(std::make_shared<llvm::Pointer_Register>(type)) {}
 
-    const parser::Type  type            () const { return result_register()->type(); }
-    llvm::Register::Ptr result_register ()       { return result_register_;          }
+    const parser::Type& type                    () const { return result_register_->type(); }
+    llvm::Pointer_Register::Ptr result_register ()       { return result_register_;         }
 
     void update_result_register (llvm::Pointer_Register::Ptr new_register) {
         result_register_ = new_register;
@@ -77,8 +77,7 @@ class Expression : public Node {
     }
 
   private:
-    const parser::Type type_;
-    llvm::Register::Ptr result_register_;
+    llvm::Pointer_Register::Ptr result_register_;
 };
 
 // Yi: What is Terminal? I always forget...
@@ -201,7 +200,7 @@ class Variable : public Terminal {
 
     Variable (const parser::Symbol::Ptr& symbol)
           : Terminal(symbol->type()), symbol_(symbol) {
-      update_result_register(llvm::new_pointer_register(parser::Type::INT, symbol_->name()));
+      update_result_register(std::make_shared<llvm::Pointer_Register>(parser::Type::INT, symbol_->name()));
     }
 
     // FIXME: this is wrong.
@@ -284,14 +283,14 @@ class Binary_Expression : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
 
-      llvm::Value_Register::Ptr value_register_lhs = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_lhs = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += lhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
-      llvm::Value_Register::Ptr value_register_rhs = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
@@ -299,7 +298,7 @@ class Binary_Expression : public Expression {
       // FIXME: Fails to put this part of code to llvm.hpp
 
       // Step 3: Operation
-      llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += tmp_value_register->name_llvm_ir();
       ir += " = ";
@@ -383,14 +382,14 @@ class Condition : public Expression {
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
 
-      llvm::Value_Register::Ptr value_register_lhs = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_lhs = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += lhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
-      llvm::Value_Register::Ptr value_register_rhs = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
@@ -463,7 +462,7 @@ class Assignment : public Expression {
 
       // Step 1: load the expression data in to a value
 
-      llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(tmp_value_register, rhs_->result_register());
@@ -656,7 +655,7 @@ class Return_Instruction : public Instruction {
       std::string ir;
 
       // Step 1: load the expression data into a value register
-      llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
+      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(parser::Type::INT);
 
       ir += expression_->emit_llvm_ir();
 

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "symbol.hpp"
@@ -12,14 +13,21 @@
 namespace llvm {
 
 
-std::string end_of_line = ", align 4\n";
+extern std::string end_of_line;
+
+template <typename T>
+std::string to_string (T t) {
+    std::ostringstream oss;
+    oss << t;
+    return oss.str();
+}
 
 
 class ID_Factory {
   public:
     ID_Factory () : next_id_(0) {}
 
-    std::string get_id () { return std::to_string(next_id_++); }
+    std::string get_id () { return to_string(next_id_++); }
     void reset () { next_id_ = 0; }
 
   private:
@@ -67,6 +75,8 @@ class Register {
 
     Register (const parser::Type& type, const std::string& id)
           : type_(type), id_(id) {}
+
+    const parser::Type& type () const { return type_; }
 
     std::string type_llvm_ir () {
         if (type_ == parser::Type::INT) {
@@ -128,64 +138,23 @@ class Cond_Register : public Value_Register {
     }
 };
 
-// Create pointer registers and value registers
-static Pointer_Register::Ptr new_pointer_register(const parser::Type type) {
-  Pointer_Register::Ptr tmp = std::make_shared<Pointer_Register>(type);
-  return tmp;
-};
-
-static Pointer_Register::Ptr new_pointer_register(const parser::Type type, const std::string id) {
-  Pointer_Register::Ptr tmp = std::make_shared<Pointer_Register>(type, id);
-  return tmp;
-};
-
-static Value_Register::Ptr new_value_register(const parser::Type type) {
-  Value_Register::Ptr tmp = std::make_shared<Value_Register>(type);
-  return tmp;
-};
-
 
 // Memory Access and Addressing Operations
 // alloca <pointer>
-static std::string alloca_instruction (parser::Symbol::Ptr symbol) {
-  return std::string("%") + symbol->name() + " = alloca " + symbol->type_llvm_ir() + end_of_line;
-};
+std::string alloca_instruction (parser::Symbol::Ptr symbol);
 
 // alloca <pointer>
-static std::string alloca_instruction (Pointer_Register::Ptr op) {
-  return op->name_llvm_ir() + " = alloca " + op->type_llvm_ir() + end_of_line;
-};
+std::string alloca_instruction (Pointer_Register::Ptr op);
 
 // Return value
 // <value> = load <pointer>
-static std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2) {
-  std::string ir;
-  ir += op_1->name_llvm_ir();
-  ir += " = load ";
-  ir += op_2->pointer_llvm_ir();
-  ir += end_of_line;
-  return ir;
-};
+std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
 
 // store <value>, int
-static std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1) {
-  std::string ir;
-  ir += std::string("store i32 ") + std::to_string(integer_value);
-  ir += ", ";
-  ir += op_1->pointer_llvm_ir();
-  ir += "\n";
-  return ir;
-};
+std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1);
 
 // store <value>, <pointer>
-static std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2) {
-  std::string ir;
-  ir += std::string("store ") + op_1->value_llvm_ir();
-  ir += ", ";
-  ir += op_2->pointer_llvm_ir();
-  ir += "\n";
-  return ir;
-};
+std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
 
 
 // Binary Operations
@@ -196,14 +165,10 @@ static std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Poin
 
 // br instruction
 // br label <dest>
-static std::string br_instruction (Label::Ptr label_1) {
-  return std::string("br ") + label_1->name_llvm_ir() + "\n";
-};
+std::string br_instruction (Label::Ptr label_1);
 
 // br i1 <cond>, label <iftrue>, label<iffailure>
-static std::string br_instruction (llvm::Value_Register::Ptr cond, Label::Ptr label_1, Label::Ptr label_2) {
-   return std::string("br i1 ") + cond->name_llvm_ir() + ", " + label_1->name_llvm_ir() + ", " + label_2->name_llvm_ir() + "\n";
-};
+std::string br_instruction (llvm::Value_Register::Ptr cond, Label::Ptr label_1, Label::Ptr label_2);
 
 
 }
