@@ -583,5 +583,34 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (do_instruction->emit_llvm_ir() == expected_output);
     }
     
+    SECTION ( "Compound_Instruction" ) {
+        // i = 1;
+        // i = -1;
+        
+        std::string expected_output;
+        
+        ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
+        ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
+        
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(const_integer_1, ast::Comparison_Operation::EQUAL, const_integer_2);
+        
+        parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("i"));
+        symbol_1->type(parser::Type::INT);
+        ast::Variable::Ptr variable_1 = std::make_shared<ast::Variable>(symbol_1);
+        
+        ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable_1, const_integer_1);
+        ast::Assignment::Ptr assignment_2 = std::make_shared<ast::Assignment>(variable_1, const_integer_2);
+        
+        ast::Expression_Instruction::Ptr instruction_1 = std::make_shared<ast::Expression_Instruction>(assignment_1);
+        ast::Expression_Instruction::Ptr instruction_2 = std::make_shared<ast::Expression_Instruction>(assignment_2);
+        
+        std::vector<ast::Instruction::Ptr> instruction_list;
+        instruction_list.push_back(instruction_1);
+        instruction_list.push_back(instruction_2);
+        
+        ast::Compound_Instruction::Ptr compound_instruction = std::make_shared<ast::Compound_Instruction>(std::move(instruction_list));
+        
+        REQUIRE (compound_instruction->emit_llvm_ir()==expected_output);
+    }
     
 }

@@ -791,7 +791,16 @@ class Compound_Instruction : public Instruction {
 
     Compound_Instruction (const std::vector<Instruction::Ptr>& instruction_list)
           : instruction_list_(instruction_list) {}
-
+          
+    std::string emit_llvm_ir () {
+      std::string ir;
+      for (auto& instruction : instruction_list_) {
+        ir += instruction->emit_llvm_ir();
+        ir += "\n";
+      }
+      return ir;
+    }
+    
   private:
     std::vector<Instruction::Ptr> instruction_list_;
 };
