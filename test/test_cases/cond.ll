@@ -11,10 +11,14 @@ define i32 @main() #0 {
   store i32 450, i32* %i, align 4
   store i32 -123, i32* %j, align 4
   %2 = load i32* %i, align 4
+  
   %3 = add nsw i32 %2, 1
   %4 = load i32* %j, align 4
+  
   %5 = add nsw i32 %4, 0
+
   %6 = icmp slt i32 %3, %5
+  
   br i1 %6, label %7, label %10
 
 ; <label>:7                                       ; preds = %0

@@ -155,11 +155,11 @@ TEST_CASE ("Abstract Syntax Tree") {
 
     SECTION ("Return variable: return a;") {
         // return a;
-        //
-        // %V.1 = load i32* %a, align 4
-        // ret i32 %V.1
+        // a is either INT type or STRING type.
 
         // INT
+        // %V.1 = load i32* %a, align 4
+        // ret i32 %V.1
         std::string expected_output_1 = std::string("%V.1 = load i32* %a, align 4\n");
         expected_output_1 += "ret i32 %V.1\n";
 
@@ -176,6 +176,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         
         
         // STRING
+        // %V.3 = load i8** %a, align 8
+        // ret i8* %V.3
         std::string expected_output_2 = std::string("%V.3 = load i8** %a, align 8\n");
         expected_output_2 += "ret i8* %V.3\n";
 
@@ -196,12 +198,13 @@ TEST_CASE ("Abstract Syntax Tree") {
         // return a+1-2;
 
         std::string expected_output;
-
+        
         expected_output += "%V.7 = load i32* %a, align 4\n";
         expected_output += "%P.1 = alloca i32, align 4\n";
         expected_output += "store i32 1, i32* %P.1\n";
         expected_output += "%V.8 = load i32* %P.1, align 4\n";
         expected_output += "%V.9 = add i32 %V.7, %V.8\n";
+        
         expected_output += "%P.3 = alloca i32, align 4\n";
         expected_output += "store i32 %V.9, i32* %P.3\n";
         expected_output += "%V.6 = load i32* %P.3, align 4\n";
@@ -209,6 +212,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         expected_output += "store i32 2, i32* %P.2\n";
         expected_output += "%V.10 = load i32* %P.2, align 4\n";
         expected_output += "%V.11 = sub i32 %V.6, %V.10\n";
+        
         expected_output += "%P.4 = alloca i32, align 4\n";
         expected_output += "store i32 %V.11, i32* %P.4\n";
         expected_output += "%V.5 = load i32* %P.4, align 4\n";
@@ -256,7 +260,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // lhs
         ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(450));
 
-        ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(const_integer->type(), variable, const_integer);
+        ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(variable, const_integer);
         output += assignment->emit_llvm_ir();
 
         REQUIRE ( output == expected_output );
@@ -273,7 +277,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (const_string_2->declare_llvm_ir() == expected_output_2 );        
     }
     
-    SECTION ("Assignment viariable with const_int: s = \"hello\";") {
+    SECTION ("Assignment viariable with const_string: s = \"hello world\";") {
         // s = "hello";
         //
         //
@@ -290,15 +294,15 @@ TEST_CASE ("Abstract Syntax Tree") {
         // lhs
         ast::Const_String::Ptr const_string = std::make_shared<ast::Const_String>(std::string("hello world"));
         
-        ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(variable->type(), variable, const_string);
+        ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(variable, const_string);
         
         REQUIRE (assignment->emit_llvm_ir() == expected_output );
     }
 
     
-    SECTION ("For Loop \n- condition i<=10\n") {
+    SECTION ("For Loop") {
         //   for ( i = -10; i <= 10; i = i+1 )
-        //      printd(i);
+        //      // printd(i); empty instruction now
 
         std::string expected_output = 
             "\n"
@@ -349,7 +353,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
 
         // i = -10 Assignment
-        ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(const_integer_1->type(), variable, const_integer_1);
+        ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(variable, const_integer_1);
 
         // We are not going to test several expressions in for_intruction.
         // Registers are different.
@@ -387,7 +391,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, variable, const_integer_3);
 
         // i = i + 1
-        ast::Assignment::Ptr increment = std::make_shared<ast::Assignment>(variable->type(), variable, add_expression);
+        ast::Assignment::Ptr increment = std::make_shared<ast::Assignment>(variable, add_expression);
 
         // std::string expected_output_3 = 
         //     "%V.13 = load i32* %i, align 4\n"
@@ -502,11 +506,31 @@ TEST_CASE ("Abstract Syntax Tree") {
         // REQUIRE (output == "" );
 	}
 
-	
-	
-	SECTION ("Assignment viariable with const_string: i = \"hello\"") {
-
+    SECTION ( "Cond_Instruction" ) {
+        // if (-10 == 10)
+        //   i = 1;
+        // else 
+        //   i = -1;
+        
+        std::string expected_output;
+        
+        ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
+        ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
+        ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
+        ast::Const_Integer::Ptr const_integer_4 = std::make_shared<ast::Const_Integer>(std::move(-1));
+        
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(const_integer_1, ast::Comparison_Operation::EQUAL, const_integer_2);
+        
+        parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("i"));
+        symbol_1->type(parser::Type::INT);
+        ast::Variable::Ptr variable_1 = std::make_shared<ast::Variable>(symbol_1);
+        
+        ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable_1, const_integer_3);
+        ast::Assignment::Ptr assignment_2 = std::make_shared<ast::Assignment>(variable_1, const_integer_4);
+        
+        // ast::Cond_Instruction::Ptr cond_instruction = std::make_shared<ast::Cond_Instruction>(condition, assignment_1, assignment_2);
+        
+        // REQUIRE (cond_instruction->emit_llvm_ir());
     }
-
 
 }

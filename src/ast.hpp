@@ -473,13 +473,10 @@ class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
 
-    // Why is type an argument in the constructor?
-    Assignment (const parser::Type& type,
-        Variable::Ptr lhs, Expression::Ptr rhs)
-          : Expression(type), lhs_(lhs), rhs_(rhs) {}
+    Assignment (Variable::Ptr lhs, Expression::Ptr rhs)
+          : Expression(lhs->type()), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-
       std::string ir;
 
       // Step 1: load the expression data in to a value
@@ -546,14 +543,14 @@ class Cond_Instruction : public Instruction {
     typedef std::shared_ptr<Cond_Instruction> Ptr;
 
     Cond_Instruction (
-        Expression::Ptr condition,
+        Condition::Ptr condition,
         Instruction::Ptr instruction
     )
           : condition_(condition),
             instruction_(instruction) {}
 
     Cond_Instruction (
-        Expression::Ptr condition,
+        Condition::Ptr condition,
         Instruction::Ptr instruction,
         Instruction::Ptr else_instruction
     )
@@ -563,12 +560,15 @@ class Cond_Instruction : public Instruction {
 
     std::string emit_llvm_ir () {
       std::string ir;
-
+      
+      ir += "\n; Cond_Instruction\n";
+      
+      
       return ir;
     }
 
   private:
-    Expression::Ptr condition_;
+    Condition::Ptr condition_;
     Instruction::Ptr instruction_;
     Instruction::Ptr else_instruction_;
 };
