@@ -260,11 +260,20 @@ class Const_String : public Terminal {
     }
     
     std::string emit_llvm_ir () {
+      std::string ir;
+      
+      ir += llvm::alloca_instruction(result_register());
+      ir += llvm::store_instruction(string_, result_register());
+      
+      return ir;
+    }
+    
+    std::string declare_llvm_ir () {
       // declarated outside any scope.
       // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
       std::string ir;
       
-      ir += "@." + id_ + " private unnamed_addr constant ";
+      ir += id_ + "= private unnamed_addr constant ";
       ir += "[" + std::to_string(string_->value().size()+1) + std::string(" x i8] ");
       ir += "c\"" + string_->value() + "\\00\"";
       ir += ", align 1";

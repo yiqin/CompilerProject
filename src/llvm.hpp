@@ -39,7 +39,7 @@ class String {
     typedef std::shared_ptr<String> Ptr;
     
     String (const std::string& value) 
-           : value_(value), id_("str_" + id_factory_.get_id()) {}
+           : value_(value), id_("@.str_" + id_factory_.get_id()) {}
 
     const std::string id() const {
       return id_;
@@ -95,10 +95,12 @@ class Register {
     const parser::Type& type () const { return type_; }
 
     std::string type_llvm_ir () {
-        if (type_ == parser::Type::INT) {
-            return "i32";
-        }
-        return "/undefine type. Please wait./";
+      switch (type_) {
+        case parser::Type::INT:
+          return "i32";
+        case parser::Type::STRING:
+          return "i8*";
+      }
     }
 
     std::string name_llvm_ir () {
@@ -166,8 +168,11 @@ std::string alloca_instruction (Pointer_Register::Ptr op);
 // <value> = load <pointer>
 std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
 
-// store <value>, int
+// store int, <pointer>
 std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1);
+
+// store string, <pointer>
+std::string store_instruction (llvm::String::Ptr string_1, llvm::Pointer_Register::Ptr op_1);
 
 // store <value>, <pointer>
 std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
