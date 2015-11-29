@@ -190,6 +190,7 @@ class Function_Definition : public Node {
       ir += ")";
 
       // step 5
+      // FIXME: this may not be always 0
       ir += " #0";
       ir += "\n";
 
@@ -254,18 +255,27 @@ class Const_String : public Terminal {
     typedef std::shared_ptr<Const_String> Ptr;
 
     Const_String (const std::string& value)
-          : Terminal(parser::Type::STRING), value_(value) {}
+          : Terminal(parser::Type::STRING), string_(std::make_shared<llvm::String>(std::move(value))) {
+      id_ = string_->id();
+    }
     
     std::string emit_llvm_ir () {
       // declarated outside any scope.
       // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
       std::string ir;
       
+      ir += "@." + id_ + " private unnamed_addr constant ";
+      ir += "[" + std::to_string(string_->value().size()+1) + std::string(" x i8] ");
+      ir += "c\"" + string_->value() + "\\00\"";
+      ir += ", align 1";
+      ir += "\n";
+      
       return ir;
     }
 
   private:
-    std::string value_;
+    std::string id_;
+    llvm::String::Ptr string_;
 };
 
 

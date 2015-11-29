@@ -18,6 +18,7 @@
 void reset_ids () {
     llvm::Label::id_factory_.reset();
     llvm::Register::id_factory_.reset();
+    // llvm::String_Label::id_factory_.reset();
 }
 
 
@@ -242,6 +243,25 @@ TEST_CASE ("Abstract Syntax Tree") {
         output += assignment->emit_llvm_ir();
 
         REQUIRE ( output == expected_output );
+    }
+    
+    
+    SECTION ("Const String") {
+        std::string expected_output_1 = "@.str_0 private unnamed_addr constant [12 x i8] c\"hello world\\00\", align 1\n";
+        ast::Const_String::Ptr const_string_1 = std::make_shared<ast::Const_String>(std::string("hello world"));
+        REQUIRE (const_string_1->emit_llvm_ir() == expected_output_1 );
+        
+        std::string expected_output_2 = "@.str_1 private unnamed_addr constant [6 x i8] c\"hello\\00\", align 1\n";
+        ast::Const_String::Ptr const_string_2 = std::make_shared<ast::Const_String>(std::string("hello"));
+        REQUIRE (const_string_2->emit_llvm_ir() == expected_output_2 );        
+    }
+    
+    SECTION ("Assignment viariable with const_int: s = \"hello\";") {
+        // s = "hello";
+        //
+        //
+        //
+        
     }
 
 

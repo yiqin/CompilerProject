@@ -18,7 +18,7 @@ std::string alignment_llvm_ir (parser::Type type) {
 
 ID_Factory Label::id_factory_;
 ID_Factory Register::id_factory_;
-
+ID_Factory String::id_factory_;
 
 // Memory Access and Addressing Operations
 // alloca <pointer>

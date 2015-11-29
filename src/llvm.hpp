@@ -34,6 +34,28 @@ class ID_Factory {
     int next_id_;
 };
 
+class String {
+  public:
+    typedef std::shared_ptr<String> Ptr;
+    
+    String (const std::string& value) 
+           : value_(value), id_("str_" + id_factory_.get_id()) {}
+
+    const std::string id() const {
+      return id_;
+    }
+    
+    const std::string value() const {
+      return value_;
+    }
+    
+  protected:
+    static ID_Factory id_factory_;
+
+  private:
+    const std::string id_;
+    const std::string value_;           
+};
 
 class Label {
   public:
