@@ -575,16 +575,20 @@ class Cond_Instruction : public Instruction {
       ir += condition_->emit_llvm_ir();
       ir += llvm::br_instruction(condition_->result_register(), label_0, label_1);
 
-      // Step 2: instruction, the body of the for instruction
+      // Step 2: instruction
       ir += "\n";
       ir += label_0->destination_llvm_ir();
       ir += instruction_->emit_llvm_ir();
       ir += llvm::br_instruction(label_2);
 
-      // Step 3: increment
+      // Step 3: else_instruction
       ir += "\n";
       ir += label_1->destination_llvm_ir();
-      ir += else_instruction_->emit_llvm_ir();
+      auto tmp_instruction = else_instruction_;
+      if (tmp_instruction) {
+        ir += tmp_instruction->emit_llvm_ir();
+      }
+      
       ir += llvm::br_instruction(label_2);
 
       // Step 4: the end

@@ -514,6 +514,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         
         std::string expected_output;
         
+        
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
         ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
@@ -531,9 +532,13 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Expression_Instruction::Ptr instruction_1 = std::make_shared<ast::Expression_Instruction>(assignment_1);
         ast::Expression_Instruction::Ptr instruction_2 = std::make_shared<ast::Expression_Instruction>(assignment_2);
         
-        ast::Cond_Instruction::Ptr cond_instruction = std::make_shared<ast::Cond_Instruction>(condition, instruction_1, instruction_2);
+        ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1, instruction_2);
         
-        REQUIRE (cond_instruction->emit_llvm_ir() == expected_output);
+        REQUIRE (cond_instruction_1->emit_llvm_ir() == expected_output);
+        
+        ast::Cond_Instruction::Ptr cond_instruction_2 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1);        
+        REQUIRE (cond_instruction_2->emit_llvm_ir() == expected_output);
     }
+    
 
 }
