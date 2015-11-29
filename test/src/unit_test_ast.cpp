@@ -431,7 +431,6 @@ TEST_CASE ("Abstract Syntax Tree") {
         expected_output += "%P.3 = alloca i32, align 4\n";
         expected_output += "store i32 %V.6, i32* %P.3\n";
         
-        std::string output;
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
@@ -441,15 +440,9 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
 
         ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, const_integer_1, const_integer_2);
-        output += add_expression->emit_llvm_ir();
 
-        REQUIRE (output == expected_output);
+        REQUIRE (add_expression->emit_llvm_ir() == expected_output);
     }
-
-
-    SECTION ("Condi_Instruction") {
-    
-	}
 	
 	// string type
 	SECTION ("Function return string type \n  string func() {\n    string s;\n    s=\"hello\";\n    return s;\n  }") {
@@ -540,5 +533,30 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (cond_instruction_2->emit_llvm_ir() == expected_output);
     }
     
+    SECTION ( "While_Instruction" ) {
+        //   while ( i < 10 ) {
+        //     i = i+2;
+        //   }
+        
+        std::string expected_output;
 
+        parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
+        symbol->type(parser::Type::INT);
+        ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+        
+        ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(10));
+        ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
+        
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN, const_integer_1);
+        
+        ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, variable, const_integer_2);
+        ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable, add_expression);
+        ast::Expression_Instruction::Ptr instruction_1 = std::make_shared<ast::Expression_Instruction>(assignment_1);
+        
+        ast::While_Instruction::Ptr while_instruction = std::make_shared<ast::While_Instruction>(condition, instruction_1);
+        
+        REQUIRE (while_instruction->emit_llvm_ir() == expected_output);
+    }
+    
+    
 }
