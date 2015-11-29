@@ -79,7 +79,7 @@ class Expression : public Node {
   private:
     // FIXME: Chnage to Register
     // Argumnets in llvm ir instructions must be pointer_register, or value_register
-    // If it's changed to Register, check several errors llvm.hpp file. 
+    // If it's changed to Register, check several errors llvm.hpp file.
     llvm::Pointer_Register::Ptr result_register_;
 };
 
@@ -169,7 +169,7 @@ class Function_Definition : public Node {
       for (auto& symbol : function_declarator_->argument_list()) {
         ir += symbol->type_llvm_ir() + " %" + symbol->name() + ", ";
       }
-      
+
       // remove the last space and the last comma
       if (function_declarator_->argument_list().size() > 0) {
         ir.pop_back();
@@ -202,7 +202,7 @@ class Variable : public Terminal {
       update_result_register(std::make_shared<llvm::Pointer_Register>(symbol_->type(), symbol_->name()));
     }
 
-    // Return empty string. 
+    // Return empty string.
     // result_register is %<symbol_->name()>
     std::string emit_llvm_ir () {
       return "";
@@ -244,27 +244,27 @@ class Const_String : public Terminal {
           : Terminal(parser::Type::STRING), string_(std::make_shared<llvm::String>(std::move(value))) {
       id_ = string_->id();
     }
-    
+
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       ir += llvm::alloca_instruction(result_register());
       ir += llvm::store_instruction(string_, result_register());
-      
+
       return ir;
     }
-    
+
     std::string declare_llvm_ir () {
       // declarated outside any scope.
       // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
       std::string ir;
-      
+
       ir += id_ + " = private unnamed_addr constant ";
-      ir += "[" + std::to_string(string_->value().size()+1) + std::string(" x i8] ");
+      ir += "[" + to_string(string_->value().size() + 1) + std::string(" x i8] ");
       ir += "c\"" + string_->value() + "\\00\"";
       ir += ", align 1";
       ir += "\n";
-      
+
       return ir;
     }
 
@@ -574,7 +574,7 @@ class Expression_Instruction : public Instruction {
 
     Expression_Instruction (Expression::Ptr expression)
           : expression_(expression) {}
-    
+
     std::string emit_llvm_ir () {
       return expression_->emit_llvm_ir();
     }
@@ -606,13 +606,13 @@ class Cond_Instruction : public Instruction {
 
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       ir += "\n; Cond_Instruction\n\n";
-      
+
       llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
-      
+
       // Step 1: condition
       ir += condition_->emit_llvm_ir();
       ir += llvm::br_instruction(condition_->result_register(), label_0, label_1);
@@ -635,7 +635,7 @@ class Cond_Instruction : public Instruction {
       // Step 4: the end
       ir += "\n";
       ir += label_2->destination_llvm_ir();
-      
+
       return ir;
     }
 
@@ -652,17 +652,17 @@ class While_Instruction : public Instruction {
 
     While_Instruction (Condition::Ptr condition, Instruction::Ptr instruction)
           : condition_(condition), instruction_(instruction) {}
-    
+
     std::string emit_llvm_ir () {
       std::string ir;
       ir += "\n; While_Instruction\n\n";
-      
+
       llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
-      
+
       ir += llvm::br_instruction(label_0);
-      
+
       // Step 1: condition
       ir += "\n";
       ir += label_0->destination_llvm_ir();
@@ -678,10 +678,10 @@ class While_Instruction : public Instruction {
       // Step 3: the end
       ir += "\n";
       ir += label_2->destination_llvm_ir();
-      
+
       return ir;
     }
-    
+
   private:
     Condition::Ptr condition_;
     Instruction::Ptr instruction_;
@@ -694,23 +694,23 @@ class Do_Instruction : public Instruction {
 
     Do_Instruction (Condition::Ptr condition, Instruction::Ptr instruction)
           : condition_(condition), instruction_(instruction) {}
-          
+
     std::string emit_llvm_ir () {
       std::string ir;
       ir += "\n; Do_Instruction\n\n";
-      
+
       llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
-      
+
       ir += llvm::br_instruction(label_0);
-      
+
       // Step 1: instruction
       ir += "\n";
       ir += label_0->destination_llvm_ir();
       ir += instruction_->emit_llvm_ir();
       ir += llvm::br_instruction(label_1);
-      
+
       // Step 2: condition
       ir += "\n";
       ir += label_1->destination_llvm_ir();
@@ -720,10 +720,10 @@ class Do_Instruction : public Instruction {
       // Step 3: the end
       ir += "\n";
       ir += label_2->destination_llvm_ir();
-      
+
       return ir;
     }
-    
+
   private:
     Condition::Ptr condition_;
     Instruction::Ptr instruction_;
@@ -833,7 +833,7 @@ class Compound_Instruction : public Instruction {
 
     Compound_Instruction (const std::vector<Instruction::Ptr>& instruction_list)
           : instruction_list_(instruction_list) {}
-          
+
     std::string emit_llvm_ir () {
       std::string ir;
       for (auto& instruction : instruction_list_) {
@@ -842,7 +842,7 @@ class Compound_Instruction : public Instruction {
       }
       return ir;
     }
-    
+
   private:
     std::vector<Instruction::Ptr> instruction_list_;
 };

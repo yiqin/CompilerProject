@@ -10,17 +10,18 @@
 #include "symbol.hpp"
 
 
-namespace llvm {
-
-
-extern std::string end_of_line;
-
 template <typename T>
 std::string to_string (T t) {
     std::ostringstream oss;
     oss << t;
     return oss.str();
 }
+
+
+namespace llvm {
+
+
+extern std::string end_of_line;
 
 
 class ID_Factory {
@@ -37,24 +38,24 @@ class ID_Factory {
 class String {
   public:
     typedef std::shared_ptr<String> Ptr;
-    
-    String (const std::string& value) 
+
+    String (const std::string& value)
            : value_(value), id_("@.str_" + id_factory_.get_id()) {}
 
     const std::string id() const {
       return id_;
     }
-    
+
     const std::string value() const {
       return value_;
     }
-    
+
   protected:
     static ID_Factory id_factory_;
 
   private:
     const std::string id_;
-    const std::string value_;           
+    const std::string value_;
 };
 
 class Label {

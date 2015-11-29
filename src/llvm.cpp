@@ -57,7 +57,7 @@ std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op
 std::string store_instruction (llvm::String::Ptr string_1, llvm::Pointer_Register::Ptr op_1) {
   std::string ir;
   ir += std::string("store i8* getelementptr inbounds ");
-  ir += "([" + std::to_string(string_1->value().size()+1) + " x i8]* ";
+  ir += "([" + to_string(string_1->value().size() + 1) + " x i8]* ";
   ir += string_1->id() + ", ";
   ir += "i32 0, i32 0), ";
   ir += op_1->pointer_llvm_ir();
