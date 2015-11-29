@@ -107,7 +107,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // int foo(int a, int b)
         // define i32 @foo(i32 %a, i32 %b) #0
 
-        std::string expected_output = std::string("define i32 @foo(i32 %a, i32 %b) #0");
+        std::string expected_output = std::string("define i32 @foo(i32 %a, i32 %b) #0\n");
 
         parser::Type type = parser::Type::INT;
         // function_declarator includes the argument list
@@ -129,15 +129,15 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Return const_int: return 0;") {
         // return 0;
         //
-        // %0 = alloca i32, align 4
-        // store i32 0, i32* %0
-        // %1 = load i32* %0, align 4
+        // %P.0 = alloca i32, align 4
+        // store i32 0, i32* %P.0
+        // %V.1 = load i32* %P.0, align 4
         // ret i32 %1
 
-        std::string expected_output = std::string("%0 = alloca i32, align 4\n");
-        expected_output += "store i32 0, i32* %0\n";
-        expected_output += "%1 = load i32* %0, align 4\n";
-        expected_output += "ret i32 %1\n";
+        std::string expected_output = std::string("%P.0 = alloca i32, align 4\n");
+        expected_output += "store i32 0, i32* %P.0\n";
+        expected_output += "%V.1 = load i32* %P.0, align 4\n";
+        expected_output += "ret i32 %V.1\n";
 
         std::string output = "";
 
@@ -155,11 +155,11 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Return variable: return a;") {
         // return a;
         //
-        // %3 = load i32* %a, align 4
-        // ret i32 %3
+        // %V.1 = load i32* %a, align 4
+        // ret i32 %V.1
 
-        std::string expected_output = std::string("%3 = load i32* %a, align 4\n");
-        expected_output += "ret i32 %3\n";
+        std::string expected_output = std::string("%V.1 = load i32* %a, align 4\n");
+        expected_output += "ret i32 %V.1\n";
 
         // Prepare
         // Expression - Variable
@@ -178,6 +178,23 @@ TEST_CASE ("Abstract Syntax Tree") {
         // return a+1-2;
 
         std::string expected_output;
+
+        expected_output += "%V.7 = load i32* %a, align 4\n";
+        expected_output += "%P.1 = alloca i32, align 4\n";
+        expected_output += "store i32 1, i32* %P.1\n";
+        expected_output += "%V.8 = load i32* %P.1, align 4\n";
+        expected_output += "%V.9 = add i32 %V.7, %V.8\n";
+        expected_output += "%P.3 = alloca i32, align 4\n";
+        expected_output += "store i32 %V.9, i32* %P.3\n";
+        expected_output += "%V.6 = load i32* %P.3, align 4\n";
+        expected_output += "%P.2 = alloca i32, align 4\n";
+        expected_output += "store i32 2, i32* %P.2\n";
+        expected_output += "%V.10 = load i32* %P.2, align 4\n";
+        expected_output += "%V.11 = sub i32 %V.6, %V.10\n";
+        expected_output += "%P.4 = alloca i32, align 4\n";
+        expected_output += "store i32 %V.11, i32* %P.4\n";
+        expected_output += "%V.5 = load i32* %P.4, align 4\n";
+        expected_output += "ret i32 %V.5\n";
 
         // Prepare
         // Expression - Variable
@@ -201,16 +218,15 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Assignment viariable with const_int: i = 450;") {
         // i = 450;
         //
-        // %1 = alloca i32, align 4
-        // store i32 450, i32* %1
-        // %3 = load i32* %1, align 4
-        // store i32 %3, i32* %i, align 4
+        // %P.1 = alloca i32, align 4
+        // store i32 450, i32* %P.1
+        // %V.3 = load i32* %P.1, align 4
+        // store i32 %V.3, i32* %i
 
-        // This may be wrong.
-        std::string expected_output = std::string("%1 = alloca i32, align 4\n");
-        expected_output += "store i32 450, i32* %1\n";
-        expected_output += "%3 = load i32* %1, align 4\n";
-        expected_output += "store i32 %3, i32* %i, align 4\n";
+        std::string expected_output = std::string("%P.1 = alloca i32, align 4\n");
+        expected_output += "store i32 450, i32* %P.1\n";
+        expected_output += "%V.3 = load i32* %P.1, align 4\n";
+        expected_output += "store i32 %V.3, i32* %i\n";
 
         std::string output = "";
 
@@ -288,7 +304,17 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Binary_Expression: 1+2") {
         // 1+2;
 
-        std::string expected_output = std::string("");
+        std::string expected_output;
+        expected_output += "%P.1 = alloca i32, align 4\n";
+        expected_output += "store i32 1, i32* %P.1\n";
+        expected_output += "%V.4 = load i32* %P.1, align 4\n";
+        expected_output += "%P.2 = alloca i32, align 4\n";
+        expected_output += "store i32 2, i32* %P.2\n";
+        expected_output += "%V.5 = load i32* %P.2, align 4\n";
+        expected_output += "%V.6 = add i32 %V.4, %V.5\n";
+        expected_output += "%P.3 = alloca i32, align 4\n";
+        expected_output += "store i32 %V.6, i32* %P.3\n";
+        
         std::string output;
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
@@ -301,7 +327,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, const_integer_1, const_integer_2);
         output += add_expression->emit_llvm_ir();
 
-        REQUIRE (output == "");
+        REQUIRE (output == expected_output);
     }
 
 

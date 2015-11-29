@@ -96,7 +96,7 @@ class Pointer_Register : public Register {
     typedef std::shared_ptr<Pointer_Register> Ptr;
 
     Pointer_Register (const parser::Type& type)
-          : Register(type, ("R." + id_factory_.get_id())) {}
+          : Register(type, ("P." + id_factory_.get_id())) {}
 
     Pointer_Register (const parser::Type& type, const std::string& id)
           : Register(type, id) {}

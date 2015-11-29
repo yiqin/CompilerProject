@@ -209,11 +209,10 @@ class Variable : public Terminal {
       update_result_register(std::make_shared<llvm::Pointer_Register>(parser::Type::INT, symbol_->name()));
     }
 
-    // FIXME: this is wrong.
-    // This should return empty string.
+    // Return empty string. 
+    // result_register is %<symbol_->name()>
     std::string emit_llvm_ir () {
       return "";
-      // return "/undefined symbol with string type/";
     }
 
   private:
@@ -254,8 +253,9 @@ class Const_String : public Terminal {
     std::string emit_llvm_ir () {
       // declarated outside any scope.
       // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
+      std::string ir;
       
-      return ir
+      return ir;
     }
 
   private:
