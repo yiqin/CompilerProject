@@ -262,7 +262,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         //
         //
         std::string expected_output = "%P.1 = alloca i8*, align 8\n";
-        expected_output += "store i8* getelementptr inbounds ([12 x i8]* @.str, i32 0, i32 0), i8** %P.1, align 8\n";
+        expected_output += "store i8* getelementptr inbounds ([12 x i8]* @.str_0, i32 0, i32 0), i8** %P.1, align 8\n";
         expected_output += "%V.3 = load i8** %P.1, align 8\n";
         expected_output += "store i8* %V.3, i8** %s\n";
         
@@ -270,18 +270,12 @@ TEST_CASE ("Abstract Syntax Tree") {
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
         symbol->type(parser::Type::STRING);
         ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
-        
-        
         // lhs
         ast::Const_String::Ptr const_string = std::make_shared<ast::Const_String>(std::string("hello world"));
         
         ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(variable->type(), variable, const_string);
         
-        
         REQUIRE (assignment->emit_llvm_ir() == expected_output );
-        
-        
-        
     }
 
 
