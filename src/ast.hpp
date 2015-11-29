@@ -650,11 +650,11 @@ class Do_Instruction : public Instruction {
   public:
     typedef std::shared_ptr<Do_Instruction> Ptr;
 
-    Do_Instruction (Expression::Ptr condition, Instruction::Ptr instruction)
+    Do_Instruction (Condition::Ptr condition, Instruction::Ptr instruction)
           : condition_(condition), instruction_(instruction) {}
 
   private:
-    Expression::Ptr condition_;
+    Condition::Ptr condition_;
     Instruction::Ptr instruction_;
 };
 
@@ -664,9 +664,9 @@ class For_Instruction : public Instruction {
     typedef std::shared_ptr<For_Instruction> Ptr;
 
     For_Instruction (
-        Assignment::Ptr initialization,
+        Expression::Ptr initialization,
         Condition::Ptr condition,
-        Assignment::Ptr increment,
+        Expression::Ptr increment,
         Instruction::Ptr instruction
     )
           : initialization_(initialization),
@@ -713,9 +713,9 @@ class For_Instruction : public Instruction {
     }
 
   private:
-    Assignment::Ptr initialization_;
+    Expression::Ptr initialization_;
     Condition::Ptr condition_;
-    Assignment::Ptr increment_;
+    Expression::Ptr increment_;
     Instruction::Ptr instruction_;
 };
 

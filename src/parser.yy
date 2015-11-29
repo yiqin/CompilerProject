@@ -105,9 +105,10 @@
 %type <ast::Expression::Ptr> assignment
 %type <ast::Expression::Ptr> expression
 
+// FIXME: must be condition. Changing to Expression breaks the compiler somehow.
 %type <ast::Comparison_Operation> comparison_operator
-%type <ast::Expression::Ptr> condition
-%type <ast::Expression::Ptr> cond_instruction
+%type <ast::Condition::Ptr> condition
+%type <ast::Condition::Ptr> cond_instruction
 
 %type <ast::Instruction::Ptr> instruction
 %type <ast::Instruction::Ptr> compound_instruction

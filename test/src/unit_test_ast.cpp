@@ -534,9 +534,9 @@ TEST_CASE ("Abstract Syntax Tree") {
     }
     
     SECTION ( "While_Instruction" ) {
-        //   while ( i < 10 ) {
-        //     i = i+2;
-        //   }
+        // while ( i < 10 ) {
+        //   i = i+2;
+        // }
         
         std::string expected_output;
 
@@ -556,6 +556,32 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::While_Instruction::Ptr while_instruction = std::make_shared<ast::While_Instruction>(condition, instruction_1);
         
         REQUIRE (while_instruction->emit_llvm_ir() == expected_output);
+    }
+    
+    SECTION ( "Do_Instruction" ) {
+        // do {
+        //   printd(i);
+        //   i = i-1;
+        // } while ( i >= -20 );
+        
+        std::string expected_output;
+
+        parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
+        symbol->type(parser::Type::INT);
+        ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
+        
+        ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(10));
+        ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
+        
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN, const_integer_1);
+        
+        ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, variable, const_integer_2);
+        ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable, add_expression);
+        ast::Expression_Instruction::Ptr instruction_1 = std::make_shared<ast::Expression_Instruction>(assignment_1);
+        
+        ast::Do_Instruction::Ptr do_instruction = std::make_shared<ast::Do_Instruction>(condition, instruction_1);
+        
+        REQUIRE (do_instruction->emit_llvm_ir() == expected_output);
     }
     
     
