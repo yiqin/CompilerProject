@@ -3,16 +3,17 @@
 #define __CSTR_COMPILER__AST_HPP
 
 
+#include <iostream>
 #include <memory>
 #include <string>
-#include "symbol.hpp"
-#include "llvm.hpp"
 
-#include <iostream>
+#include "llvm.hpp"
+#include "symbol.hpp"
+
 
 namespace ast {
 
-static std::string end_of_line = ", align 4\n";
+std::string end_of_line = ", align 4\n";
 
 // Operation relates to Abstract Syntax Tree.
 // Operation and Comparison Operation are in different mechanisms.
@@ -42,13 +43,15 @@ class Node {
 
     virtual ~Node () {}
 
+    // TODO (Emery) Make abstract.
     virtual std::string emit_llvm_ir () {
-      return std::string("; /undefine Expression - Node Class/ \n");
+        return std::string("; /undefine Expression - Node Class/ \n");
     };
-    
+    // virtual std::string emit_llvm_ir () = 0;
+
     // We don't need this.
     // virtual void build_llvm_ir ();
-    
+
 };
 
 // e.g. 0, 0+1, 1-2, a, a+b, a-b, a+(c+d)
@@ -59,25 +62,23 @@ class Expression : public Node {
     // Yi: I remove (const parser::Type& type) to (const parser::Type type)
     // If you don't agree, please let me know.
     // (const parser::Type& type) doesn't save the type information.
-    Expression (const parser::Type type) 
-          : type_(type) {
-            result_register_ = std::make_shared<llvm::Pointer_Register>(type_);
-          }
+    Expression (const parser::Type type)
+          : result_register_(std::make_shared<llvm::Register>(type_)) {}
 
-    const parser::Type type () const { return type_; }
-    llvm::Pointer_Register::Ptr result_register () { return result_register_; }
-    
+    const parser::Type  type            () const { return result_register()->type(); }
+    llvm::Register::Ptr result_register ()       { return result_register_;          }
+
     void update_result_register (llvm::Pointer_Register::Ptr new_register) {
-      result_register_ = new_register;
+        result_register_ = new_register;
     }
-    
+
     std::string emit_llvm_ir () {
       return std::string("/undefine Expression - Expression Class/");
     }
 
   private:
     const parser::Type type_;
-    llvm::Pointer_Register::Ptr result_register_;
+    llvm::Register::Ptr result_register_;
 };
 
 // Yi: What is Terminal? I always forget...
@@ -88,17 +89,17 @@ class Terminal : public Expression {
     Terminal (const parser::Type type) : Expression(type) {}
 };
 
-// Declaration, external_declaration 
+// Declaration, external_declaration
 // It corresponds to Symbol class and Function class
 
 // For a single declarator, may not be used in the future.
 class Symbol_Declarator : public Node {
   public:
     typedef std::shared_ptr<Symbol_Declarator> Ptr;
-    
+
     Symbol_Declarator (const parser::Symbol::Ptr& symbol)
           : symbol_(symbol) {}
-    
+
     std::string emit_llvm_ir () {
       if (symbol_->type() == parser::Type::INT) {
         return llvm::alloca_instruction(symbol_);
@@ -106,7 +107,7 @@ class Symbol_Declarator : public Node {
         return "undefined symbol with string type";
       }
     }
-    
+
   private:
     parser::Symbol::Ptr symbol_;
 };
@@ -115,52 +116,52 @@ class Symbol_Declarator : public Node {
 class Declaration : public Node {
   public:
     typedef std::shared_ptr<Declaration> Ptr;
-    
+
     Declaration (const parser::Symbol_List& symbol_list)
           : symbol_list_(symbol_list) {}
-    
+
     std::string emit_llvm_ir () {
       std::string ir;
-      
-      for (auto& symbol : symbol_list_) { 
+
+      for (auto& symbol : symbol_list_) {
         Symbol_Declarator::Ptr symbol_declarator = std::make_shared<Symbol_Declarator>(symbol);
         ir += symbol_declarator->emit_llvm_ir();
       }
-      
+
       return ir;
     }
-    
+
   private:
     parser::Symbol_List symbol_list_;
 };
 
 // e.g. int main(int a)
 // FIXME: I hesitate to use Function class or function_definition.
-// But I think function_definition is better. 
+// But I think function_definition is better.
 class Function_Definition : public Node {
   public:
     typedef std::shared_ptr<Function_Definition> Ptr;
-    
+
     Function_Definition (const parser::Type& type, parser::Function::Ptr& function_declarator)
           : type_(type), function_declarator_(function_declarator) {}
-    
+
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       // step 1
       ir += "define";
-      
+
       // step 2: function return type
       if (type_ == parser::Type::INT) {
         ir += " i32";
       }
-      
+
       // step 3: function name
       ir += " @"+function_declarator_->name();
-      
+
       // step 4: function argument list
       ir += "(";
-     
+
       for (auto& symbol : function_declarator_->argument_list()) {
         if(symbol->type() == parser::Type::INT) {
           ir += "i32 %" + symbol->name();
@@ -172,15 +173,15 @@ class Function_Definition : public Node {
         ir.pop_back();
         ir.pop_back();
       }
-        
+
       ir += ")";
-      
+
       // step 5
       ir += " #0";
-      
+
       return ir;
     }
-    
+
   private:
     parser::Type type_;
     parser::Function::Ptr function_declarator_;
@@ -199,14 +200,14 @@ class Variable : public Terminal {
           : Terminal(symbol->type()), symbol_(symbol) {
       update_result_register(llvm::new_pointer_register(parser::Type::INT, symbol_->name()));
     }
-          
+
     // FIXME: this is wrong.
     // This should return empty string.
     std::string emit_llvm_ir () {
       return "";
       // return "/undefined symbol with string type/";
     }
-    
+
   private:
     parser::Symbol::Ptr symbol_;
 };
@@ -219,17 +220,17 @@ class Const_Integer : public Terminal {
 
     Const_Integer (const int& value)
           : Terminal(parser::Type::INT), value_(value) {}
-    
+
     std::string emit_llvm_ir () {
       // %1 = alloca i32, align 4
       // store i32 0, i32* %1
 
       std::string ir = llvm::alloca_instruction(result_register());
       ir += llvm::store_instruction(value_, result_register());
-      
+
       return ir;
     }
-    
+
   private:
     int value_;
 };
@@ -271,37 +272,37 @@ class Binary_Expression : public Expression {
           : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-      // Actually we have an abstract syntax tree 
+      // Actually we have an abstract syntax tree
       // Not simply left and right, then operation.
       // No. We can simple left and right.
-      
+
       std::string ir;
-      
+
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
-      
+
       llvm::Value_Register::Ptr value_register_lhs = llvm::new_value_register(parser::Type::INT);
-      
+
       ir += lhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       llvm::Value_Register::Ptr value_register_rhs = llvm::new_value_register(parser::Type::INT);
-      
+
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
-      
+
       // FIXME: Fails to put this part of code to llvm.hpp
-      
+
       // Step 3: Operation
       llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
 
       ir += tmp_value_register->name_llvm_ir();
       ir += " = ";
-      
+
       // add
-      // sub 
+      // sub
       // mul
       // udiv
       // urem
@@ -328,18 +329,18 @@ class Binary_Expression : public Expression {
           ir += "/Undefine. Please wait./";
           break;
       }
-      
+
       ir += " ";
       ir += value_register_lhs->type_llvm_ir();
       ir += " ";
       ir += value_register_lhs->name_llvm_ir();
       ir += ", ";
       ir += value_register_rhs->name_llvm_ir();
-      
+
       ir += "\n";
       ir += llvm::alloca_instruction(result_register());
       ir += llvm::store_instruction(tmp_value_register, result_register());
-      
+
       return ir;
     }
 
@@ -360,38 +361,41 @@ class Binary_Expression : public Expression {
 class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;
-  
-    Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator, 
-                   Expression::Ptr rhs) 
-          : Expression(parser::Type::INT), lhs_(lhs), comparison_operator_(comparison_operator), rhs_(rhs) {
-            result_register_ = std::make_shared<llvm::Value_Register>(parser::Type::INT);            
-          }
-    
+
+    Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator,
+                   Expression::Ptr rhs)
+          : Expression(parser::Type::INT),
+            lhs_(lhs),
+            comparison_operator_(comparison_operator),
+            rhs_(rhs) {
+        result_register_ = std::make_shared<llvm::Value_Register>(parser::Type::INT);
+    }
+
     // override
     llvm::Value_Register::Ptr result_register() { return result_register_; }
-    
+
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
-      
+
       llvm::Value_Register::Ptr value_register_lhs = llvm::new_value_register(parser::Type::INT);
-      
+
       ir += lhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       llvm::Value_Register::Ptr value_register_rhs = llvm::new_value_register(parser::Type::INT);
-      
+
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
-      
+
       // Step 3: Compare
       ir += result_register()->name_llvm_ir();
       ir += " = icmp ";
-      
+
       // eq: equal
       // ne: not equal
       // ugt: unsigned greater than
@@ -423,15 +427,15 @@ class Condition : public Expression {
           ir += "sge";
           break;
       }
-      
+
       ir += " ";
       ir += value_register_lhs->type_llvm_ir();
       ir += " " + value_register_lhs->name_llvm_ir() + ", " + value_register_rhs->name_llvm_ir();
       ir += "\n";
       return ir;
     }
-  
-  
+
+
   private:
     Expression::Ptr lhs_;
     Comparison_Operation comparison_operator_;
@@ -445,25 +449,25 @@ class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
 
-    // Why is type an argument in the constructor? 
+    // Why is type an argument in the constructor?
     Assignment (const parser::Type& type,
         Variable::Ptr lhs, Expression::Ptr rhs)
           : Expression(type), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-      
+
       std::string ir;
-      
+
       // Step 1: load the expression data in to a value
 
       llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
-      
+
       ir += rhs_->emit_llvm_ir();
       ir += llvm::load_instruction(tmp_value_register, rhs_->result_register());
-      
+
       // Step 2: assignment the value to the variable
       ir += llvm::store_instruction(tmp_value_register, lhs_->result_register());
-      
+
       return ir;
     }
 
@@ -533,10 +537,10 @@ class Cond_Instruction : public Instruction {
           : condition_(condition),
             instruction_(instruction),
             else_instruction_(else_instruction) {}
-            
+
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       return ir;
     }
 
@@ -587,42 +591,42 @@ class For_Instruction : public Instruction {
             condition_(condition),
             increment_(increment),
             instruction_(instruction) {}
-            
+
     std::string emit_llvm_ir () {
       std::string ir;
       ir += "\n; For_Instruction\n\n";
-      
+
       llvm::Label::Ptr label_1 = llvm::new_label();
       llvm::Label::Ptr label_2 = llvm::new_label();
       llvm::Label::Ptr label_3 = llvm::new_label();
       llvm::Label::Ptr label_4 = llvm::new_label();
-      
+
       // Step 1: initialization
       ir += initialization_->emit_llvm_ir();
       ir += llvm::br_instruction(label_1);
-      
+
       // Step 2: condition
       ir += "\n";
       ir += label_1->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
       ir += llvm::br_instruction(condition_->result_register(), label_2, label_4);
-      
+
       // Step 3: instruction, the body of the for instruction
       ir += "\n";
       ir += label_2->destination_llvm_ir();
       ir += instruction_->emit_llvm_ir();
       ir += llvm::br_instruction(label_3);
-      
+
       // Step 4: increment
       ir += "\n";
       ir += label_3->destination_llvm_ir();
       ir += increment_->emit_llvm_ir();
       ir += llvm::br_instruction(label_1);
-      
+
       // Step 5: the end
       ir += "\n";
       ir += label_4->destination_llvm_ir();
-      
+
       return ir;
     }
 
@@ -644,31 +648,31 @@ class Return_Instruction : public Instruction {
 
     Return_Instruction (Expression::Ptr expression)
           : expression_(expression) {}
-          
+
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       // Step 1: load the expression data into a value register
       llvm::Value_Register::Ptr tmp_value_register = llvm::new_value_register(parser::Type::INT);
-      
+
       ir += expression_->emit_llvm_ir();
-      
+
       ir += llvm::load_instruction(tmp_value_register, expression_->result_register());
-      
+
       // Step 2: return the register
       ir += "ret " + tmp_value_register->value_llvm_ir();
       ir += "\n";
-      
+
       return ir;
     }
-    
+
   private:
     Expression::Ptr expression_;
 };
 
 // For example
 // {
-//    // a lot of code.....  
+//    // a lot of code.....
 // }
 class Compound_Instruction : public Instruction {
   public:
