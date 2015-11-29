@@ -37,10 +37,49 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);
     }
+	
+	SECTION ("Symbol Declaration: string s;") {
+		// string s;
+		// %s = alloca i8*, align 8
 
+		std::string expected_output = std::string("%s = alloca i8*, align 8\n");
+		
+		parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
+		symbol->type(parser::Type::STRING);
+		
+		ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
+		
+		REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);		
+	}
 
-    SECTION ("Declare a list of symbols: int i, j;") {
-        // int i, j;
+	
+	SECTION ("Declare a list of symbols: string s, t;") {
+		// string s, t;
+		// %s = alloca i8*, align 4
+		// %t = alloca i8*, align 4
+		
+		std::string expected_output = std::string("%s = alloca i8*, align 8\n");
+		expected_output += "%t = alloca i8*, align 8\n";
+		
+		std::string str1 = "s";
+		parser::Symbol::Ptr symbol1 = std::make_shared<parser::Symbol>(std::move(str1));
+		symbol1->type(parser::Type::STRING);
+		
+		std::string str2 = "t";
+		parser::Symbol::Ptr symbol2 = std::make_shared<parser::Symbol>(std::move(str2));
+		symbol2->type(parser::Type::STRING);
+		
+		parser::Symbol_List symbol_list;
+		symbol_list.push_back(symbol1);
+		symbol_list.push_back(symbol2);
+		
+		ast::Declaration::Ptr declaration = std::make_shared<ast::Declaration>(symbol_list);
+		
+		REQUIRE (declaration->emit_llvm_ir() == expected_output);
+	}
+	
+    SECTION ("Declare a list of symbols: string s, t;") {
+        // string s, t;
         // %i = alloca i32, align 4
         // %j = alloca i32, align 4
 
@@ -267,6 +306,14 @@ TEST_CASE ("Abstract Syntax Tree") {
 
 
     SECTION ("Condi_Instruction") {
+		
+	}
+	
+	// string type
+
+	
+	
+	SECTION ("Assignment viariable with const_string: i = \"hello\"") {
 
     }
 

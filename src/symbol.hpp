@@ -42,7 +42,7 @@ class Symbol {
     void type (Type          value) { type_ = value; }
 
     virtual std::string type_str () const { return type_ == Type::INT ? "int" : "string"; }
-    virtual std::string type_llvm_ir () const { return type_ == Type::INT ? "i32" : "/undefined./"; }
+    virtual std::string type_llvm_ir () const { return type_ == Type::INT ? "i32" : "i8*"; }
 
     const bool get (Attribute attribute) const {
         return attributes_[static_cast<std::size_t>(attribute)];
