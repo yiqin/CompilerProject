@@ -102,7 +102,7 @@
 %type <ast::Expression::Ptr> unary_expression
 %type <ast::Expression::Ptr> multiplicative_expression
 %type <ast::Expression::Ptr> additive_expression
-%type <ast::Assignment::Ptr> assignment
+%type <ast::Expression::Ptr> assignment
 %type <ast::Expression::Ptr> expression
 
 %type <ast::Comparison_Operation> comparison_operator
@@ -394,7 +394,7 @@ assignment :
         }
 
         auto variable = std::make_shared<ast::Variable>(symbol);
-        $$ = std::make_shared<ast::Assignment>(symbol->type(), variable, $3);
+        $$ = std::make_shared<ast::Assignment>(variable, $3);
     }
 ;
 

@@ -528,9 +528,12 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable_1, const_integer_3);
         ast::Assignment::Ptr assignment_2 = std::make_shared<ast::Assignment>(variable_1, const_integer_4);
         
-        // ast::Cond_Instruction::Ptr cond_instruction = std::make_shared<ast::Cond_Instruction>(condition, assignment_1, assignment_2);
+        ast::Expression_Instruction::Ptr instruction_1 = std::make_shared<ast::Expression_Instruction>(assignment_1);
+        ast::Expression_Instruction::Ptr instruction_2 = std::make_shared<ast::Expression_Instruction>(assignment_2);
         
-        // REQUIRE (cond_instruction->emit_llvm_ir());
+        ast::Cond_Instruction::Ptr cond_instruction = std::make_shared<ast::Cond_Instruction>(condition, instruction_1, instruction_2);
+        
+        REQUIRE (cond_instruction->emit_llvm_ir() == expected_output);
     }
 
 }

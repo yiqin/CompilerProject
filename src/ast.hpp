@@ -532,6 +532,10 @@ class Expression_Instruction : public Instruction {
 
     Expression_Instruction (Expression::Ptr expression)
           : expression_(expression) {}
+    
+    std::string emit_llvm_ir () {
+      return expression_->emit_llvm_ir();
+    }
 
   private:
     Expression::Ptr expression_;
@@ -561,8 +565,31 @@ class Cond_Instruction : public Instruction {
     std::string emit_llvm_ir () {
       std::string ir;
       
-      ir += "\n; Cond_Instruction\n";
+      ir += "\n; Cond_Instruction\n\n";
       
+      llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
+      llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
+      llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
+      
+      // Step 1: condition
+      ir += condition_->emit_llvm_ir();
+      ir += llvm::br_instruction(condition_->result_register(), label_0, label_1);
+
+      // Step 2: instruction, the body of the for instruction
+      ir += "\n";
+      ir += label_0->destination_llvm_ir();
+      ir += instruction_->emit_llvm_ir();
+      ir += llvm::br_instruction(label_2);
+
+      // Step 3: increment
+      ir += "\n";
+      ir += label_1->destination_llvm_ir();
+      ir += else_instruction_->emit_llvm_ir();
+      ir += llvm::br_instruction(label_2);
+
+      // Step 4: the end
+      ir += "\n";
+      ir += label_2->destination_llvm_ir();
       
       return ir;
     }
@@ -619,36 +646,36 @@ class For_Instruction : public Instruction {
       std::string ir;
       ir += "\n; For_Instruction\n\n";
 
+      llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
       llvm::Label::Ptr label_3 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_4 = std::make_shared<llvm::Label>();
 
       // Step 1: initialization
       ir += initialization_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_1);
+      ir += llvm::br_instruction(label_0);
 
       // Step 2: condition
       ir += "\n";
-      ir += label_1->destination_llvm_ir();
+      ir += label_0->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->result_register(), label_2, label_4);
+      ir += llvm::br_instruction(condition_->result_register(), label_1, label_3);
 
       // Step 3: instruction, the body of the for instruction
       ir += "\n";
-      ir += label_2->destination_llvm_ir();
+      ir += label_1->destination_llvm_ir();
       ir += instruction_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_3);
+      ir += llvm::br_instruction(label_2);
 
       // Step 4: increment
       ir += "\n";
-      ir += label_3->destination_llvm_ir();
+      ir += label_2->destination_llvm_ir();
       ir += increment_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_1);
+      ir += llvm::br_instruction(label_0);
 
       // Step 5: the end
       ir += "\n";
-      ir += label_4->destination_llvm_ir();
+      ir += label_3->destination_llvm_ir();
 
       return ir;
     }
