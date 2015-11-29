@@ -620,9 +620,9 @@ class While_Instruction : public Instruction {
       llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
       
       ir += llvm::br_instruction(label_0);
-      ir += "\n";
       
       // Step 1: condition
+      ir += "\n";
       ir += label_0->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
       ir += llvm::br_instruction(condition_->result_register(), label_1, label_2);
@@ -633,7 +633,7 @@ class While_Instruction : public Instruction {
       ir += instruction_->emit_llvm_ir();
       ir += llvm::br_instruction(label_0);
 
-      // Step 4: the end
+      // Step 3: the end
       ir += "\n";
       ir += label_2->destination_llvm_ir();
       
@@ -652,7 +652,36 @@ class Do_Instruction : public Instruction {
 
     Do_Instruction (Condition::Ptr condition, Instruction::Ptr instruction)
           : condition_(condition), instruction_(instruction) {}
+          
+    std::string emit_llvm_ir () {
+      std::string ir;
+      ir += "\n; Do_Instruction\n\n";
+      
+      llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
+      llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
+      llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
+      
+      ir += llvm::br_instruction(label_0);
+      
+      // Step 1: instruction
+      ir += "\n";
+      ir += label_0->destination_llvm_ir();
+      ir += instruction_->emit_llvm_ir();
+      ir += llvm::br_instruction(label_1);
+      
+      // Step 2: condition
+      ir += "\n";
+      ir += label_1->destination_llvm_ir();
+      ir += condition_->emit_llvm_ir();
+      ir += llvm::br_instruction(condition_->result_register(), label_0, label_2);
 
+      // Step 3: the end
+      ir += "\n";
+      ir += label_2->destination_llvm_ir();
+      
+      return ir;
+    }
+    
   private:
     Condition::Ptr condition_;
     Instruction::Ptr instruction_;

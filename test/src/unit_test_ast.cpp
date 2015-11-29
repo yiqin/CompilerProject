@@ -560,9 +560,8 @@ TEST_CASE ("Abstract Syntax Tree") {
     
     SECTION ( "Do_Instruction" ) {
         // do {
-        //   printd(i);
-        //   i = i-1;
-        // } while ( i >= -20 );
+        //   i = i + 2
+        // } while ( i < 10 );
         
         std::string expected_output;
 
