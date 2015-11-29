@@ -54,7 +54,7 @@ Due to the different version of LLVM compilers, sample.ll will be different.
 ===============================================================================
 To Do:
 - [ ] Print variables when printf is called. printf is a special function.
-- [ ]  Assume all integers are ```%32```.
+- [ ] Assume all integers are ```%32```.
 
 ===============================================================================
 
