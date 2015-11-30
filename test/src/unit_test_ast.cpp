@@ -25,7 +25,7 @@ void reset_ids () {
 TEST_CASE ("Abstract Syntax Tree") {
     reset_ids();
     std::string expected_output;
-    
+
     SECTION ("Symbol Declaration: int i;") {
         // int i;
         // %i = alloca i32, align 4
@@ -39,19 +39,19 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);
     }
-	
+
 	SECTION ("Symbol Declaration: string s;") {
         // string s;
         // %s = alloca i8*, align 8
 
         expected_output = std::string("%s = alloca i8*, align 8\n");
-    
+
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
         symbol->type(parser::Type::STRING);
-    
+
         ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
-    
-        REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);    
+
+        REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);
 	}
 
     SECTION ("Declare a list of symbols: string s, t;") {
@@ -83,7 +83,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // int foo(int a, int b)
         // define i32 @foo(i32 %a, i32 %b)
 
-        expected_output = std::string("define i32 @foo(i32 %a, i32 %b)\n");
+        expected_output = std::string("declare i32 @foo(i32, i32)\n");
 
         parser::Type type = parser::Type::INT;
         // function_declarator includes the argument list
@@ -97,8 +97,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         argument2->type(parser::Type::INT);
         function_declarator->argument_list().push_back(argument2);
 
-        ast::Function_Definition::Ptr function_definition = std::make_shared<ast::Function_Definition>(type, function_declarator);
-        REQUIRE (function_definition->emit_llvm_ir() == expected_output);
+        ast::Function_Declaration::Ptr function_declaration = std::make_shared<ast::Function_Declaration>(type, function_declarator);
+        REQUIRE (function_declaration->emit_llvm_ir() == expected_output);
     }
 
 
@@ -170,7 +170,7 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Return expression: return a+1-2;") {
         // return a+1-2;
 
-        expected_output = 
+        expected_output =
         "%P.5 = alloca i32, align 4\n"
         "store i32 1, i32* %P.5\n"
         "%V.1 = load i32* %P.5, align 4\n"
@@ -268,7 +268,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         //   for ( i = -10; i <= 10; i = i+1 )
         //      // printd(i); empty instruction now
 
-        expected_output = 
+        expected_output =
             "\n"
             "; For_Instruction\n"
             "\n"
@@ -384,7 +384,7 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Binary_Expression: 1+2") {
         // 1+2;
 
-        expected_output = 
+        expected_output =
             "%P.4 = alloca i32, align 4\n"
             "store i32 1, i32* %P.4\n"
             "%V.1 = load i32* %P.4, align 4\n"
@@ -447,8 +447,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         // argument2->type(parser::Type::INT);
         // function_declarator->argument_list().push_back(argument2);
 
-        ast::Function_Definition::Ptr function_definition = std::make_shared<ast::Function_Definition>(type, function_declarator);
-        output += function_definition->emit_llvm_ir();
+        ast::Function_Declaration::Ptr function_declaration = std::make_shared<ast::Function_Declaration>(type, function_declarator);
+        output += function_declaration->emit_llvm_ir();
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
         symbol->type(parser::Type::STRING);
@@ -566,59 +566,59 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         REQUIRE (compound_instruction->emit_llvm_ir()==expected_output);
     }
-    
+
     SECTION ( "Function_Call" ) {
         // int foo(int x, int y) {
-        //   return x+y;    
+        //   return x+y;
         // }
-        // 
+        //
         // i = foo(2, 4);
-        // 
+        //
         // The test case is foo(2, 4, "hello world");
         //
-        
+
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));
         function->type(parser::Type::INT);
-        
+
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(4));
         ast::Const_String::Ptr const_string_1 = std::make_shared<ast::Const_String>(std::string("hello world"));
-        
-        
+
+
         std::vector<ast::Expression::Ptr> argument_list;
         argument_list.push_back(const_integer_1);
         argument_list.push_back(const_integer_2);
         argument_list.push_back(const_string_1);
-        
+
         ast::Function_Call::Ptr function_call = std::make_shared<ast::Function_Call>(function, argument_list);
-        
+
         REQUIRE (function_call->emit_llvm_ir() == expected_output);
     }
 
     SECTION ( "Const_Integer" ) {
-        // -a 
+        // -a
         // a is int type.
-        
+
         expected_output = "%P.1 = alloca i32, align 4\n"
                           "store i32 2, i32* %P.1\n"
                           "%V.0 = load i32* %P.1, align 4\n";
-        
+
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
         REQUIRE (const_integer_1->emit_llvm_ir() == expected_output);
     }
-    
+
     SECTION ( "Unary_Expression" ) {
-        // -a 
+        // -a
         // a is int type.
-        
+
         expected_output = "%V.1 = sub i32 0, %a\n";
-        
+
         parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("a"));
         symbol_1->type(parser::Type::INT);
         ast::Variable::Ptr variable_1 = std::make_shared<ast::Variable>(symbol_1);
-        
+
         ast::Unary_Expression::Ptr unary_expression = std::make_shared<ast::Unary_Expression>(variable_1);
-        
+
         REQUIRE (unary_expression->emit_llvm_ir() == expected_output);
     }
 }

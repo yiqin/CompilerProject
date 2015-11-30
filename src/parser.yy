@@ -113,7 +113,7 @@
 %type <ast::Condition::Ptr> cond_instruction
 
 %type <ast::Instruction::Ptr> instruction
-%type <ast::Instruction::Ptr> compound_instruction
+%type <ast::Compound_Instruction::Ptr> compound_instruction
 %type <ast::Instruction::Ptr> expression_instruction
 %type <ast::Instruction::Ptr> iteration_instruction
 %type <ast::Instruction::Ptr> select_instruction
@@ -142,7 +142,7 @@ external_declaration :
         for (auto& symbol : $1) {
             symbol->set(Symbol::Attribute::GLOBAL);
 
-            if (auto function std::dynamic_pointer_cast<Function>(symbol)) {
+            if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
                 ast::Function_Declaration func_decl(function->type(), function);
                 std::cout << func_decl.emit_llvm_ir();
             } else {
@@ -172,7 +172,7 @@ external_declaration :
                 if (std::iscntrl(c)) {
                     char buf[3];
                     buf[2] = '\0';
-                    snprintf(buf, 3, "%02x", c & 0xff)
+                    snprintf(buf, 3, "%02x", c & 0xff);
                     std::cout << '\\' << buf;
                 } else {
                     std::cout << c;
