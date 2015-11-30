@@ -2,6 +2,8 @@
 
 #include "scanner.hpp"
 
+#include <cctype>
+
 #include <algorithm>
 #include <string>
 
@@ -120,6 +122,7 @@
 %type <std::vector<ast::Expression::Ptr>> argument_expression_list
 %type <std::vector<ast::Instruction::Ptr>> instruction_list
 
+%type <ast::Function_Definition::Ptr> function_definition
 
 %%
 
@@ -135,16 +138,52 @@ program :
 
 external_declaration :
     declaration         {
-        /* Nothing to do. Symbol was already added to symbol_table. */
+        // Loop over declarations, and print out the functions as "function declarations".
+        for (auto& symbol : $1) {
+            symbol->set(Symbol::Attribute::GLOBAL);
+
+            if (auto function std::dynamic_pointer_cast<Function>(symbol)) {
+                ast::Function_Declaration func_decl(function->type(), function);
+                std::cout << func_decl.emit_llvm_ir();
+            } else {
+                // Global declaration.
+                // TODO: declare global variable.
+            }
+        }
     }
   | EXTERN declaration  {
         for (auto& symbol : $2) {
+            symbol->set(Symbol::Attribute::GLOBAL);
             symbol->set(Symbol::Attribute::EXTERN);
             // std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
         }
     }
   | function_definition {
         /* std::cout << "external_declaration: function_definition" << std::endl; */
+
+        // emit constant strings
+        for (auto& str : llvm::String::all_strings()) {
+            // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
+            std::cout
+                << str->id() << " private constant [" << str->value().size()
+                << " x i8] c\""
+                ;
+            for (auto& c : str->value()) {
+                if (std::iscntrl(c)) {
+                    char buf[3];
+                    buf[2] = '\0';
+                    snprintf(buf, 3, "%02x", c & 0xff)
+                    std::cout << '\\' << buf;
+                } else {
+                    std::cout << c;
+                }
+            }
+            std::cout << '"' << std::endl;
+        }
+        llvm::String::clear_store();
+
+        // emit function definition
+        std::cout << $1->emit_llvm_ir();
     }
 ;
 
@@ -182,11 +221,7 @@ function_definition :
             // $2->print_semantic_action();
         }
 
-        // Emit LLVM IR.
-        // emit constant strings
-        // emit function header
-        // emit function body
-        // emit function trailer
+        $$ = std::make_shared<ast::Function_Definition>($1, function, $4);
     }
 ;
 

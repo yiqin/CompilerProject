@@ -127,15 +127,76 @@ class Declaration : public Node {
     parser::Symbol_List symbol_list_;
 };
 
-// e.g. int main(int a)
-// FIXME: I hesitate to use Function class or function_definition.
-// But I think function_definition is better.
+// e.g. int main(int a);
+class Function_Declaration : public Node {
+  public:
+    typedef std::shared_ptr<Function_Declaration> Ptr;
+
+    Function_Declaration (const parser::Type& type, parser::Function::Ptr& function_declarator)
+          : type_(type), function_declarator_(function_declarator) {}
+
+    std::string emit_llvm_ir () {
+      std::string ir;
+
+      // step 1
+      ir += "declare ";
+
+      // step 2: function return type
+      switch (type_) {
+        case parser::Type::INT:
+          ir += "i32";
+          break;
+        case parser::Type::STRING:
+          ir += "i8*";
+          break;
+      }
+
+      // step 3: function name
+      ir += " @"+function_declarator_->name();
+
+      // step 4: function argument list
+      ir += "(";
+
+      for (auto& symbol : function_declarator_->argument_list()) {
+        ir += symbol->type_llvm_ir() + ", ";
+      }
+
+      // remove the last space and the last comma
+      if (function_declarator_->argument_list().size() > 0) {
+        ir.pop_back();
+        ir.pop_back();
+      }
+
+      ir += ")";
+
+      // step 5
+      // FIXME: this may not be always 0
+      ir += " #0";
+      ir += "\n";
+
+      return ir;
+    }
+
+  private:
+    parser::Type type_;
+    parser::Function::Ptr function_declarator_;
+    // decl_glb_fct
+};
+
+
+// e.g. int main(int a) { ... }
 class Function_Definition : public Node {
   public:
     typedef std::shared_ptr<Function_Definition> Ptr;
 
-    Function_Definition (const parser::Type& type, parser::Function::Ptr& function_declarator)
-          : type_(type), function_declarator_(function_declarator) {}
+    Function_Definition (
+        const parser::Type& type,
+        parser::Function::Ptr function_declarator,
+        Compound_Instruction::Ptr body
+    )
+          : type_(type),
+            function_declarator_(function_declarator),
+            body_(body) {}
 
     std::string emit_llvm_ir () {
       std::string ir;
@@ -159,7 +220,6 @@ class Function_Definition : public Node {
       // step 4: function argument list
       ir += "(";
 
-      // TODO: argument is <value>. We need to put them into <pointer>
       for (auto& symbol : function_declarator_->argument_list()) {
         ir += symbol->type_llvm_ir() + " %" + symbol->name() + ", ";
       }
@@ -173,7 +233,11 @@ class Function_Definition : public Node {
       ir += ")";
 
       // step 5
-      ir += "\n";
+      ir += " {\nentry:\n";
+
+      // step 6: function body
+      ir += body_->emit_llvm_ir();
+      ir += "}\n";
 
       return ir;
     }
@@ -181,6 +245,7 @@ class Function_Definition : public Node {
   private:
     parser::Type type_;
     parser::Function::Ptr function_declarator_;
+    Compound_Instruction::Ptr body_;
     // decl_glb_fct
 };
 

@@ -28,6 +28,7 @@ class Symbol {
 
     enum class Attribute : std::size_t {
         EXTERN,
+        GLOBAL,
         FUNCTION_PARAM,
         kSize
     };
