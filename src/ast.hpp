@@ -127,128 +127,6 @@ class Declaration : public Node {
     parser::Symbol_List symbol_list_;
 };
 
-// e.g. int main(int a);
-class Function_Declaration : public Node {
-  public:
-    typedef std::shared_ptr<Function_Declaration> Ptr;
-
-    Function_Declaration (const parser::Type& type, parser::Function::Ptr& function_declarator)
-          : type_(type), function_declarator_(function_declarator) {}
-
-    std::string emit_llvm_ir () {
-      std::string ir;
-
-      // step 1
-      ir += "declare ";
-
-      // step 2: function return type
-      switch (type_) {
-        case parser::Type::INT:
-          ir += "i32";
-          break;
-        case parser::Type::STRING:
-          ir += "i8*";
-          break;
-      }
-
-      // step 3: function name
-      ir += " @"+function_declarator_->name();
-
-      // step 4: function argument list
-      ir += "(";
-
-      for (auto& symbol : function_declarator_->argument_list()) {
-        ir += symbol->type_llvm_ir() + ", ";
-      }
-
-      // remove the last space and the last comma
-      if (function_declarator_->argument_list().size() > 0) {
-        ir.pop_back();
-        ir.pop_back();
-      }
-
-      ir += ")";
-
-      // step 5
-      // FIXME: this may not be always 0
-      ir += " #0";
-      ir += "\n";
-
-      return ir;
-    }
-
-  private:
-    parser::Type type_;
-    parser::Function::Ptr function_declarator_;
-    // decl_glb_fct
-};
-
-
-// e.g. int main(int a) { ... }
-class Function_Definition : public Node {
-  public:
-    typedef std::shared_ptr<Function_Definition> Ptr;
-
-    Function_Definition (
-        const parser::Type& type,
-        parser::Function::Ptr function_declarator,
-        Compound_Instruction::Ptr body
-    )
-          : type_(type),
-            function_declarator_(function_declarator),
-            body_(body) {}
-
-    std::string emit_llvm_ir () {
-      std::string ir;
-
-      // step 1
-      ir += "define ";
-
-      // step 2: function return type
-      switch (type_) {
-        case parser::Type::INT:
-          ir += "i32";
-          break;
-        case parser::Type::STRING:
-          ir += "i8*";
-          break;
-      }
-
-      // step 3: function name
-      ir += " @"+function_declarator_->name();
-
-      // step 4: function argument list
-      ir += "(";
-
-      for (auto& symbol : function_declarator_->argument_list()) {
-        ir += symbol->type_llvm_ir() + " %" + symbol->name() + ", ";
-      }
-
-      // remove the last space and the last comma
-      if (function_declarator_->argument_list().size() > 0) {
-        ir.pop_back();
-        ir.pop_back();
-      }
-
-      ir += ")";
-
-      // step 5
-      ir += " {\nentry:\n";
-
-      // step 6: function body
-      ir += body_->emit_llvm_ir();
-      ir += "}\n";
-
-      return ir;
-    }
-
-  private:
-    parser::Type type_;
-    parser::Function::Ptr function_declarator_;
-    Compound_Instruction::Ptr body_;
-    // decl_glb_fct
-};
-
 
 class Variable : public Terminal {
   public:
@@ -286,7 +164,7 @@ class Const_Integer : public Terminal {
 
       std::string ir = llvm::alloca_instruction(tmp);
       ir += llvm::store_instruction(value_, tmp);
-      
+
       ir += llvm::load_instruction(result_register(), tmp);
 
       return ir;
@@ -348,14 +226,14 @@ class Unary_Expression : public Expression {
 
     std::string emit_llvm_ir () {
       std::string ir;
-      
-      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->result_register()->type());      
+
+      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->result_register()->type());
       ir += rhs_->emit_llvm_ir();
-      
+
       llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(result_register()->type());
 
       ir += result_register()->name_llvm_ir();
-      ir += " = ";      
+      ir += " = ";
       ir += "sub";
       ir += " ";
       ir += result_register()->type_llvm_ir();
@@ -390,7 +268,7 @@ class Binary_Expression : public Expression {
       // No. We can simple left and right.
 
       std::string ir;
-      
+
       ir += lhs_->emit_llvm_ir();
       ir += rhs_->emit_llvm_ir();
 
@@ -543,12 +421,12 @@ class Assignment : public Expression {
     std::string emit_llvm_ir () {
       std::string ir;
       ir += rhs_->emit_llvm_ir();
-      
+
       llvm::Pointer_Register::Ptr tmp_pointer_register = std::make_shared<llvm::Pointer_Register>(rhs_->type());
       ir += llvm::alloca_instruction(tmp_pointer_register);
       ir += llvm::store_instruction(rhs_->result_register(), tmp_pointer_register);
       ir += llvm::load_instruction(lhs_->result_register(), tmp_pointer_register);
-      
+
       return ir;
     }
 
@@ -864,7 +742,7 @@ class Return_Instruction : public Instruction {
 
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       ir += expression_->emit_llvm_ir();
 
       ir += "ret " + expression_->result_register()->value_llvm_ir();
@@ -902,6 +780,127 @@ class Compound_Instruction : public Instruction {
 };
 
 
+// e.g. int main(int a);
+class Function_Declaration : public Node {
+  public:
+    typedef std::shared_ptr<Function_Declaration> Ptr;
+
+    Function_Declaration (const parser::Type& type, parser::Function::Ptr& function_declarator)
+          : type_(type), function_declarator_(function_declarator) {}
+
+    std::string emit_llvm_ir () {
+      std::string ir;
+
+      // step 1
+      ir += "declare ";
+
+      // step 2: function return type
+      switch (type_) {
+        case parser::Type::INT:
+          ir += "i32";
+          break;
+        case parser::Type::STRING:
+          ir += "i8*";
+          break;
+      }
+
+      // step 3: function name
+      ir += " @"+function_declarator_->name();
+
+      // step 4: function argument list
+      ir += "(";
+
+      for (auto& symbol : function_declarator_->argument_list()) {
+        ir += symbol->type_llvm_ir() + ", ";
+      }
+
+      // remove the last space and the last comma
+      if (function_declarator_->argument_list().size() > 0) {
+        ir.pop_back();
+        ir.pop_back();
+      }
+
+      ir += ")";
+
+      // step 5
+      // // FIXME: this may not be always 0
+      // ir += " #0";
+      ir += "\n";
+
+      return ir;
+    }
+
+  private:
+    parser::Type type_;
+    parser::Function::Ptr function_declarator_;
+    // decl_glb_fct
+};
+
+
+// e.g. int main(int a) { ... }
+class Function_Definition : public Node {
+  public:
+    typedef std::shared_ptr<Function_Definition> Ptr;
+
+    Function_Definition (
+        const parser::Type& type,
+        parser::Function::Ptr function_declarator,
+        Compound_Instruction::Ptr body
+    )
+          : type_(type),
+            function_declarator_(function_declarator),
+            body_(body) {}
+
+    std::string emit_llvm_ir () {
+      std::string ir;
+
+      // step 1
+      ir += "define ";
+
+      // step 2: function return type
+      switch (type_) {
+        case parser::Type::INT:
+          ir += "i32";
+          break;
+        case parser::Type::STRING:
+          ir += "i8*";
+          break;
+      }
+
+      // step 3: function name
+      ir += " @"+function_declarator_->name();
+
+      // step 4: function argument list
+      ir += "(";
+
+      for (auto& symbol : function_declarator_->argument_list()) {
+        ir += symbol->type_llvm_ir() + " %" + symbol->name() + ", ";
+      }
+
+      // remove the last space and the last comma
+      if (function_declarator_->argument_list().size() > 0) {
+        ir.pop_back();
+        ir.pop_back();
+      }
+
+      ir += ")";
+
+      // step 5
+      ir += " {\nentry:\n";
+
+      // step 6: function body
+      ir += body_->emit_llvm_ir();
+      ir += "}\n";
+
+      return ir;
+    }
+
+  private:
+    parser::Type type_;
+    parser::Function::Ptr function_declarator_;
+    Compound_Instruction::Ptr body_;
+    // decl_glb_fct
+};
 
 
 
