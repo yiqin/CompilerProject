@@ -163,6 +163,7 @@ std::string alloca_instruction (Pointer_Register::Ptr op);
 // Return value
 // <value> = load <pointer>
 std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
+std::string load_instruction (llvm::Pointer_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
 
 // store int, <pointer>
 std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1);

@@ -604,9 +604,23 @@ TEST_CASE ("Abstract Syntax Tree") {
         REQUIRE (function_call->emit_llvm_ir() == expected_output);
     }
 
+    SECTION ( "Const_Integer" ) {
+        // -a 
+        // a is int type.
+        
+        expected_output = "%P.0 = alloca i32, align 4\n"
+                          "store i32 2, i32* %P.0\n"
+                          "%V.0 = load i32* %P.1, align 4\n";
+        
+        ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
+        REQUIRE (const_integer_1->emit_llvm_ir() == expected_output);
+    }
+    
     SECTION ( "Unary_Expression" ) {
         // -a 
         // a is int type.
+        
+        expected_output = "%V.1 = sub i32 0, %a";
         
         parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("a"));
         symbol_1->type(parser::Type::INT);

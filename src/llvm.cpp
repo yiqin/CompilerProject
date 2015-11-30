@@ -42,6 +42,15 @@ std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Regi
   return ir;
 };
 
+std::string load_instruction (llvm::Pointer_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2) {
+  std::string ir;
+  ir += op_1->name_llvm_ir();
+  ir += " = load ";
+  ir += op_2->pointer_llvm_ir();
+  ir += ", " + alignment_llvm_ir(op_1->type()) + "\n";
+  return ir;
+};
+
 // store <value>, int
 std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1) {
   std::string ir;
