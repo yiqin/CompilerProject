@@ -245,10 +245,9 @@ class Const_String : public Terminal {
 
     std::string emit_llvm_ir () {
       std::string ir;
-      // Nothing to do
-      // ir += llvm::alloca_instruction(result_register());
-      // ir += llvm::store_instruction(string_, result_register());
-      // ir += llvm::load_instruction(result_register(), string_);
+      ir += result_register()->name_llvm_ir();
+      ir += " = ";
+      ir += llvm::getelementptr_instruction(string_);
       return ir;
     }
 
@@ -287,7 +286,6 @@ class Unary_Expression : public Expression {
       
       llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->result_register()->type());      
       ir += rhs_->emit_llvm_ir();
-      // ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
       
       llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(result_register()->type());
 
@@ -331,25 +329,7 @@ class Binary_Expression : public Expression {
       ir += lhs_->emit_llvm_ir();
       ir += rhs_->emit_llvm_ir();
 
-      // Step 1: lhs_ emit_llvm_ir
-      // Get the lhs data into one register
-
-
-      //  ir += lhs_->emit_llvm_ir();
-      // ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
-
-      // Step 2: rhs_ emit_llvm_ir
-      // Get the rhs data into another register
-
-      // ir += rhs_->emit_llvm_ir();
-      // ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
-
-      // FIXME: Fails to put this part of code to llvm.hpp
-
-      // Step 3: Operation
-
-
-      ir += result_register()->name_llvm_ir();//tmp_value_register->name_llvm_ir();
+      ir += result_register()->name_llvm_ir();
       ir += " = ";
 
       // add
@@ -416,12 +396,7 @@ class Condition : public Expression {
           : Expression(parser::Type::INT),
             lhs_(lhs),
             comparison_operator_(comparison_operator),
-            rhs_(rhs) {
-        result_register_ = std::make_shared<llvm::Value_Register>(parser::Type::INT);
-    }
-
-    // override
-    llvm::Value_Register::Ptr result_register() { return result_register_; }
+            rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
       std::string ir;
@@ -490,8 +465,6 @@ class Condition : public Expression {
     Expression::Ptr lhs_;
     Comparison_Operation comparison_operator_;
     Expression::Ptr rhs_;
-    // override
-    llvm::Value_Register::Ptr result_register_;
 };
 
 // For example: a = 1; b = "hello world";
@@ -504,26 +477,13 @@ class Assignment : public Expression {
 
     std::string emit_llvm_ir () {
       std::string ir;
+      ir += rhs_->emit_llvm_ir();
       
-      if (type() == parser::Type::STRING) {
-        return "Please wait";
-      }
-      
-      // Step 1: load the expression data in to a value
       llvm::Pointer_Register::Ptr tmp_pointer_register = std::make_shared<llvm::Pointer_Register>(rhs_->type());
-      
       ir += llvm::alloca_instruction(tmp_pointer_register);
       ir += llvm::store_instruction(rhs_->result_register(), tmp_pointer_register);
       ir += llvm::load_instruction(lhs_->result_register(), tmp_pointer_register);
-      /*
-      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(rhs_->type());
-
-      // ir += rhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(tmp_value_register, rhs_->result_register());
-
-      // Step 2: assignment the value to the variable
-      ir += llvm::store_instruction(tmp_value_register, lhs_->result_register());
-      */
+      
       return ir;
     }
 

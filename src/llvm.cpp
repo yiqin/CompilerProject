@@ -99,4 +99,15 @@ std::string br_instruction (llvm::Value_Register::Ptr cond, Label::Ptr label_1, 
    return std::string("br i1 ") + cond->name_llvm_ir() + ", " + label_1->name_llvm_ir() + ", " + label_2->name_llvm_ir() + "\n";
 };
 
+// <value> = getelementptr (class string)
+std::string getelementptr_instruction (llvm::String::Ptr string) {
+  std::string ir;
+  ir += std::string("getelementptr inbounds ");
+  ir += "[" + to_string(string->value().size() + 1) + " x i8]* ";
+  ir += string->id() + ", ";
+  ir += "i32 0, i32 0";
+  ir += "\n";
+  return ir;
+};
+
 }  // namespace llvm

@@ -210,6 +210,8 @@ std::string br_instruction (Label::Ptr label_1);
 // br i1 <cond>, label <iftrue>, label<iffailure>
 std::string br_instruction (llvm::Value_Register::Ptr cond, Label::Ptr label_1, Label::Ptr label_2);
 
+// <value> = getelementptr (class string)
+std::string getelementptr_instruction (llvm::String::Ptr string);
 
 }
 
