@@ -4,15 +4,17 @@
 // NOTE: These two files must be included in this order.
 #include "scanner.hpp"
 #include "symbol_table.hpp"
-#include "parser.tab.hpp"
 
 #include "ast.hpp"
+#include "llvm.hpp"
+#include "parser.tab.hpp"
 
 int main (int argc, char** argv) {
     scanner::Scanner scanner;
     parser::Symbol_Table::Ptr symbol_table =
         parser::Symbol_Table::construct("global scope", parser::location());
-    parser::Parser parser(scanner, symbol_table);
+    llvm::LLVM_Generator llvm_generator(std::cout);
+    parser::Parser parser(scanner, symbol_table, llvm_generator);
 
     parser.parse();
 

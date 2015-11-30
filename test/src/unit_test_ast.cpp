@@ -17,14 +17,17 @@
 
 void reset_ids () {
     llvm::Label::id_factory_.reset();
-    llvm::String::id_factory_.reset();
-    ast::Nonterminal::id_factory_.reset();
+    // llvm::String::id_factory_.reset();
+    // ast::Nonterminal::id_factory_.reset();
 }
 
 
-TEST_CASE ("Abstract Syntax Tree") {
+TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
     reset_ids();
     std::string expected_output;
+    std::ostringstream output_stream;
+
+    llvm::LLVM_Generator generator(output_stream);
 
     SECTION ("Symbol Declaration: int i;") {
         // int i;
@@ -35,9 +38,10 @@ TEST_CASE ("Abstract Syntax Tree") {
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
 
-        ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
+        ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
 
-        REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);
+        declaration_list->emit_code(&generator);
+        REQUIRE(output_stream.str() == expected_output);
     }
 
 	SECTION ("Symbol Declaration: string s;") {
@@ -49,9 +53,10 @@ TEST_CASE ("Abstract Syntax Tree") {
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
         symbol->type(parser::Type::STRING);
 
-        ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
+        ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
 
-        REQUIRE(symbol_declarator->emit_llvm_ir() == expected_output);
+        declaration_list->emit_code(&generator);
+        REQUIRE(output_stream.str() == expected_output);
 	}
 
     SECTION ("Declare a list of symbols: string s, t;") {
@@ -74,9 +79,10 @@ TEST_CASE ("Abstract Syntax Tree") {
         symbol_list.push_back(symbol1);
         symbol_list.push_back(symbol2);
 
-        ast::Declaration::Ptr declaration = std::make_shared<ast::Declaration>(symbol_list);
+        ast::Declaration_List::Ptr declaration = std::make_shared<ast::Declaration_List>(symbol_list);
 
-        REQUIRE (declaration->emit_llvm_ir() == expected_output);
+        declaration->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ("Declare function: int foo(int a, int b)") {
@@ -98,7 +104,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         function_declarator->argument_list().push_back(argument2);
 
         ast::Function_Declaration::Ptr function_declaration = std::make_shared<ast::Function_Declaration>(type, function_declarator);
-        REQUIRE (function_declaration->emit_llvm_ir() == expected_output);
+        function_declaration->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -109,16 +116,14 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         expected_output = std::string("ret i32 0\n");
 
-        std::string output = "";
-
         // Expression - Const_Integer
         ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(0));
 
         // Return_Instruction
         ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(const_integer);
-        output += return_instruction->emit_llvm_ir();
 
-        REQUIRE ( output == expected_output );
+        return_instruction->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -139,7 +144,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         // Return_Instruction
         ast::Return_Instruction::Ptr return_instruction_1 = std::make_shared<ast::Return_Instruction>(variable_1);
 
-        REQUIRE (return_instruction_1->emit_llvm_ir() == expected_output_1);
+        return_instruction_1->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output_1);
     }
 
 
@@ -157,7 +163,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, const_integer_1, const_integer_2);
 
-        REQUIRE (add_expression->emit_llvm_ir() == expected_output);
+        add_expression->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -186,9 +193,9 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         expected_output =
             "%a.1 = load i32* %a\n"
-            "%tmp.0 = add i32 %a.1, 1\n"
-            "%tmp.1 = sub i32 %tmp.0, 2\n"
-            "ret i32 %tmp.1\n"
+            "%tmp.1 = add i32 %a.1, 1\n"
+            "%tmp.0 = sub i32 %tmp.1, 2\n"
+            "ret i32 %tmp.0\n"
             ;
 
 
@@ -207,7 +214,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         // Return_Instruction
         ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(minus_expression);
 
-        REQUIRE (return_instruction->emit_llvm_ir() == expected_output);
+        return_instruction->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -221,8 +229,6 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         expected_output = "store i32 450, i32* %i\n";
 
-        std::string output = "";
-
         // rhs
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
@@ -232,9 +238,9 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Const_Integer::Ptr const_integer = std::make_shared<ast::Const_Integer>(std::move(450));
 
         ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(variable, const_integer);
-        output += assignment->emit_llvm_ir();
 
-        REQUIRE ( output == expected_output );
+        assignment->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -332,7 +338,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
 
         // i <= 10 Condition
-        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(ast::Comparison_Operation::LESS_THAN_OR_EQUAL, variable, const_integer_2);
 
         // increment - Assignment with expression.
         // i = i + 1
@@ -351,7 +357,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         // for_instruction
         ast::For_Instruction::Ptr for_instruction = std::make_shared<ast::For_Instruction>(initialization, condition, increment, instruction);
 
-        REQUIRE (for_instruction->emit_llvm_ir() == expected_output);
+        for_instruction->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -381,8 +388,6 @@ TEST_CASE ("Abstract Syntax Tree") {
         // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
         //
 
-        std::string output;
-
         parser::Type type = parser::Type::STRING;
         // function_declarator includes the argument list
         parser::Function::Ptr function_declarator = std::make_shared<parser::Function>(std::move("foo"));
@@ -396,13 +401,13 @@ TEST_CASE ("Abstract Syntax Tree") {
         // function_declarator->argument_list().push_back(argument2);
 
         ast::Function_Declaration::Ptr function_declaration = std::make_shared<ast::Function_Declaration>(type, function_declarator);
-        output += function_declaration->emit_llvm_ir();
+        function_declaration->emit_code(&generator);
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
         symbol->type(parser::Type::STRING);
 
-        ast::Symbol_Declarator::Ptr symbol_declarator = std::make_shared<ast::Symbol_Declarator>(symbol);
-        output += symbol_declarator->emit_llvm_ir();
+        ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
+        declaration_list->emit_code(&generator);
 
 
         // Unfinished....
@@ -415,8 +420,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         //   i = 1;
         // else
         //   i = -1;
-        
-        expected_output = 
+
+        expected_output =
             "\n"
             "; Cond_Instruction\n"
             "\n"
@@ -426,20 +431,20 @@ TEST_CASE ("Abstract Syntax Tree") {
             "Label_0:\n"
             "store i32 1, i32* %i\n"
             "br label %Label_2\n"
-            "\n"  
+            "\n"
             "Label_1:\n"
             "store i32 -1, i32* %i\n"
             "br label %Label_2\n"
             "\n"
             "Label_2:\n"
             ;
-            
+
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
         ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
         ast::Const_Integer::Ptr const_integer_4 = std::make_shared<ast::Const_Integer>(std::move(-1));
 
-        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(const_integer_1, ast::Comparison_Operation::EQUAL, const_integer_2);
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(ast::Comparison_Operation::EQUAL, const_integer_1, const_integer_2);
 
         parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("i"));
         symbol_1->type(parser::Type::INT);
@@ -453,14 +458,15 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1, instruction_2);
 
-        REQUIRE (cond_instruction_1->emit_llvm_ir() == expected_output);
+        cond_instruction_1->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Cond_Instruction if" ) {
         // if (-10 == 10)
         //   i = 1;
-        
-        expected_output = 
+
+        expected_output =
             "\n"
             "; Cond_Instruction\n"
             "\n"
@@ -470,18 +476,18 @@ TEST_CASE ("Abstract Syntax Tree") {
             "Label_0:\n"
             "store i32 1, i32* %i\n"
             "br label %Label_2\n"
-            "\n"  
+            "\n"
             "Label_1:\n"
             "br label %Label_2\n"
             "\n"
             "Label_2:\n"
             ;
-            
+
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
         ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
 
-        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(const_integer_1, ast::Comparison_Operation::EQUAL, const_integer_2);
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(ast::Comparison_Operation::EQUAL, const_integer_1, const_integer_2);
 
         parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("i"));
         symbol_1->type(parser::Type::INT);
@@ -491,7 +497,9 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Expression_Instruction::Ptr instruction_1 = std::make_shared<ast::Expression_Instruction>(assignment_1);
 
         ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1);
-        REQUIRE (cond_instruction_1->emit_llvm_ir() == expected_output);
+
+        cond_instruction_1->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -500,12 +508,9 @@ TEST_CASE ("Abstract Syntax Tree") {
         //   i = i+2;
         // }
 
-        expected_output = 
+        expected_output =
             "\n"
             "; While_Instruction\n"
-            "\n"
-            "%i = alloca i32\n"
-            "store i32 0, i32* %i\n"
             "\n"
             "br label %Label_0\n"
             "\n"
@@ -516,8 +521,8 @@ TEST_CASE ("Abstract Syntax Tree") {
             "\n"
             "Label_1:\n"
             "%i.2 = load i32* %i\n"
-            "%tmp.1 = add i32 %i.2, 2\n"
-            "store i32 %tmp.1, i32* %i\n"
+            "%tmp.4 = add i32 %i.2, 2\n"
+            "store i32 %tmp.4, i32* %i\n"
             "br label %Label_0\n"
             "\n"
             "Label_2:\n"
@@ -530,7 +535,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
 
-        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN, const_integer_1);
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(ast::Comparison_Operation::LESS_THAN, variable, const_integer_1);
 
         ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, variable, const_integer_2);
         ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable, add_expression);
@@ -538,7 +543,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         ast::While_Instruction::Ptr while_instruction = std::make_shared<ast::While_Instruction>(condition, instruction_1);
 
-        REQUIRE (while_instruction->emit_llvm_ir() == expected_output);
+        while_instruction->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Do_Instruction" ) {
@@ -560,12 +566,12 @@ TEST_CASE ("Abstract Syntax Tree") {
             "\n"
             "Label_1:\n"
             "%i.2 = load i32* %i\n"
-            "%tmp.0 = icmp slt i32 %i.2, 10\n"
-            "br i1 %tmp.0, label %Label_0, label %Label_2\n"
+            "%tmp.4 = icmp slt i32 %i.2, 10\n"
+            "br i1 %tmp.4, label %Label_0, label %Label_2\n"
             "\n"
             "Label_2:\n"
             ;
-            
+
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
         ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
@@ -573,7 +579,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(2));
 
-        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN, const_integer_1);
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(ast::Comparison_Operation::LESS_THAN, variable, const_integer_1);
 
         ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, variable, const_integer_2);
         ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable, add_expression);
@@ -581,7 +587,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         ast::Do_Instruction::Ptr do_instruction = std::make_shared<ast::Do_Instruction>(condition, instruction_1);
 
-        REQUIRE (do_instruction->emit_llvm_ir() == expected_output);
+        do_instruction->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Compound_Instruction" ) {
@@ -589,11 +596,11 @@ TEST_CASE ("Abstract Syntax Tree") {
         // i = -10;
         expected_output = "store i32 -10, i32* %i\n";
         expected_output += "store i32 10, i32* %i\n";
-        
+
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
 
-        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(const_integer_1, ast::Comparison_Operation::EQUAL, const_integer_2);
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(ast::Comparison_Operation::EQUAL, const_integer_1, const_integer_2);
 
         parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("i"));
         symbol_1->type(parser::Type::INT);
@@ -611,7 +618,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         ast::Compound_Instruction::Ptr compound_instruction = std::make_shared<ast::Compound_Instruction>(std::move(instruction_list));
 
-        REQUIRE (compound_instruction->emit_llvm_ir()==expected_output);
+        compound_instruction->emit_code(&generator);
+        REQUIRE (output_stream.str()==expected_output);
     }
 
     SECTION ( "Function_Call" ) {
@@ -623,9 +631,9 @@ TEST_CASE ("Abstract Syntax Tree") {
         //
         // The test case is foo(2, 4, "hello world");
         //
-        
-        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @.str_0, i32 0, i32 0";
-        expected_output += "%tmp.0 = call i32 @foo(2, 4, @.str_0)";
+
+        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @str.0, i32 0, i32 0\n";
+        expected_output += "%tmp.0 = call i32 ()* @foo(2, 4, %str.0)\n";
 
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));
         function->type(parser::Type::INT);
@@ -642,7 +650,8 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         ast::Function_Call::Ptr function_call = std::make_shared<ast::Function_Call>(function, argument_list);
 
-        REQUIRE (function_call->emit_llvm_ir() == expected_output);
+        function_call->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Const_Integer" ) {
@@ -653,9 +662,14 @@ TEST_CASE ("Abstract Syntax Tree") {
         // It is only referenced by others.
 
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
-        REQUIRE (const_integer_1->emit_llvm_ir() == "");
-        
-        REQUIRE (const_integer_1->emit_llvm_ir_access() == "2");
+
+        const_integer_1->emit_code(&generator);
+        REQUIRE (output_stream.str() == "");
+        REQUIRE (generator.register_reference_.size() == 1);
+
+        auto iter = std::begin(generator.register_reference_);
+        REQUIRE (iter->first == const_integer_1);
+        REQUIRE (iter->second == "2");
     }
 
     SECTION ( "Unary_Expression" ) {
@@ -673,6 +687,7 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         ast::Unary_Expression::Ptr unary_expression = std::make_shared<ast::Unary_Expression>(variable_1);
 
-        REQUIRE (unary_expression->emit_llvm_ir() == expected_output);
+        unary_expression->emit_code(&generator);
+        REQUIRE (output_stream.str() == expected_output);
     }
 }

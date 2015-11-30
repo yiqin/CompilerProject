@@ -3,11 +3,14 @@
 #define __CSTR_COMPILER__LLVM_HPP
 
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "ast.hpp"
 #include "symbol.hpp"
 
 
@@ -20,6 +23,55 @@ std::string to_string (T t) {
 
 
 namespace llvm {
+
+
+class LLVM_Generator : public ast::Code_Generator {
+  public:
+    LLVM_Generator (std::ostream& out) : out_(out) {}
+
+    // void visit (ast::Node&                   node);
+    // void visit (ast::Expression&             node);
+    // void visit (ast::Terminal&               node);
+    void visit (ast::Declaration_List&       node);
+    void visit (ast::Variable&               node);
+    void visit (ast::Const_Integer&          node);
+    void visit (ast::Const_String&           node);
+    void visit (ast::Unary_Expression&       node);
+    void visit (ast::Binary_Expression&      node);
+    void visit (ast::Condition&              node);
+    void visit (ast::Assignment&             node);
+    void visit (ast::Function_Call&          node);
+    // void visit (ast::Instruction&            node);
+    void visit (ast::Expression_Instruction& node);
+    void visit (ast::Cond_Instruction&       node);
+    void visit (ast::While_Instruction&      node);
+    void visit (ast::Do_Instruction&         node);
+    void visit (ast::For_Instruction&        node);
+    void visit (ast::Return_Instruction&     node);
+    void visit (ast::Compound_Instruction&   node);
+    void visit (ast::Function_Declaration&   node);
+    void visit (ast::Function_Definition&    node);
+
+  private:
+    std::ostream& out_;
+
+    std::unordered_map<ast::Expression::Ptr, std::string> register_reference_;
+    std::unordered_map<parser::Symbol::Ptr, std::size_t>  variable_counts_;
+    std::vector<std::pair<std::string, std::string>>      const_strings_;
+
+    std::size_t increment_var_count_ (parser::Symbol::Ptr symbol) {
+        auto iter = variable_counts_.find(symbol);
+        if (iter == std::end(variable_counts_)) {
+            return variable_counts_[symbol] = 1;
+        } else {
+            return ++variable_counts_[symbol];
+        }
+    }
+};
+
+
+
+
 
 
 extern std::string end_of_line;
@@ -181,7 +233,7 @@ class Label {
 
 // Memory Access and Addressing Operations
 // alloca <pointer>
-std::string alloca_instruction (parser::Symbol::Ptr symbol);
+// std::string alloca_instruction (parser::Symbol::Ptr symbol);
 
 // // alloca <pointer>
 // std::string alloca_instruction (Pointer_Register::Ptr op);
@@ -208,10 +260,10 @@ std::string alloca_instruction (parser::Symbol::Ptr symbol);
 
 // br instruction
 // br label <dest>
-std::string br_instruction (Label::Ptr label_1);
+std::string br_instruction (const Label& label_1);
 
 // br i1 <cond>, label <iftrue>, label<iffailure>
-std::string br_instruction (const std::string& cond, Label::Ptr label_1, Label::Ptr label_2);
+std::string br_instruction (const std::string& cond, const Label& label_1, const Label& label_2);
 
 // <value> = getelementptr (class string)
 std::string getelementptr_instruction (llvm::String::Ptr string);

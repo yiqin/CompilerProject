@@ -1,7 +1,11 @@
 
 #include "llvm.hpp"
 
+#include <iostream>
 #include <string>
+
+#include "ast.hpp"
+#include "symbol.hpp"
 
 
 namespace llvm {
@@ -18,7 +22,7 @@ std::string type (parser::Type t) {
 
 
 // The align 4 ensures that the address will be a multiple of 4
-std::string alignment_llvm_ir (parser::Type type) {
+std::string alignment (parser::Type type) {
   switch (type) {
     case parser::Type::INT:
       return "align 4";
@@ -27,98 +31,451 @@ std::string alignment_llvm_ir (parser::Type type) {
   }
 }
 
+
+template <typename C, typename Op>
+void infix (std::ostream& out, const char* delim, const C& container, Op op) {
+    auto iter = std::begin(container);
+    if (iter != std::end(container)) {
+        out << op(*iter);
+        for (++iter; iter != std::end(container); ++iter) {
+            out << delim << op(*iter);
+        }
+    }
+}
+
+
+// void LLVM_Generator::visit (ast::Node&                   node) {}
+// void LLVM_Generator::visit (ast::Expression&             node) {}
+// void LLVM_Generator::visit (ast::Terminal&               node) {}
+void LLVM_Generator::visit (ast::Declaration_List&       node) {
+    for (auto& symbol : node.symbol_list()) {
+        out_
+            << '%' << symbol->name() << " = alloca " << type(symbol->type())
+            << ", " << alignment(symbol->type())
+            << std::endl
+            ;
+    }
+}
+void LLVM_Generator::visit (ast::Variable&               node) {
+    const auto& symbol = node.symbol();
+    std::string register_reference = '%' + symbol->name() + '.' +
+        to_string(increment_var_count_(symbol));
+
+    register_reference_[node.self<ast::Expression>()] = register_reference;
+
+    switch (node.type()) {
+        case parser::Type::INT:
+            out_ << register_reference << " = load i32* %" << symbol->name()
+                << std::endl;
+            break;
+        case parser::Type::STRING:
+            // TODO
+            break;
+    }
+}
+void LLVM_Generator::visit (ast::Const_Integer&          node) {
+    register_reference_[node.self<ast::Expression>()] = to_string(node.value());
+}
+void LLVM_Generator::visit (ast::Const_String&           node) {
+    std::string id = "str." + to_string(const_strings_.size());
+    const_strings_.emplace_back(id, node.value());
+
+    register_reference_[node.self<ast::Expression>()] = '%' + id;
+
+    out_
+        << '%' << id << " = getelementptr inbounds ["
+        << node.value().size() + 1 << " x i8]* @" << id << ", i32 0, i32 0"
+        << std::endl
+        ;
+}
+void LLVM_Generator::visit (ast::Unary_Expression&       node) {
+    std::string register_ref = "%tmp." + to_string(register_reference_.size());
+    register_reference_[node.self<ast::Expression>()] = register_ref;
+
+    node.rhs()->emit_code(this);
+
+    out_
+        << register_ref << " = sub " << type(node.type()) << " 0, "
+        << register_reference_[node.rhs()] << std::endl
+        ;
+}
+void LLVM_Generator::visit (ast::Binary_Expression&      node) {
+    std::string register_ref = "%tmp." + to_string(register_reference_.size());
+    register_reference_[node.self<ast::Expression>()] = register_ref;
+
+    node.lhs()->emit_code(this);
+    node.rhs()->emit_code(this);
+
+    out_ << register_ref << " = ";
+
+    switch (node.op()) {
+        case ast::Operation::ADDITION:
+            out_ << "add ";
+            break;
+        case ast::Operation::SUBTRACTION:
+            out_ << "sub ";
+            break;
+        case ast::Operation::MULTIPLICATION:
+            out_ << "mul ";
+            break;
+        case ast::Operation::DIVISION:
+            out_ << "udiv ";
+            break;
+        case ast::Operation::MODULUS:
+            out_ << "urem ";
+            break;
+        case ast::Operation::LEFT_SHIFT:
+          // TODO
+            out_ << "/Undefined. Please wait./ ";
+            break;
+        case ast::Operation::RIGHT_SHIFT:
+          // TODO
+            out_ << "/Undefined. Please wait./ ";
+            break;
+    }
+
+    out_
+        << type(node.type()) << ' '
+        << register_reference_[node.lhs()] << ", "
+        << register_reference_[node.rhs()] << std::endl
+        ;
+}
+void LLVM_Generator::visit (ast::Condition&              node) {
+    std::string register_ref = "%tmp." + to_string(register_reference_.size());
+    register_reference_[node.self<ast::Expression>()] = register_ref;
+
+    node.lhs()->emit_code(this);
+    node.rhs()->emit_code(this);
+
+    out_ << register_ref << " = icmp ";
+
+    // eq: equal
+    // ne: not equal
+    // ugt: unsigned greater than
+    // uge: unsigned greater or equal
+    // ult: unsigned less than
+    // ule: unsigned less or equal
+    // sgt: signed greater than
+    // sge: signed greater or equal
+    // slt: signed less than
+    // sle: signed less or equal
+
+    switch (node.op()) {
+        case ast::Comparison_Operation::EQUAL:
+            out_ << "eq ";
+            break;
+        case ast::Comparison_Operation::NOT_EQUAL:
+            out_ << "ne ";
+            break;
+        case ast::Comparison_Operation::LESS_THAN:
+            out_ << "slt ";
+            break;
+        case ast::Comparison_Operation::GREATER_THAN:
+            out_ << "sgt ";
+            break;
+        case ast::Comparison_Operation::LESS_THAN_OR_EQUAL:
+            out_ << "sle ";
+            break;
+        case ast::Comparison_Operation::GREATER_THAN_OR_EQUAL:
+            out_ << "sge ";
+            break;
+    }
+
+    out_
+        << type(node.type()) << ' '
+        << register_reference_[node.lhs()] << ", "
+        << register_reference_[node.rhs()] << std::endl
+        ;
+}
+void LLVM_Generator::visit (ast::Assignment&             node) {
+    std::string register_ref = "%tmp." + to_string(register_reference_.size());
+    register_reference_[node.self<ast::Expression>()] = register_ref;
+
+    node.rhs()->emit_code(this);
+
+    switch (node.type()) {
+        case parser::Type::INT:
+            out_
+                << "store i32 " << register_reference_[node.rhs()]
+                << ", i32* %" << node.lhs()->symbol()->name()
+                << std::endl;
+                ;
+            break;
+        case parser::Type::STRING:
+            // TODO
+            break;
+    }
+}
+void LLVM_Generator::visit (ast::Function_Call&          node) {
+    std::string register_ref = "%tmp." + to_string(register_reference_.size());
+    register_reference_[node.self<ast::Expression>()] = register_ref;
+
+    auto& function  = node.function();
+    auto& arguments = node.argument_list();
+
+    // Step 1: Prepare arguments
+    for (auto& argument : node.argument_list()) {
+        argument->emit_code(this);
+    }
+
+    // Step 2: call the function
+    out_ << register_ref << " = call " << type(function->type()) << " (";
+    infix(out_, ", ", function->argument_list(),
+        [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); });
+    // std::transform(
+    //     std::begin(function->argument_list()),
+    //     std::end(function->argument_list()),
+    //     std::ostream_iterator<std::string>(out_, ", "),
+    //     [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); }
+    // );
+    out_ << ")* @" << function->name() << "(";
+    infix(out_, ", ", arguments,
+        [&] (ast::Expression::Ptr expr) { return register_reference_[expr]; });
+    // std::transform(
+    //     std::begin(arguments), std::end(arguments),
+    //     std::ostream_iterator<std::string>(out_, ", "),
+    //     [&] (ast::Expression::Ptr expr) { return register_reference_[expr]; }
+    // );
+    // // remove the last space and the last comma
+    // if (argument_list_.size() > 0) {
+    //     ir.pop_back();
+    //     ir.pop_back();
+    // }
+    out_ << ')' << std::endl;
+}
+// void LLVM_Generator::visit (ast::Instruction&            node) {}
+void LLVM_Generator::visit (ast::Expression_Instruction& node) {
+    node.expression()->emit_code(this);
+}
+void LLVM_Generator::visit (ast::Cond_Instruction&       node) {
+    out_ << std::endl << "; Cond_Instruction" << std::endl << std::endl;
+
+    llvm::Label label_0;
+    llvm::Label label_1;
+    llvm::Label label_2;
+
+    // Step 1: condition
+    node.condition()->emit_code(this);
+    out_ << llvm::br_instruction(register_reference_[node.condition()],
+        label_0, label_1);
+
+    // Step 2: instruction
+    out_ << std::endl;
+    out_ << label_0.destination_llvm_ir();
+    node.instruction()->emit_code(this);
+    out_ << llvm::br_instruction(label_2);
+
+    // Step 3: else_instruction
+    out_ << std::endl;
+    out_ << label_1.destination_llvm_ir();
+    if (const auto& else_instruction = node.else_instruction()) {
+        else_instruction->emit_code(this);
+    }
+    out_ << llvm::br_instruction(label_2);
+
+    // Step 4: the end
+    out_ << std::endl;
+    out_ << label_2.destination_llvm_ir();
+}
+void LLVM_Generator::visit (ast::While_Instruction&      node) {
+    out_ << std::endl << "; While_Instruction" << std::endl << std::endl;
+
+    llvm::Label label_0;
+    llvm::Label label_1;
+    llvm::Label label_2;
+
+    out_ << llvm::br_instruction(label_0);
+
+    // Step 1: condition
+    out_ << std::endl;
+    out_ << label_0.destination_llvm_ir();
+    node.condition()->emit_code(this);
+    out_ << llvm::br_instruction(register_reference_[node.condition()],
+        label_1, label_2);
+
+    // Step 2: instruction
+    out_ << std::endl;
+    out_ << label_1.destination_llvm_ir();
+    node.instruction()->emit_code(this);
+    out_ << llvm::br_instruction(label_0);
+
+    // Step 3: the end
+    out_ << std::endl;
+    out_ << label_2.destination_llvm_ir();
+}
+void LLVM_Generator::visit (ast::Do_Instruction&         node) {
+    out_ << std::endl << "; Do_Instruction" << std::endl << std::endl;
+
+    llvm::Label label_0;
+    llvm::Label label_1;
+    llvm::Label label_2;
+
+    out_ << llvm::br_instruction(label_0);
+
+    // Step 1: instruction
+    out_ << std::endl;
+    out_ << label_0.destination_llvm_ir();
+    node.instruction()->emit_code(this);
+    out_ << llvm::br_instruction(label_1);
+
+    // Step 2: condition
+    out_ << std::endl;
+    out_ << label_1.destination_llvm_ir();
+    node.condition()->emit_code(this);
+    out_ << llvm::br_instruction(register_reference_[node.condition()],
+        label_0, label_2);
+
+    // Step 3: the end
+    out_ << std::endl;
+    out_ << label_2.destination_llvm_ir();
+}
+void LLVM_Generator::visit (ast::For_Instruction&        node) {
+    out_ << "\n; For_Instruction\n\n";
+
+    llvm::Label label_0;
+    llvm::Label label_1;
+    llvm::Label label_2;
+    llvm::Label label_3;
+
+    // Step 1: initialization
+    node.initialization()->emit_code(this);
+    out_ << llvm::br_instruction(label_0);
+
+    // Step 2: condition
+    out_ << std::endl;
+    out_ << label_0.destination_llvm_ir();
+    node.condition()->emit_code(this);
+    out_ << llvm::br_instruction(register_reference_[node.condition()],
+        label_1, label_3);
+
+    // Step 3: instruction, the body of the for instruction
+    out_ << std::endl;
+    out_ << label_1.destination_llvm_ir();
+    node.instruction()->emit_code(this);
+    out_ << llvm::br_instruction(label_2);
+
+    // Step 4: increment
+    out_ << std::endl;
+    out_ << label_2.destination_llvm_ir();
+    node.increment()->emit_code(this);
+    out_ << llvm::br_instruction(label_0);
+
+    // Step 5: the end
+    out_ << std::endl;
+    out_ << label_3.destination_llvm_ir();
+}
+void LLVM_Generator::visit (ast::Return_Instruction&     node) {
+    node.expression()->emit_code(this);
+
+    out_ << "ret ";
+    out_ << type(node.expression()->type()) << ' ';
+    out_ << register_reference_[node.expression()];
+    out_ << std::endl;
+}
+void LLVM_Generator::visit (ast::Compound_Instruction&   node) {
+    for (auto& instruction : node.instruction_list()) {
+        instruction->emit_code(this);
+    }
+}
+void LLVM_Generator::visit (ast::Function_Declaration&   node) {
+    auto& declarator = node.function_declarator();
+
+    // step 1
+    out_ << "declare ";
+
+    // step 2: function return type
+    out_ << type(node.type());
+
+    // step 3: function name
+    out_ << " @" << declarator->name();
+
+    // step 4: function argument list
+    out_ << "(";
+    infix(out_, ", ", declarator->argument_list(),
+        [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); });
+    // std::transform(
+    //     std::begin(declarator->argument_list()),
+    //     std::end(declarator->argument_list()),
+    //     std::ostream_iterator<std::string>(out_, ", "),
+    //     [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); }
+    // );
+
+    // // remove the last space and the last comma
+    // if (function_declarator_->argument_list().size() > 0) {
+    //     ir.pop_back();
+    //     ir.pop_back();
+    // }
+
+    out_ << ")";
+
+    // step 5
+    out_ << std::endl;
+}
+void LLVM_Generator::visit (ast::Function_Definition&    node) {
+    auto& declarator = node.function_declarator();
+
+    // step 1
+    out_ << "define ";
+
+    // step 2: function return type
+    out_ << type(node.type());
+
+    // step 3: function name
+    out_ << " @" << declarator->name();
+
+    // step 4: function argument list
+    out_ << "(";
+    infix(out_, ", ", declarator->argument_list(),
+        [] (parser::Symbol::Ptr symbol) {
+            return type(symbol->type()) + " %" + symbol->name();
+        });
+    // std::transform(
+    //     std::begin(declarator->argument_list()),
+    //     std::end(declarator->argument_list()),
+    //     std::ostream_iterator<std::string>(out_, ", "),
+    //     [] (parser::Symbol::Ptr symbol) {
+    //         return type(symbol->type()) + " %" + symbol->name();
+    //     }
+    // );
+
+    // // remove the last space and the last comma
+    // if (function_declarator_->argument_list().size() > 0) {
+    //     ir.pop_back();
+    //     ir.pop_back();
+    // }
+
+    out_ << ")";
+
+    // step 5
+    out_ << " {" << std::endl << "entry:" << std::endl;
+
+    // step 6: function body
+    node.body()->emit_code(this);
+    out_ << "}" << std::endl;
+}
+
+
+
 ID_Factory Label::id_factory_;
 // ID_Factory Register::id_factory_;
-ID_Factory String::id_factory_;
+// ID_Factory String::id_factory_;
 
 std::vector<String::Ptr> String::all_strings_;
 
 
-// Memory Access and Addressing Operations
-// alloca <pointer>
-std::string alloca_instruction (parser::Symbol::Ptr symbol) {
-  return std::string("%") + symbol->name() + " = alloca " + symbol->type_llvm_ir() + ", " + alignment_llvm_ir(symbol->type()) + "\n";
-};
-
-// // alloca <pointer>
-// std::string alloca_instruction (Pointer_Register::Ptr op) {
-//   return op->name_llvm_ir() + " = alloca " + op->type_llvm_ir() + ", " + alignment_llvm_ir(op->type()) + "\n";
-// };
-
-// // Return value
-// // <value> = load <pointer>
-// std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2) {
-//   std::string ir;
-//   ir += op_1->name_llvm_ir();
-//   ir += " = load ";
-//   ir += op_2->pointer_llvm_ir();
-//   ir += ", " + alignment_llvm_ir(op_1->type()) + "\n";
-//   return ir;
-// };
-
-// // store <value>, int
-// std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1) {
-//   std::string ir;
-//   ir += std::string("store i32 ") + to_string(integer_value);
-//   ir += ", ";
-//   ir += op_1->pointer_llvm_ir();
-//   ir += "\n";
-//   return ir;
-// };
-
-// // store string, <pointer>
-// // store i8* getelementptr inbounds ([12 x i8]* @.str, i32 0, i32 0), i8** %R.1, align 8
-// std::string store_instruction (llvm::String::Ptr string_1, llvm::Pointer_Register::Ptr op_1) {
-//   std::string ir;
-//   ir += std::string("store i8* getelementptr inbounds ");
-//   ir += "([" + to_string(string_1->value().size() + 1) + " x i8]* ";
-//   ir += string_1->id() + ", ";
-//   ir += "i32 0, i32 0), ";
-//   ir += op_1->pointer_llvm_ir();
-//   ir += ", ";
-//   ir += alignment_llvm_ir(op_1->type());
-//   ir += "\n";
-//   return ir;
-// };
-
-
-// // store <value>, <pointer>
-// std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2) {
-//   std::string ir;
-//   ir += std::string("store ") + op_1->value_llvm_ir();
-//   ir += ", ";
-//   ir += op_2->pointer_llvm_ir();
-//   ir += "\n";
-//   return ir;
-// };
-
-
-// Binary Operations
-
-
-// Other Operations
-
-
 // br instruction
 // br label <dest>
-std::string br_instruction (Label::Ptr label_1) {
-  return std::string("br ") + label_1->name_llvm_ir() + "\n";
+std::string br_instruction (const Label& label_1) {
+  return std::string("br ") + label_1.name_llvm_ir() + '\n';
 };
 
 // br i1 <cond>, label <iftrue>, label<iffailure>
-std::string br_instruction (const std::string& cond, Label::Ptr label_1, Label::Ptr label_2) {
-   return "br i1 " + cond + ", " + label_1->name_llvm_ir() + ", " + label_2->name_llvm_ir() + "\n";
+std::string br_instruction (const std::string& cond, const Label& label_1, const Label& label_2) {
+   return "br i1 " + cond + ", " + label_1.name_llvm_ir() + ", " + label_2.name_llvm_ir() + '\n';
 };
 
 // <value> = getelementptr (class string)
 std::string getelementptr_instruction (llvm::String::Ptr string) {
-  std::string ir;
-  ir += std::string("getelementptr inbounds ");
-  ir += "[" + to_string(string->value().size() + 1) + " x i8]* ";
-  ir += string->id() + ", ";
-  ir += "i32 0, i32 0";
-  ir += "\n";
-  return ir;
 };
 
 }  // namespace llvm

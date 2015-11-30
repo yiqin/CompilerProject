@@ -33,6 +33,7 @@
 // allows for the parser to drive the scanner.
 %parse-param { scanner::Scanner& scanner }
 %parse-param { Symbol_Table::Ptr symbol_table }
+%parse-param { ast::Code_Generator& code_generator }
 
 %code requires {
     #include "ast.hpp"
@@ -110,7 +111,7 @@
 // FIXME: must be condition. Changing to Expression breaks the compiler somehow.
 %type <ast::Comparison_Operation> comparison_operator
 %type <ast::Condition::Ptr> condition
-%type <ast::Condition::Ptr> cond_instruction
+%type <ast::Condition::Ptr> cond_instruction  // This doesn't seem right, but it is.
 
 %type <ast::Instruction::Ptr> instruction
 %type <ast::Compound_Instruction::Ptr> compound_instruction
@@ -144,7 +145,7 @@ external_declaration :
 
             if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
                 ast::Function_Declaration func_decl(function->type(), function);
-                std::cout << func_decl.emit_llvm_ir();
+                func_decl.emit_code(&code_generator);
             } else {
                 // Global declaration.
                 // TODO: declare global variable.
@@ -162,28 +163,29 @@ external_declaration :
         /* std::cout << "external_declaration: function_definition" << std::endl; */
 
         // emit constant strings
-        for (auto& str : llvm::String::all_strings()) {
-            // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
-            std::cout
-                << str->id() << " private unnamed_addr constant [" << str->value().size()
-                << " x i8] c\""
-                ;
-            for (auto& c : str->value()) {
-                if (std::iscntrl(c)) {
-                    char buf[3];
-                    buf[2] = '\0';
-                    snprintf(buf, 3, "%02x", c & 0xff);
-                    std::cout << '\\' << buf;
-                } else {
-                    std::cout << c;
-                }
-            }
-            std::cout << "\\00\"" << std::endl;
-        }
-        llvm::String::clear_store();
+        // TODO(Emery): Move this to Code_Generator subclass.
+        // for (auto& str : llvm::String::all_strings()) {
+        //     // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
+        //     std::cout
+        //         << str->id() << " private unnamed_addr constant [" << str->value().size()
+        //         << " x i8] c\""
+        //         ;
+        //     for (auto& c : str->value()) {
+        //         if (std::iscntrl(c)) {
+        //             char buf[3];
+        //             buf[2] = '\0';
+        //             snprintf(buf, 3, "%02x", c & 0xff);
+        //             std::cout << '\\' << buf;
+        //         } else {
+        //             std::cout << c;
+        //         }
+        //     }
+        //     std::cout << "\\00\"" << std::endl;
+        // }
+        // llvm::String::clear_store();
 
         // emit function definition
-        std::cout << $1->emit_llvm_ir();
+        $1->emit_code(&code_generator);
     }
 ;
 
@@ -525,7 +527,7 @@ jump_instruction:
 condition :
     expression comparison_operator expression {
         /* std::cout << "condition: expression comparison_operator expression" << std::endl; */
-        $$ = std::make_shared<ast::Condition>($1, $2, $3);
+        $$ = std::make_shared<ast::Condition>($2, $1, $3);
     }
 ;
 

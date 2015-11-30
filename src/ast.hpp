@@ -4,18 +4,119 @@
 
 
 #include <algorithm>
+#include <iomanip>  // DEBUG
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <type_traits>  // DEBUG
 
-#include "llvm.hpp"
 #include "symbol.hpp"
 
 
 namespace ast {
-  
+
+
+class Node;
+class Expression;
+class Terminal;
+class Symbol_Declarator;
+class Declaration;
+class Variable;
+class Const_Integer;
+class Const_String;
+class Unary_Expression;
+class Binary_Expression;
+class Condition;
+class Assignment;
+class Function_Call;
+class Instruction;
+class Expression_Instruction;
+class Cond_Instruction;
+class While_Instruction;
+class Do_Instruction;
+class For_Instruction;
+class Return_Instruction;
+class Compound_Instruction;
+class Function_Declaration;
+class Function_Definition;
+
+
+// Visitor base class for code generation.
+class Code_Generator {
+  public:
+    virtual void visit (Node& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Node'.");
+    }
+    virtual void visit (Expression& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Expression'.");
+    }
+    virtual void visit (Terminal& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Terminal'.");
+    }
+    virtual void visit (Symbol_Declarator& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Symbol_Declarator'.");
+    }
+    virtual void visit (Declaration& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Declaration'.");
+    }
+    virtual void visit (Variable& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Variable'.");
+    }
+    virtual void visit (Const_Integer& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Const_Integer'.");
+    }
+    virtual void visit (Const_String& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Const_String'.");
+    }
+    virtual void visit (Unary_Expression& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Unary_Expression'.");
+    }
+    virtual void visit (Binary_Expression& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Binary_Expression'.");
+    }
+    virtual void visit (Condition& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Condition'.");
+    }
+    virtual void visit (Assignment& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Assignment'.");
+    }
+    virtual void visit (Function_Call& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Function_Call'.");
+    }
+    virtual void visit (Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Instruction'.");
+    }
+    virtual void visit (Expression_Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Expression_Instruction'.");
+    }
+    virtual void visit (Cond_Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Cond_Instruction'.");
+    }
+    virtual void visit (While_Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'While_Instruction'.");
+    }
+    virtual void visit (Do_Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Do_Instruction'.");
+    }
+    virtual void visit (For_Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'For_Instruction'.");
+    }
+    virtual void visit (Return_Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Return_Instruction'.");
+    }
+    virtual void visit (Compound_Instruction& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Compound_Instruction'.");
+    }
+    virtual void visit (Function_Declaration& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Function_Declaration'.");
+    }
+    virtual void visit (Function_Definition& node) {
+        throw std::runtime_error("This code generator does not implement a handler for node class 'Function_Definition'.");
+    }
+};
 
 enum class Operation {
     ADDITION,
@@ -37,17 +138,27 @@ enum class Comparison_Operation {
 };
 
 
-class Node {
+class Node : public std::enable_shared_from_this<Node> {
   public:
     typedef std::shared_ptr<Node> Ptr;
 
     virtual ~Node () {}
 
     // TODO (Emery) Make abstract.
-    virtual std::string emit_llvm_ir () {
-        return std::string("; /undefine Expression - Node Class/ \n");
-    };
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
+    }
     // virtual std::string emit_llvm_ir () = 0;
+
+    template <typename T>
+    std::shared_ptr<T> self () {
+        return std::static_pointer_cast<T>(shared_from_this());
+    }
+
+    template <typename T>
+    const std::shared_ptr<T const> self () const {
+        return std::static_pointer_cast<T const>(shared_from_this());
+    }
 };
 
 // e.g. 0, 0+1, 1-2, a, a+b, a-b, a+(c+d)
@@ -60,11 +171,9 @@ class Expression : public Node {
 
     const parser::Type& type () const { return type_; }
 
-    std::string emit_llvm_ir () {
-        return std::string("; /undefine Expression - Expression Class/ \n");
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
-
-    virtual std::string emit_llvm_ir_access () = 0;
 
   private:
     const parser::Type type_;
@@ -81,39 +190,41 @@ class Terminal : public Expression {
 // Declaration, external_declaration
 // It corresponds to Symbol class and Function class
 
-// For a single declarator, may not be used in the future.
-class Symbol_Declarator : public Node {
-  public:
-    typedef std::shared_ptr<Symbol_Declarator> Ptr;
+// // For a single declarator, may not be used in the future.
+// class Symbol_Declarator : public Node {
+//   public:
+//     typedef std::shared_ptr<Symbol_Declarator> Ptr;
 
-    Symbol_Declarator (const parser::Symbol::Ptr& symbol)
-          : symbol_(symbol) {}
+//     Symbol_Declarator (const parser::Symbol::Ptr& symbol)
+//           : symbol_(symbol) {}
 
-    std::string emit_llvm_ir () {
-      return llvm::alloca_instruction(symbol_);
-    }
+//     virtual void emit_code (Code_Generator* generator) {
+//->        generator.visit(self(this));
+//     }
 
-  private:
-    parser::Symbol::Ptr symbol_;
-};
+//     const parser::Symbol::Ptr& symbol () const { return symbol_; }
+
+//   private:
+//     parser::Symbol::Ptr symbol_;
+// };
 
 // Declarate a list of symbols
-class Declaration : public Node {
+class Declaration_List : public Node {
   public:
-    typedef std::shared_ptr<Declaration> Ptr;
+    typedef std::shared_ptr<Declaration_List> Ptr;
 
-    Declaration (const parser::Symbol_List& symbol_list)
+    Declaration_List (const parser::Symbol_List& symbol_list)
           : symbol_list_(symbol_list) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const parser::Symbol_List& symbol_list () const { return symbol_list_; }
 
-      for (auto& symbol : symbol_list_) {
-        Symbol_Declarator::Ptr symbol_declarator = std::make_shared<Symbol_Declarator>(symbol);
-        ir += symbol_declarator->emit_llvm_ir();
-      }
-
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+// std::cerr
+//     << "     -- in Declaration_List::emit_code(Code_Generator*):" << std::endl
+//     << "        std::is_same<decltype(this), Node*> ? " << std::boolalpha << std::is_same<decltype(this), Node*>::value << std::endl
+//     << "        std::is_same<decltype(this), Declaration_List*> ? " << std::boolalpha << std::is_same<decltype(this), Declaration_List*>::value << std::endl
+//     ;
+        generator->visit(*this);
     }
 
   private:
@@ -126,34 +237,15 @@ class Variable : public Terminal {
     typedef std::shared_ptr<Variable> Ptr;
 
     Variable (const parser::Symbol::Ptr& symbol)
-          : Terminal(symbol->type()), symbol_(symbol) {
-        symbol_->increment_access_count();
-        register_reference_ = '%' + symbol_->name() + '.' +
-            to_string(symbol_->access_count());
-    }
+          : Terminal(symbol->type()), symbol_(symbol) {}
 
-    std::string emit_llvm_ir () {
-        switch (type()) {
-            case parser::Type::INT:
-                return  register_reference_ + " = load i32* %" +
-                    symbol_->name() + '\n';
-            case parser::Type::STRING:
-                // TODO
-                return "";
-        }
-    }
+    const parser::Symbol::Ptr& symbol () const { return symbol_; }
 
-    std::string emit_llvm_ir_access () {
-        // TODO(Emery): Access global variables.
-        return register_reference_;
-    }
-
-    std::string llvm_pointer_register () {
-        return '%' + symbol_->name();
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
-    std::string register_reference_;
     parser::Symbol::Ptr symbol_;
 };
 
@@ -166,12 +258,10 @@ class Const_Integer : public Terminal {
     Const_Integer (const int& value)
           : Terminal(parser::Type::INT), value_(value) {}
 
-    std::string emit_llvm_ir () {
-        return "";
-    }
+    int value () const { return value_; }
 
-    std::string emit_llvm_ir_access () {
-        return to_string(value_);
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -184,75 +274,35 @@ class Const_String : public Terminal {
     typedef std::shared_ptr<Const_String> Ptr;
 
     Const_String (const std::string& value)
-          : Terminal(parser::Type::STRING) {
-        string_ = llvm::String::construct(value);
-    }
+          : Terminal(parser::Type::STRING), value_(value) {}
 
-    const std::string& id () const { return string_->id(); }
+    const std::string& value () const { return value_; }
 
-    std::string emit_llvm_ir () {
-        std::string ir;
-        ir += "%" + string_->id() + " = ";
-        ir += llvm::getelementptr_instruction(string_);
-        return ir;
-    }
-
-    std::string emit_llvm_ir_access () {
-        return string_->id();
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
-    llvm::String::Ptr string_;
+    std::string value_;
 };
 
 
-class Nonterminal : public Expression {
-  public:
-    Nonterminal (const parser::Type& type)
-          : Expression(type),
-            id_("tmp." + id_factory_.get_id()) {}
-
-    const std::string& id () const { return id_; }
-
-    std::string emit_llvm_ir_access () {
-        return '%' + id_;
-    }
-
-  private:
-    static llvm::ID_Factory id_factory_;
-
-    const std::string id_;
-};
-
-
-class Unary_Expression : public Nonterminal {
+class Unary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Unary_Expression> Ptr;
 
     // TODO: Yi - Remove if we don't use this constructor.
     Unary_Expression (const parser::Type& type, Operation op, Expression::Ptr rhs)
-          : Nonterminal(type), op_(op), rhs_(rhs) {}
+          : Expression(type), op_(op), rhs_(rhs) {}
 
     Unary_Expression (Expression::Ptr rhs)
-          : Nonterminal(parser::Type::INT), op_(Operation::SUBTRACTION), rhs_(rhs) {}
+          : Expression(parser::Type::INT), op_(Operation::SUBTRACTION), rhs_(rhs) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const Operation&       op  () const { return op_;  }
+    const Expression::Ptr& rhs () const { return rhs_; }
 
-      ir += rhs_->emit_llvm_ir();
-
-      ir += '%' + id();
-      ir += " = ";
-      ir += "sub";
-      ir += " ";
-      ir += llvm::type(type());
-      ir += " ";
-      ir += "0";
-      ir += ", ";
-      ir += rhs_->emit_llvm_ir_access();
-      ir += "\n";
-
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -263,64 +313,20 @@ class Unary_Expression : public Nonterminal {
 
 // Binary_Expression - Expression class for a binary operator
 // e.g. i <= 10, 1+2
-class Binary_Expression : public Nonterminal {
+class Binary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Binary_Expression> Ptr;
 
     Binary_Expression (const parser::Type& type,
         Operation op, Expression::Ptr lhs, Expression::Ptr rhs)
-          : Nonterminal(type), op_(op), lhs_(lhs), rhs_(rhs) {}
+          : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const Operation&       op  () const { return op_;  }
+    const Expression::Ptr& lhs () const { return lhs_; }
+    const Expression::Ptr& rhs () const { return rhs_; }
 
-      ir += lhs_->emit_llvm_ir();
-      ir += rhs_->emit_llvm_ir();
-
-      ir += '%' + id();
-      ir += " = ";
-
-      // add
-      // sub
-      // mul
-      // udiv
-      // urem
-      switch (op_) {
-        case Operation::ADDITION:
-          ir += "add";
-          break;
-        case Operation::SUBTRACTION:
-          ir += "sub";
-          break;
-        case Operation::MULTIPLICATION:
-          ir += "mul";
-          break;
-        case Operation::DIVISION:
-          ir += "udiv";
-          break;
-        case Operation::MODULUS:
-          ir += "urem";
-          break;
-        case Operation::LEFT_SHIFT:
-          // TODO
-          ir += "/Undefine. Please wait./";
-          break;
-        case Operation::RIGHT_SHIFT:
-          // TODO
-          ir += "/Undefine. Please wait./";
-          break;
-      }
-
-      ir += " ";
-      ir += llvm::type(type());
-      ir += " ";
-      ir += lhs_->emit_llvm_ir_access();
-      ir += ", ";
-      ir += rhs_->emit_llvm_ir_access();
-
-      ir += "\n";
-
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -335,156 +341,73 @@ class Binary_Expression : public Nonterminal {
 // But they are quite similar.
 // Currently it works, we can merge them in the future.
 // Return are different
-class Condition : public Nonterminal {
+class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;
 
-    Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator,
-                   Expression::Ptr rhs)
-          : Nonterminal(parser::Type::INT),
+    Condition (Comparison_Operation op, Expression::Ptr lhs,
+               Expression::Ptr rhs)
+          : Expression(parser::Type::INT),
+            op_(op),
             lhs_(lhs),
-            comparison_operator_(comparison_operator),
             rhs_(rhs) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const Comparison_Operation& op  () const { return op_;  }
+    const Expression::Ptr&      lhs () const { return lhs_; }
+    const Expression::Ptr&      rhs () const { return rhs_; }
 
-      ir += lhs_->emit_llvm_ir();
-      ir += rhs_->emit_llvm_ir();
-
-      ir += '%' + id();
-      ir += " = icmp ";
-
-      // eq: equal
-      // ne: not equal
-      // ugt: unsigned greater than
-      // uge: unsigned greater or equal
-      // ult: unsigned less than
-      // ule: unsigned less or equal
-      // sgt: signed greater than
-      // sge: signed greater or equal
-      // slt: signed less than
-      // sle: signed less or equal
-
-      switch (comparison_operator_) {
-        case Comparison_Operation::EQUAL:
-          ir += "eq";
-          break;
-        case Comparison_Operation::NOT_EQUAL:
-          ir += "ne";
-          break;
-        case Comparison_Operation::LESS_THAN:
-          ir += "slt";
-          break;
-        case Comparison_Operation::GREATER_THAN:
-          ir += "sgt";
-          break;
-        case Comparison_Operation::LESS_THAN_OR_EQUAL:
-          ir += "sle";
-          break;
-       case Comparison_Operation::GREATER_THAN_OR_EQUAL:
-          ir += "sge";
-          break;
-      }
-      ir += ' ' + llvm::type(type()) + ' ';
-
-      ir += lhs_->emit_llvm_ir_access();
-      ir += ", ";
-      ir += rhs_->emit_llvm_ir_access();
-      ir += "\n";
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
-
   private:
+    Comparison_Operation op_;
     Expression::Ptr lhs_;
-    Comparison_Operation comparison_operator_;
     Expression::Ptr rhs_;
 };
 
 // For example: a = 1; b = "hello world";
-class Assignment : public Nonterminal {
+class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
 
     Assignment (Variable::Ptr lhs, Expression::Ptr rhs)
-          : Nonterminal(lhs->type()), lhs_(lhs), rhs_(rhs) {}
+          : Expression(lhs->type()), lhs_(lhs), rhs_(rhs) {}
 
-    std::string emit_llvm_ir () {
-        std::string ir;
-        ir += rhs_->emit_llvm_ir();
+    const Variable::Ptr&   lhs () const { return lhs_; }
+    const Expression::Ptr& rhs () const { return rhs_; }
 
-        switch (type()) {
-            case parser::Type::INT:
-                ir += "store i32 " + rhs_->emit_llvm_ir_access() +
-                    ", i32* " + lhs_->llvm_pointer_register() + '\n';
-                break;
-            case parser::Type::STRING:
-                // TODO
-                break;
-        }
-
-        return ir;
-    }
-
-    std::string emit_llvm_ir_access () {
-        return lhs_->emit_llvm_ir_access();
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
-    Variable::Ptr lhs_;
+    Variable::Ptr   lhs_;
     Expression::Ptr rhs_;
 };
 
 
-class Function_Call : public Nonterminal {
+class Function_Call : public Expression {
   public:
     typedef std::shared_ptr<Function_Call> Ptr;
 
     Function_Call (parser::Function::Ptr function)
-          : Nonterminal(function->type()),
+          : Expression(function->type()),
             function_(function) {}
 
     Function_Call (
         parser::Function::Ptr function,
         const std::vector<Expression::Ptr>& argument_list
     )
-          : Nonterminal(function->type()),
+          : Expression(function->type()),
             function_(function),
             argument_list_(argument_list) {}
 
-    std::string emit_llvm_ir () {
-        std::string ir;
+    const parser::Function::Ptr&        function      () const { return function_;      }
+    const std::vector<Expression::Ptr>& argument_list () const { return argument_list_; }
 
-        // Step 1: Prepare arguments
-        for (auto& argument : argument_list_) {
-            ir += argument->emit_llvm_ir();
-        }
-
-        // Step 2: call the function
-        std::ostringstream oss;
-        oss << '%' << id() << " = call " << function_->type_llvm_ir() << " ";
-        std::transform(
-            std::begin(function_->argument_list()),
-            std::end(function_->argument_list()),
-            std::ostream_iterator<std::string>(oss, ", "),
-            [] (parser::Symbol::Ptr symbol) { return symbol->type_llvm_ir(); }
-        );
-        oss << "@" << function_->name() << "(";
-        std::transform(
-            std::begin(argument_list_), std::end(argument_list_),
-            std::ostream_iterator<std::string>(oss, ", "),
-            [] (Expression::Ptr expr) { return expr->emit_llvm_ir_access(); }
-        );
-        ir += oss.str();
-        // remove the last space and the last comma
-        if (argument_list_.size() > 0) {
-            ir.pop_back();
-            ir.pop_back();
-        }        
-        ir += ")\n";
-        
-        return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -497,8 +420,9 @@ class Instruction : public Node {
   public:
     typedef std::shared_ptr<Instruction> Ptr;
 
-    // Empty instruction.
-    std::string emit_llvm_ir () { return ""; }
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
+    }
 };
 
 
@@ -509,8 +433,10 @@ class Expression_Instruction : public Instruction {
     Expression_Instruction (Expression::Ptr expression)
           : expression_(expression) {}
 
-    std::string emit_llvm_ir () {
-      return expression_->emit_llvm_ir();
+    const Expression::Ptr& expression () const { return expression_; }
+
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -538,39 +464,12 @@ class Cond_Instruction : public Instruction {
             instruction_(instruction),
             else_instruction_(else_instruction) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const Condition::Ptr&   condition        () const { return condition_;        }
+    const Instruction::Ptr& instruction      () const { return instruction_;      }
+    const Instruction::Ptr& else_instruction () const { return else_instruction_; }
 
-      ir += "\n; Cond_Instruction\n\n";
-
-      llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
-
-      // Step 1: condition
-      ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(),
-        label_0, label_1);
-
-      // Step 2: instruction
-      ir += "\n";
-      ir += label_0->destination_llvm_ir();
-      ir += instruction_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_2);
-
-      // Step 3: else_instruction
-      ir += "\n";
-      ir += label_1->destination_llvm_ir();
-      auto tmp_instruction = else_instruction_;
-      if (tmp_instruction) {
-        ir += tmp_instruction->emit_llvm_ir();
-      }
-      ir += llvm::br_instruction(label_2);
-
-      // Step 4: the end
-      ir += "\n";
-      ir += label_2->destination_llvm_ir();
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -587,33 +486,11 @@ class While_Instruction : public Instruction {
     While_Instruction (Condition::Ptr condition, Instruction::Ptr instruction)
           : condition_(condition), instruction_(instruction) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
-      ir += "\n; While_Instruction\n\n";
+    const Condition::Ptr&   condition   () const { return condition_;   }
+    const Instruction::Ptr& instruction () const { return instruction_; }
 
-      llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
-
-      ir += llvm::br_instruction(label_0);
-
-      // Step 1: condition
-      ir += "\n";
-      ir += label_0->destination_llvm_ir();
-      ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(),
-        label_1, label_2);
-
-      // Step 2: instruction
-      ir += "\n";
-      ir += label_1->destination_llvm_ir();
-      ir += instruction_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_0);
-
-      // Step 3: the end
-      ir += "\n";
-      ir += label_2->destination_llvm_ir();
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -629,32 +506,11 @@ class Do_Instruction : public Instruction {
     Do_Instruction (Condition::Ptr condition, Instruction::Ptr instruction)
           : condition_(condition), instruction_(instruction) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
-      ir += "\n; Do_Instruction\n\n";
+    const Condition::Ptr&   condition   () const { return condition_;   }
+    const Instruction::Ptr& instruction () const { return instruction_; }
 
-      llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
-
-      ir += llvm::br_instruction(label_0);
-
-      // Step 1: instruction
-      ir += "\n";
-      ir += label_0->destination_llvm_ir();
-      ir += instruction_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_1);
-
-      // Step 2: condition
-      ir += "\n";
-      ir += label_1->destination_llvm_ir();
-      ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(), label_0, label_2);
-
-      // Step 3: the end
-      ir += "\n";
-      ir += label_2->destination_llvm_ir();
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -678,41 +534,13 @@ class For_Instruction : public Instruction {
             increment_(increment),
             instruction_(instruction) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
-      ir += "\n; For_Instruction\n\n";
+    const Expression::Ptr&  initialization () const { return initialization_; }
+    const Condition::Ptr&   condition      () const { return condition_;      }
+    const Expression::Ptr&  increment      () const { return increment_;      }
+    const Instruction::Ptr& instruction    () const { return instruction_;    }
 
-      llvm::Label::Ptr label_0 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_1 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_2 = std::make_shared<llvm::Label>();
-      llvm::Label::Ptr label_3 = std::make_shared<llvm::Label>();
-
-      // Step 1: initialization
-      ir += initialization_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_0);
-
-      // Step 2: condition
-      ir += "\n";
-      ir += label_0->destination_llvm_ir();
-      ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(), label_1, label_3);
-
-      // Step 3: instruction, the body of the for instruction
-      ir += "\n";
-      ir += label_1->destination_llvm_ir();
-      ir += instruction_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_2);
-
-      // Step 4: increment
-      ir += "\n";
-      ir += label_2->destination_llvm_ir();
-      ir += increment_->emit_llvm_ir();
-      ir += llvm::br_instruction(label_0);
-
-      // Step 5: the end
-      ir += "\n";
-      ir += label_3->destination_llvm_ir();
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -734,17 +562,10 @@ class Return_Instruction : public Instruction {
     Return_Instruction (Expression::Ptr expression)
           : expression_(expression) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const Expression::Ptr& expression () const { return expression_; }
 
-      ir += expression_->emit_llvm_ir();
-
-      ir += "ret ";
-      ir += llvm::type(expression_->type()) + ' ';
-      ir += expression_->emit_llvm_ir_access();
-      ir += "\n";
-
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -762,12 +583,10 @@ class Compound_Instruction : public Instruction {
     Compound_Instruction (const std::vector<Instruction::Ptr>& instruction_list)
           : instruction_list_(instruction_list) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
-      for (auto& instruction : instruction_list_) {
-        ir += instruction->emit_llvm_ir();
-      }
-      return ir;
+    const std::vector<Instruction::Ptr>& instruction_list () const { return instruction_list_; }
+
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -783,44 +602,11 @@ class Function_Declaration : public Node {
     Function_Declaration (const parser::Type& type, parser::Function::Ptr& function_declarator)
           : type_(type), function_declarator_(function_declarator) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const parser::Type&          type                () const { return type_;                }
+    const parser::Function::Ptr& function_declarator () const { return function_declarator_; }
 
-      // step 1
-      ir += "declare ";
-
-      // step 2: function return type
-      switch (type_) {
-        case parser::Type::INT:
-          ir += "i32";
-          break;
-        case parser::Type::STRING:
-          ir += "i8*";
-          break;
-      }
-
-      // step 3: function name
-      ir += " @"+function_declarator_->name();
-
-      // step 4: function argument list
-      ir += "(";
-
-      for (auto& symbol : function_declarator_->argument_list()) {
-        ir += symbol->type_llvm_ir() + ", ";
-      }
-
-      // remove the last space and the last comma
-      if (function_declarator_->argument_list().size() > 0) {
-        ir.pop_back();
-        ir.pop_back();
-      }
-
-      ir += ")";
-
-      // step 5
-      ir += "\n";
-
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -843,48 +629,12 @@ class Function_Definition : public Node {
             function_declarator_(function_declarator),
             body_(body) {}
 
-    std::string emit_llvm_ir () {
-      std::string ir;
+    const parser::Type&              type                () const { return type_;                }
+    const parser::Function::Ptr&     function_declarator () const { return function_declarator_; }
+    const Compound_Instruction::Ptr& body                () const { return body_;                }
 
-      // step 1
-      ir += "define ";
-
-      // step 2: function return type
-      switch (type_) {
-        case parser::Type::INT:
-          ir += "i32";
-          break;
-        case parser::Type::STRING:
-          ir += "i8*";
-          break;
-      }
-
-      // step 3: function name
-      ir += " @"+function_declarator_->name();
-
-      // step 4: function argument list
-      ir += "(";
-
-      for (auto& symbol : function_declarator_->argument_list()) {
-        ir += symbol->type_llvm_ir() + " %" + symbol->name() + ", ";
-      }
-
-      // remove the last space and the last comma
-      if (function_declarator_->argument_list().size() > 0) {
-        ir.pop_back();
-        ir.pop_back();
-      }
-
-      ir += ")";
-
-      // step 5
-      ir += " {\nentry:\n";
-
-      // step 6: function body
-      ir += body_->emit_llvm_ir();
-      ir += "}\n";
-
-      return ir;
+    virtual void emit_code (Code_Generator* generator) {
+        generator->visit(*this);
     }
 
   private:
@@ -892,8 +642,6 @@ class Function_Definition : public Node {
     parser::Function::Ptr function_declarator_;
     Compound_Instruction::Ptr body_;
 };
-
-
 
 }  // namespace ast
 
