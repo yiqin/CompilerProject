@@ -20,6 +20,9 @@ ID_Factory Label::id_factory_;
 ID_Factory Register::id_factory_;
 ID_Factory String::id_factory_;
 
+std::vector<String::Ptr> String::all_strings_;
+
+
 // Memory Access and Addressing Operations
 // alloca <pointer>
 std::string alloca_instruction (parser::Symbol::Ptr symbol) {

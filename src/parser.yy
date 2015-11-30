@@ -135,7 +135,7 @@ program :
 
 external_declaration :
     declaration         {
-        /* Nothing to do. Symbol was already added to symbol_table. */        
+        /* Nothing to do. Symbol was already added to symbol_table. */
     }
   | EXTERN declaration  {
         for (auto& symbol : $2) {
@@ -181,6 +181,12 @@ function_definition :
             symbol_table->add($2->name(), Symbol::Ptr($2));
             // $2->print_semantic_action();
         }
+
+        // Emit LLVM IR.
+        // emit constant strings
+        // emit function header
+        // emit function body
+        // emit function trailer
     }
 ;
 
@@ -252,8 +258,8 @@ declaration :
             symbol_table->add(symbol->name(), symbol);
             // symbol->print_semantic_action();  // TODO: Remove for Part 3.
         }
-        
-        
+
+
     }
 ;
 
@@ -470,7 +476,7 @@ iteration_instruction :
   | FOR '(' assignment ';' condition ';' assignment ')' instruction {
         /* std::cout << "iteration_instruction: FOR '(' assignment ';' condition ';' assignment ')' instruction" << std::endl; */
         $$ = std::make_shared<ast::For_Instruction>($3, $5, $7, $9);
-        
+
     }
 ;
 
@@ -483,7 +489,7 @@ jump_instruction:
 
 condition :
     expression comparison_operator expression {
-        /* std::cout << "condition: expression comparison_operator expression" << std::endl; */        
+        /* std::cout << "condition: expression comparison_operator expression" << std::endl; */
         $$ = std::make_shared<ast::Condition>($1, $2, $3);
     }
 ;
