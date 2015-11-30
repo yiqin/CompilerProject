@@ -170,24 +170,17 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Return expression: return a+1-2;") {
         // return a+1-2;
 
-        expected_output += "%V.7 = load i32* %a, align 4\n";
-        expected_output += "%P.1 = alloca i32, align 4\n";
-        expected_output += "store i32 1, i32* %P.1\n";
-        expected_output += "%V.8 = load i32* %P.1, align 4\n";
-        expected_output += "%V.9 = add i32 %V.7, %V.8\n";
+        expected_output = 
+        "%P.5 = alloca i32, align 4\n"
+        "store i32 1, i32* %P.5\n"
+        "%V.1 = load i32* %P.5, align 4\n"
+        "%V.3 = add i32 %a, %V.1\n"
+        "%P.6 = alloca i32, align 4\n"
+        "store i32 2, i32* %P.6\n"
+        "%V.2 = load i32* %P.6, align 4\n"
+        "%V.4 = sub i32 %V.3, %V.2\n"
+        "ret i32 %V.4\n";
 
-        expected_output += "%P.3 = alloca i32, align 4\n";
-        expected_output += "store i32 %V.9, i32* %P.3\n";
-        expected_output += "%V.6 = load i32* %P.3, align 4\n";
-        expected_output += "%P.2 = alloca i32, align 4\n";
-        expected_output += "store i32 2, i32* %P.2\n";
-        expected_output += "%V.10 = load i32* %P.2, align 4\n";
-        expected_output += "%V.11 = sub i32 %V.6, %V.10\n";
-
-        expected_output += "%P.4 = alloca i32, align 4\n";
-        expected_output += "store i32 %V.11, i32* %P.4\n";
-        expected_output += "%V.5 = load i32* %P.4, align 4\n";
-        expected_output += "ret i32 %V.5\n";
 
         // Prepare
         // Expression - Variable
@@ -391,15 +384,15 @@ TEST_CASE ("Abstract Syntax Tree") {
     SECTION ("Binary_Expression: 1+2") {
         // 1+2;
 
-        expected_output += "%P.1 = alloca i32, align 4\n";
-        expected_output += "store i32 1, i32* %P.1\n";
-        expected_output += "%V.4 = load i32* %P.1, align 4\n";
-        expected_output += "%P.2 = alloca i32, align 4\n";
-        expected_output += "store i32 2, i32* %P.2\n";
-        expected_output += "%V.5 = load i32* %P.2, align 4\n";
-        expected_output += "%V.6 = add i32 %V.4, %V.5\n";
-        expected_output += "%P.3 = alloca i32, align 4\n";
-        expected_output += "store i32 %V.6, i32* %P.3\n";
+        expected_output = 
+            "%P.4 = alloca i32, align 4\n"
+            "store i32 1, i32* %P.4\n"
+            "%V.1 = load i32* %P.4, align 4\n"
+            "%P.5 = alloca i32, align 4\n"
+            "store i32 2, i32* %P.5\n"
+            "%V.2 = load i32* %P.5, align 4\n"
+            "%V.3 = add i32 %V.1, %V.2\n";
+
 
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
@@ -581,7 +574,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // 
         // i = foo(2, 4);
         // 
-        // The test case is foo(2, 4);
+        // The test case is foo(2, 4, "hello world");
         //
         
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));
@@ -606,8 +599,8 @@ TEST_CASE ("Abstract Syntax Tree") {
         // -a 
         // a is int type.
         
-        expected_output = "%P.0 = alloca i32, align 4\n"
-                          "store i32 2, i32* %P.0\n"
+        expected_output = "%P.1 = alloca i32, align 4\n"
+                          "store i32 2, i32* %P.1\n"
                           "%V.0 = load i32* %P.1, align 4\n";
         
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
@@ -618,7 +611,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // -a 
         // a is int type.
         
-        expected_output = "%V.1 = sub i32 0, %a";
+        expected_output = "%V.1 = sub i32 0, %a\n";
         
         parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("a"));
         symbol_1->type(parser::Type::INT);

@@ -335,18 +335,19 @@ class Binary_Expression : public Expression {
       // No. We can simple left and right.
 
       std::string ir;
+      
+      ir += lhs_->emit_llvm_ir();
+      ir += rhs_->emit_llvm_ir();
 
       // Step 1: lhs_ emit_llvm_ir
       // Get the lhs data into one register
 
-      llvm::Value_Register::Ptr value_register_lhs = std::make_shared<llvm::Value_Register>(lhs_->type());
 
       //  ir += lhs_->emit_llvm_ir();
       // ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
-      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->type());
 
       // ir += rhs_->emit_llvm_ir();
       // ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
@@ -354,7 +355,7 @@ class Binary_Expression : public Expression {
       // FIXME: Fails to put this part of code to llvm.hpp
 
       // Step 3: Operation
-      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(result_register()->type());
+
 
       ir += result_register()->name_llvm_ir();//tmp_value_register->name_llvm_ir();
       ir += " = ";
@@ -391,9 +392,9 @@ class Binary_Expression : public Expression {
       ir += " ";
       ir += result_register()->type_llvm_ir();
       ir += " ";
-      ir += value_register_lhs->name_llvm_ir();
+      ir += lhs_->result_register()->name_llvm_ir();
       ir += ", ";
-      ir += value_register_rhs->name_llvm_ir();
+      ir += rhs_->result_register()->name_llvm_ir();
 
       ir += "\n";
       // ir += llvm::alloca_instruction(result_register());
