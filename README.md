@@ -45,11 +45,11 @@ llc-3.6 -O3 sample.ll -march=x86-64 -o sample-x86-64.s
 gcc sample-x86-64.s -o sample-x86-64
 ./sample-x86-64
 ```
-opt-3.6 is to optimize the code. 
+opt-3.6 is to optimize the code.
 
 If you want to try LLVM online, [http://ellcc.org/demo/index.cgi](http://ellcc.org/demo/index.cgi).
 
-Due to the different version of LLVM compilers, sample.ll will be different. 
+Due to the different version of LLVM compilers, sample.ll will be different.
 
 ===============================================================================
 To Do:
@@ -71,3 +71,6 @@ at [https://kripken.github.io/llvm.js/demo.html](https://kripken.github.io/llvm.
 
 * Implement a String Data Type in LLVM?
 at [http://stackoverflow.com/questions/1061753/how-can-i-implement-a-string-data-type-in-llvm](http://stackoverflow.com/questions/1061753/how-can-i-implement-a-string-data-type-in-llvm).
+
+* Local variables in LLVM IR
+at [http://stackoverflow.com/questions/24605063/assigning-literal-value-to-local-variable-in-llvm-ir](http://stackoverflow.com/questions/24605063/assigning-literal-value-to-local-variable-in-llvm-ir).

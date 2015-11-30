@@ -47,8 +47,11 @@ yylloc->step();
 
 %}
 
-#include[ \n\t\r]*\"[A-Za-z_][A-Za-z0-9_]*.c\" { std::cout << "- declare #include" << std::endl;}
-#define[^\n]*\n {std::cout << "- declare #define" << std::endl;}
+    // #include[ \n\t\r]*\"[A-Za-z_][A-Za-z0-9_]*.c\" { std::cout << "- declare #include" << std::endl;}
+    // #define[^\n]*\n {std::cout << "- declare #define" << std::endl;}
+
+ // ignore lines beginning with a '#'
+"#".* { std::cerr << "ignoring meta-comment - \"" << yytext << "\"" << std::endl; }
 
 "+" { return token::PLUS; }
 "-" { return token::MINUS; }
