@@ -81,9 +81,9 @@ TEST_CASE ("Abstract Syntax Tree") {
 
     SECTION ("Declare function: int foo(int a, int b)") {
         // int foo(int a, int b)
-        // define i32 @foo(i32 %a, i32 %b) #0
+        // define i32 @foo(i32 %a, i32 %b)
 
-        expected_output = std::string("define i32 @foo(i32 %a, i32 %b) #0\n");
+        expected_output = std::string("define i32 @foo(i32 %a, i32 %b)\n");
 
         parser::Type type = parser::Type::INT;
         // function_declarator includes the argument list
@@ -110,10 +110,10 @@ TEST_CASE ("Abstract Syntax Tree") {
         // %V.1 = load i32* %P.0, align 4
         // ret i32 %1
 
-        expected_output = std::string("%P.0 = alloca i32, align 4\n");
-        expected_output += "store i32 0, i32* %P.0\n";
-        expected_output += "%V.1 = load i32* %P.0, align 4\n";
-        expected_output += "ret i32 %V.1\n";
+        expected_output = std::string("%P.1 = alloca i32, align 4\n");
+        expected_output += "store i32 0, i32* %P.1\n";
+        expected_output += "%V.0 = load i32* %P.1, align 4\n";
+        expected_output += "ret i32 %V.0\n";
 
         std::string output = "";
 
@@ -135,8 +135,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // INT
         // %V.1 = load i32* %a, align 4
         // ret i32 %V.1
-        std::string expected_output_1 = std::string("%V.1 = load i32* %a, align 4\n");
-        expected_output_1 += "ret i32 %V.1\n";
+        std::string expected_output_1 = "ret i32 %a\n";
 
         // Prepare
         // Expression - Variable
@@ -153,8 +152,7 @@ TEST_CASE ("Abstract Syntax Tree") {
         // STRING
         // %V.3 = load i8** %a, align 8
         // ret i8* %V.3
-        std::string expected_output_2 = std::string("%V.3 = load i8** %a, align 8\n");
-        expected_output_2 += "ret i8* %V.3\n";
+        std::string expected_output_2 = "ret i8* %a\n";
 
         // Prepare
         // Expression - Variable

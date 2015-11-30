@@ -63,12 +63,12 @@ class Expression : public Node {
     // If you don't agree, please let me know.
     // (const parser::Type& type) doesn't save the type information.
     Expression (const parser::Type type)
-          : result_register_(std::make_shared<llvm::Pointer_Register>(type)) {}
+          : result_register_(std::make_shared<llvm::Value_Register>(type)) {}
 
     const parser::Type& type                    () const { return result_register_->type(); }
-    llvm::Pointer_Register::Ptr result_register ()       { return result_register_;         }
+    llvm::Value_Register::Ptr result_register ()       { return result_register_;         }
 
-    void update_result_register (llvm::Pointer_Register::Ptr new_register) {
+    void update_result_register (llvm::Value_Register::Ptr new_register) {
         result_register_ = new_register;
     }
 
@@ -80,7 +80,7 @@ class Expression : public Node {
     // FIXME: Chnage to Register
     // Argumnets in llvm ir instructions must be pointer_register, or value_register
     // If it's changed to Register, check several errors llvm.hpp file.
-    llvm::Pointer_Register::Ptr result_register_;
+    llvm::Value_Register::Ptr result_register_;
 };
 
 // Yi: What is Terminal? I always forget...
@@ -197,7 +197,7 @@ class Variable : public Terminal {
 
     Variable (const parser::Symbol::Ptr& symbol)
           : Terminal(symbol->type()), symbol_(symbol) {
-      update_result_register(std::make_shared<llvm::Pointer_Register>(symbol_->type(), symbol_->name()));
+      update_result_register(std::make_shared<llvm::Value_Register>(symbol_->type(), symbol_->name()));
     }
 
     // Return empty string.
@@ -249,9 +249,9 @@ class Const_String : public Terminal {
 
     std::string emit_llvm_ir () {
       std::string ir;
-
-      ir += llvm::alloca_instruction(result_register());
-      ir += llvm::store_instruction(string_, result_register());
+      // Nothing to do
+      // ir += llvm::alloca_instruction(result_register());
+      // ir += llvm::store_instruction(string_, result_register());
       // ir += llvm::load_instruction(result_register(), string_);
       return ir;
     }
@@ -341,22 +341,22 @@ class Binary_Expression : public Expression {
 
       llvm::Value_Register::Ptr value_register_lhs = std::make_shared<llvm::Value_Register>(lhs_->type());
 
-      ir += lhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
+      //  ir += lhs_->emit_llvm_ir();
+      // ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->type());
 
-      ir += rhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
+      // ir += rhs_->emit_llvm_ir();
+      // ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
 
       // FIXME: Fails to put this part of code to llvm.hpp
 
       // Step 3: Operation
       llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(result_register()->type());
 
-      ir += tmp_value_register->name_llvm_ir();
+      ir += result_register()->name_llvm_ir();//tmp_value_register->name_llvm_ir();
       ir += " = ";
 
       // add
@@ -396,8 +396,8 @@ class Binary_Expression : public Expression {
       ir += value_register_rhs->name_llvm_ir();
 
       ir += "\n";
-      ir += llvm::alloca_instruction(result_register());
-      ir += llvm::store_instruction(tmp_value_register, result_register());
+      // ir += llvm::alloca_instruction(result_register());
+      // ir += llvm::store_instruction(tmp_value_register, result_register());
 
       return ir;
     }
@@ -438,15 +438,15 @@ class Condition : public Expression {
 
       llvm::Value_Register::Ptr value_register_lhs = std::make_shared<llvm::Value_Register>(lhs_->type());
 
-      ir += lhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
+      // ir += lhs_->emit_llvm_ir();
+      // ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
 
       // Step 2: rhs_ emit_llvm_ir
       // Get the rhs data into another register
       llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->type());
 
-      ir += rhs_->emit_llvm_ir();
-      ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
+      // ir += rhs_->emit_llvm_ir();
+      // ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
 
       // Step 3: Compare
       ir += result_register()->name_llvm_ir();
@@ -486,7 +486,8 @@ class Condition : public Expression {
 
       ir += " ";
       ir += value_register_lhs->type_llvm_ir();
-      ir += " " + value_register_lhs->name_llvm_ir() + ", " + value_register_rhs->name_llvm_ir();
+      ir += " " + value_register_lhs->name_llvm_ir() + ", ";
+      ir += value_register_rhs->name_llvm_ir();
       ir += "\n";
       return ir;
     }
@@ -500,7 +501,7 @@ class Condition : public Expression {
     llvm::Value_Register::Ptr result_register_;
 };
 
-// For example: a = 1;
+// For example: a = 1; b = "hello world";
 class Assignment : public Expression {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
@@ -510,10 +511,18 @@ class Assignment : public Expression {
 
     std::string emit_llvm_ir () {
       std::string ir;
-
+      
+      if (type() == parser::Type::STRING) {
+        return "Please wait";
+      }
+      
       // Step 1: load the expression data in to a value
       llvm::Pointer_Register::Ptr tmp_pointer_register = std::make_shared<llvm::Pointer_Register>(rhs_->type());
       
+      ir += llvm::alloca_instruction(tmp_pointer_register);
+      ir += llvm::store_instruction(rhs_->result_register(), tmp_pointer_register);
+      ir += llvm::load_instruction(lhs_->result_register(), tmp_pointer_register);
+      /*
       llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(rhs_->type());
 
       // ir += rhs_->emit_llvm_ir();
@@ -521,7 +530,7 @@ class Assignment : public Expression {
 
       // Step 2: assignment the value to the variable
       ir += llvm::store_instruction(tmp_value_register, lhs_->result_register());
-
+      */
       return ir;
     }
 
@@ -554,17 +563,20 @@ class Function_Call : public Expression {
       // Store the value of arguments in value registers
       std::vector<llvm::Value_Register::Ptr> value_registers_for_argument_list;
       
+      // This is special: Yi 
       for (auto& argument : argument_list_) {
         ir += argument->emit_llvm_ir();
-        llvm::Value_Register::Ptr tmp = std::make_shared<llvm::Value_Register>(argument->type());
-        ir += llvm::load_instruction(tmp, argument->result_register());
-        value_registers_for_argument_list.push_back(tmp);
+        llvm::Pointer_Register::Ptr tmp_pointer_register = std::make_shared<llvm::Pointer_Register>(argument->type());
+        ir += llvm::store_instruction(argument->result_register(), tmp_pointer_register);
+        llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(argument->type());
+        // ir += llvm::load_instruction(tmp, argument->result_register());
+        value_registers_for_argument_list.push_back(tmp_value_register);
       }
       
       // Step 2: call the function
       // The return value is stored in a value register
-      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(function_->type());
-      ir += tmp_value_register->name_llvm_ir();
+      // llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(function_->type());
+      ir += result_register()->name_llvm_ir();
       ir += " = call ";
       ir += function_->type_llvm_ir();
       ir += " @";
@@ -584,7 +596,7 @@ class Function_Call : public Expression {
       ir += "\n";
       
       // Step 3: put the value to the result register
-      ir += llvm::store_instruction(tmp_value_register, result_register());
+      // ir += llvm::store_instruction(tmp_value_register, result_register());
       
       return ir;
     }
@@ -838,16 +850,10 @@ class Return_Instruction : public Instruction {
 
     std::string emit_llvm_ir () {
       std::string ir;
-
-      // Step 1: load the expression data into a value register
-      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(expression_->type());
-
+      
       ir += expression_->emit_llvm_ir();
 
-      ir += llvm::load_instruction(tmp_value_register, expression_->result_register());
-
-      // Step 2: return the register
-      ir += "ret " + tmp_value_register->value_llvm_ir();
+      ir += "ret " + expression_->result_register()->value_llvm_ir();
       ir += "\n";
 
       return ir;

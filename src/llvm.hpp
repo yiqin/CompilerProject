@@ -123,9 +123,6 @@ class Pointer_Register : public Register {
     Pointer_Register (const parser::Type& type)
           : Register(type, ("P." + id_factory_.get_id())) {}
 
-    Pointer_Register (const parser::Type& type, const std::string& id)
-          : Register(type, id) {}
-
     // <pointer>
     std::string pointer_llvm_ir() {
         return type_llvm_ir() + "* " + name_llvm_ir();
@@ -139,6 +136,9 @@ class Value_Register : public Register {
     Value_Register (const parser::Type& type)
           : Register(type, ("V." + id_factory_.get_id())) {}
 
+    Value_Register (const parser::Type& type, const std::string& id)
+          : Register(type, id) {}
+          
     // <value>
     virtual std::string value_llvm_ir() {
       return type_llvm_ir() + " " + name_llvm_ir();
@@ -163,7 +163,6 @@ std::string alloca_instruction (Pointer_Register::Ptr op);
 // Return value
 // <value> = load <pointer>
 std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
-std::string load_instruction (llvm::Pointer_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
 
 // store int, <pointer>
 std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1);
