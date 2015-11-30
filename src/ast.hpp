@@ -15,8 +15,7 @@
 
 
 namespace ast {
-
-const std::string end_of_line = ", align 4\n";
+  
 
 enum class Operation {
     ADDITION,
@@ -62,7 +61,7 @@ class Expression : public Node {
     const parser::Type& type () const { return type_; }
 
     std::string emit_llvm_ir () {
-        return std::string("/undefine Expression - Expression Class/");
+        return std::string("; /undefine Expression - Expression Class/ \n");
     }
 
     virtual std::string emit_llvm_ir_access () = 0;
@@ -392,6 +391,7 @@ class Condition : public Nonterminal {
       ir += lhs_->emit_llvm_ir_access();
       ir += ", ";
       ir += rhs_->emit_llvm_ir_access();
+      ir += "\n";
       return ir;
     }
 
@@ -463,21 +463,27 @@ class Function_Call : public Nonterminal {
 
         // Step 2: call the function
         std::ostringstream oss;
-        oss << '%' << id() << " = call " << function_->type_llvm_ir() << " (";
+        oss << '%' << id() << " = call " << function_->type_llvm_ir() << " ";
         std::transform(
             std::begin(function_->argument_list()),
             std::end(function_->argument_list()),
             std::ostream_iterator<std::string>(oss, ", "),
             [] (parser::Symbol::Ptr symbol) { return symbol->type_llvm_ir(); }
         );
-        oss << " @" << function_->name() << " (";
+        oss << "@" << function_->name() << "(";
         std::transform(
             std::begin(argument_list_), std::end(argument_list_),
             std::ostream_iterator<std::string>(oss, ", "),
             [] (Expression::Ptr expr) { return expr->emit_llvm_ir_access(); }
         );
-        oss << ")\n";
-
+        ir += oss.str();
+        // remove the last space and the last comma
+        if (argument_list_.size() > 0) {
+            ir.pop_back();
+            ir.pop_back();
+        }        
+        ir += ")\n";
+        
         return ir;
     }
 
@@ -487,7 +493,6 @@ class Function_Call : public Nonterminal {
 };
 
 
-// Doesn't have a result register.
 class Instruction : public Node {
   public:
     typedef std::shared_ptr<Instruction> Ptr;
@@ -565,7 +570,6 @@ class Cond_Instruction : public Instruction {
       // Step 4: the end
       ir += "\n";
       ir += label_2->destination_llvm_ir();
-
       return ir;
     }
 
@@ -609,7 +613,6 @@ class While_Instruction : public Instruction {
       // Step 3: the end
       ir += "\n";
       ir += label_2->destination_llvm_ir();
-
       return ir;
     }
 
@@ -651,7 +654,6 @@ class Do_Instruction : public Instruction {
       // Step 3: the end
       ir += "\n";
       ir += label_2->destination_llvm_ir();
-
       return ir;
     }
 
@@ -710,7 +712,6 @@ class For_Instruction : public Instruction {
       // Step 5: the end
       ir += "\n";
       ir += label_3->destination_llvm_ir();
-
       return ir;
     }
 
@@ -765,7 +766,6 @@ class Compound_Instruction : public Instruction {
       std::string ir;
       for (auto& instruction : instruction_list_) {
         ir += instruction->emit_llvm_ir();
-        ir += "\n";
       }
       return ir;
     }
@@ -818,8 +818,6 @@ class Function_Declaration : public Node {
       ir += ")";
 
       // step 5
-      // // FIXME: this may not be always 0
-      // ir += " #0";
       ir += "\n";
 
       return ir;
@@ -828,7 +826,6 @@ class Function_Declaration : public Node {
   private:
     parser::Type type_;
     parser::Function::Ptr function_declarator_;
-    // decl_glb_fct
 };
 
 
@@ -894,9 +891,7 @@ class Function_Definition : public Node {
     parser::Type type_;
     parser::Function::Ptr function_declarator_;
     Compound_Instruction::Ptr body_;
-    // decl_glb_fct
 };
-
 
 
 

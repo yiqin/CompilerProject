@@ -299,7 +299,6 @@ TEST_CASE ("Abstract Syntax Tree") {
             "br label %Label_0\n"
             "\n"
             "Label_3:\n"
-            "\n"
             ;
 
 
@@ -335,15 +334,6 @@ TEST_CASE ("Abstract Syntax Tree") {
         // i <= 10 Condition
         ast::Condition::Ptr condition = std::make_shared<ast::Condition>(variable, ast::Comparison_Operation::LESS_THAN_OR_EQUAL, const_integer_2);
 
-        // std::string expected_output_2 =
-        //     "%V.10 = load i32* %i, align 4\n"
-        //     "%P.3 = alloca i32, align 4\n"
-        //     "store i32 10, i32* %P.3\n"
-        //     "%V.11 = load i32* %P.3, align 4\n"
-        //     "%V.5 = icmp sle i32 %V.10, %V.11\n"
-        //     ;
-        // REQUIRE ( condition->emit_llvm_ir() == expected_output_2 );
-
         // increment - Assignment with expression.
         // i = i + 1
         // 1
@@ -353,19 +343,6 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         // i = i + 1
         ast::Assignment::Ptr increment = std::make_shared<ast::Assignment>(variable, add_expression);
-
-        // std::string expected_output_3 =
-        //     "%V.13 = load i32* %i, align 4\n"
-        //     "%P.6 = alloca i32, align 4\n"
-        //     "store i32 1, i32* %P.6\n"
-        //     "%V.14 = load i32* %P.6, align 4\n"
-        //     "%V.15 = add i32 %V.13, %V.14\n"
-        //     "%P.7 = alloca i32, align 4\n"
-        //     "store i32 %V.15, i32* %P.7\n"
-        //     "%V.12 = load i32* %P.7, align 4\n"
-        //     "store i32 %V.12, i32* %i\n"
-        //     ;
-        // REQUIRE ( increment->emit_llvm_ir() == expected_output_3 );
 
         // instruction
         // It's the body of the loop. Only empty instruction, not multiply lines.
@@ -433,12 +410,30 @@ TEST_CASE ("Abstract Syntax Tree") {
         // REQUIRE (output == "" );
     }
 
-    SECTION ( "Cond_Instruction" ) {
+    SECTION ( "Cond_Instruction if else" ) {
         // if (-10 == 10)
         //   i = 1;
         // else
         //   i = -1;
-
+        
+        expected_output = 
+            "\n"
+            "; Cond_Instruction\n"
+            "\n"
+            "%tmp.0 = icmp eq i32 -10, 10\n"
+            "br i1 %tmp.0, label %Label_0, label %Label_1\n"
+            "\n"
+            "Label_0:\n"
+            "store i32 1, i32* %i\n"
+            "br label %Label_2\n"
+            "\n"  
+            "Label_1:\n"
+            "store i32 -1, i32* %i\n"
+            "br label %Label_2\n"
+            "\n"
+            "Label_2:\n"
+            ;
+            
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
         ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
@@ -459,15 +454,74 @@ TEST_CASE ("Abstract Syntax Tree") {
         ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1, instruction_2);
 
         REQUIRE (cond_instruction_1->emit_llvm_ir() == expected_output);
-
-        ast::Cond_Instruction::Ptr cond_instruction_2 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1);
-        REQUIRE (cond_instruction_2->emit_llvm_ir() == expected_output);
     }
+
+    SECTION ( "Cond_Instruction if" ) {
+        // if (-10 == 10)
+        //   i = 1;
+        
+        expected_output = 
+            "\n"
+            "; Cond_Instruction\n"
+            "\n"
+            "%tmp.0 = icmp eq i32 -10, 10\n"
+            "br i1 %tmp.0, label %Label_0, label %Label_1\n"
+            "\n"
+            "Label_0:\n"
+            "store i32 1, i32* %i\n"
+            "br label %Label_2\n"
+            "\n"  
+            "Label_1:\n"
+            "br label %Label_2\n"
+            "\n"
+            "Label_2:\n"
+            ;
+            
+        ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
+        ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
+        ast::Const_Integer::Ptr const_integer_3 = std::make_shared<ast::Const_Integer>(std::move(1));
+
+        ast::Condition::Ptr condition = std::make_shared<ast::Condition>(const_integer_1, ast::Comparison_Operation::EQUAL, const_integer_2);
+
+        parser::Symbol::Ptr symbol_1 = std::make_shared<parser::Symbol>(std::move("i"));
+        symbol_1->type(parser::Type::INT);
+        ast::Variable::Ptr variable_1 = std::make_shared<ast::Variable>(symbol_1);
+
+        ast::Assignment::Ptr assignment_1 = std::make_shared<ast::Assignment>(variable_1, const_integer_3);
+        ast::Expression_Instruction::Ptr instruction_1 = std::make_shared<ast::Expression_Instruction>(assignment_1);
+
+        ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1);
+        REQUIRE (cond_instruction_1->emit_llvm_ir() == expected_output);
+    }
+
 
     SECTION ( "While_Instruction" ) {
         // while ( i < 10 ) {
         //   i = i+2;
         // }
+
+        expected_output = 
+            "\n"
+            "; While_Instruction\n"
+            "\n"
+            "%i = alloca i32\n"
+            "store i32 0, i32* %i\n"
+            "\n"
+            "br label %Label_0\n"
+            "\n"
+            "Label_0:\n"
+            "%i.1 = load i32* %i\n"
+            "%tmp.0 = icmp slt i32 %i.1, 10\n"
+            "br i1 %tmp.0, label %Label_1, label %Label_2\n"
+            "\n"
+            "Label_1:\n"
+            "%i.2 = load i32* %i\n"
+            "%tmp.1 = add i32 %i.2, 2\n"
+            "store i32 %tmp.1, i32* %i\n"
+            "br label %Label_0\n"
+            "\n"
+            "Label_2:\n"
+            ;
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
@@ -492,6 +546,26 @@ TEST_CASE ("Abstract Syntax Tree") {
         //   i = i + 2
         // } while ( i < 10 );
 
+        expected_output =
+            "\n"
+            "; Do_Instruction\n"
+            "\n"
+            "br label %Label_0\n"
+            "\n"
+            "Label_0:\n"
+            "%i.1 = load i32* %i\n"
+            "%tmp.1 = add i32 %i.1, 2\n"
+            "store i32 %tmp.1, i32* %i\n"
+            "br label %Label_1\n"
+            "\n"
+            "Label_1:\n"
+            "%i.2 = load i32* %i\n"
+            "%tmp.0 = icmp slt i32 %i.2, 10\n"
+            "br i1 %tmp.0, label %Label_0, label %Label_2\n"
+            "\n"
+            "Label_2:\n"
+            ;
+            
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
         symbol->type(parser::Type::INT);
         ast::Variable::Ptr variable = std::make_shared<ast::Variable>(symbol);
@@ -511,9 +585,11 @@ TEST_CASE ("Abstract Syntax Tree") {
     }
 
     SECTION ( "Compound_Instruction" ) {
-        // i = 1;
-        // i = -1;
-
+        // i = 10;
+        // i = -10;
+        expected_output = "store i32 -10, i32* %i\n";
+        expected_output += "store i32 10, i32* %i\n";
+        
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
         ast::Const_Integer::Ptr const_integer_2 = std::make_shared<ast::Const_Integer>(std::move(10));
 
@@ -547,6 +623,9 @@ TEST_CASE ("Abstract Syntax Tree") {
         //
         // The test case is foo(2, 4, "hello world");
         //
+        
+        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @.str_0, i32 0, i32 0";
+        expected_output += "%tmp.0 = call i32 @foo(2, 4, @.str_0)";
 
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));
         function->type(parser::Type::INT);
@@ -572,10 +651,11 @@ TEST_CASE ("Abstract Syntax Tree") {
 
         // A constant integer should have no prep-work and no inline execution.
         // It is only referenced by others.
-        expected_output = "";
 
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
-        REQUIRE (const_integer_1->emit_llvm_ir() == expected_output);
+        REQUIRE (const_integer_1->emit_llvm_ir() == "");
+        
+        REQUIRE (const_integer_1->emit_llvm_ir_access() == "2");
     }
 
     SECTION ( "Unary_Expression" ) {
