@@ -237,9 +237,11 @@ class Const_String : public Terminal {
     typedef std::shared_ptr<Const_String> Ptr;
 
     Const_String (const std::string& value)
-          : Terminal(parser::Type::STRING), string_(std::make_shared<llvm::String>(std::move(value))) {
-      id_ = string_->id();
+          : Terminal(parser::Type::STRING) {
+        string_ = llvm::String::construct(value);
     }
+
+    const std::string& id () const { return string_->id(); }
 
     std::string emit_llvm_ir () {
       std::string ir;
@@ -255,7 +257,7 @@ class Const_String : public Terminal {
       // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
       std::string ir;
 
-      ir += id_ + " = private unnamed_addr constant ";
+      ir += id() + " = private unnamed_addr constant ";
       ir += "[" + to_string(string_->value().size() + 1) + std::string(" x i8] ");
       ir += "c\"" + string_->value() + "\\00\"";
       ir += ", align 1";
@@ -265,7 +267,6 @@ class Const_String : public Terminal {
     }
 
   private:
-    std::string id_;
     llvm::String::Ptr string_;
 };
 
@@ -273,14 +274,14 @@ class Const_String : public Terminal {
 class Unary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Unary_Expression> Ptr;
-    
+
     // TODO: Yi - Remove if we don't use this constructor.
     Unary_Expression (const parser::Type& type, Operation op, Expression::Ptr rhs)
           : Expression(type), op_(op), rhs_(rhs) {}
-    
+
     Unary_Expression (Expression::Ptr rhs)
           : Expression(parser::Type::INT), op_(Operation::SUBTRACTION), rhs_(rhs) {}
-    
+
     std::string emit_llvm_ir () {
       std::string ir;
       
@@ -301,9 +302,6 @@ class Unary_Expression : public Expression {
       ir += rhs_->result_register()->name_llvm_ir();
       ir += "\n";
 
-      // ir += llvm::alloca_instruction(result_register());
-      // ir += llvm::store_instruction(tmp_value_register, result_register());
-      
       return ir;
     }
 
@@ -550,15 +548,14 @@ class Function_Call : public Expression {
           : Expression(function->type()),
             function_(function),
             argument_list_(argument_list) {}
-            
+
     std::string emit_llvm_ir () {
       std::string ir;
 
       // Step 1: Prepare arguments
       // Store the value of arguments in value registers
       std::vector<llvm::Value_Register::Ptr> value_registers_for_argument_list;
-      
-      // This is special: Yi 
+
       for (auto& argument : argument_list_) {
         ir += argument->emit_llvm_ir();
         llvm::Pointer_Register::Ptr tmp_pointer_register = std::make_shared<llvm::Pointer_Register>(argument->type());
@@ -567,7 +564,7 @@ class Function_Call : public Expression {
         // ir += llvm::load_instruction(tmp, argument->result_register());
         value_registers_for_argument_list.push_back(tmp_value_register);
       }
-      
+
       // Step 2: call the function
       // The return value is stored in a value register
       // llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(function_->type());
@@ -586,13 +583,10 @@ class Function_Call : public Expression {
         ir.pop_back();
         ir.pop_back();
       }
-      
+
       ir += ")";
       ir += "\n";
-      
-      // Step 3: put the value to the result register
-      // ir += llvm::store_instruction(tmp_value_register, result_register());
-      
+
       return ir;
     }
 

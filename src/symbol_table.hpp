@@ -29,7 +29,7 @@ class Symbol_Table {
     Symbol_Table& operator = (Symbol_Table&&)      = delete;
 
     // Factory constructor.
-    template <typename ...T>
+    template <typename... T>
     static Ptr construct (T&&... t) {
         Ptr p (new Symbol_Table(std::forward<T>(t)...));
         all_tables_.push_back(p);

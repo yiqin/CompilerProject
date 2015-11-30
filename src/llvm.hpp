@@ -6,6 +6,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "symbol.hpp"
 
@@ -39,23 +40,45 @@ class String {
   public:
     typedef std::shared_ptr<String> Ptr;
 
-    String (const std::string& value)
-           : value_(value), id_("@.str_" + id_factory_.get_id()) {}
+    // Delete all default constructors/assignment operators.
+    String             ()              = delete;
+    String             (const String&) = delete;
+    String             (String&&)      = delete;
+    String& operator = (const String&) = delete;
+    String& operator = (String&&)      = delete;
 
-    const std::string id() const {
-      return id_;
+    // Factory constructor.
+    template <typename... T>
+    static Ptr construct (T&&... t) {
+        Ptr p (new String(std::forward<T>(t)...));
+        all_strings_.push_back(p);
+        return p;
     }
 
-    const std::string value() const {
-      return value_;
+    static const std::vector<Ptr> all_strings () { return all_strings_; }
+    static void clear_store () { all_strings_.clear(); }
+
+    const std::string& id () const {
+        return id_;
+    }
+
+    const std::string& value () const {
+        return value_;
     }
 
   protected:
     static ID_Factory id_factory_;
 
   private:
+    // Constructors private to control new object creation.
+    String (const std::string& value)
+          : value_(value),
+            id_("@.str_" + id_factory_.get_id()) {}
+
     const std::string id_;
     const std::string value_;
+
+    static std::vector<Ptr> all_strings_;
 };
 
 class Label {
