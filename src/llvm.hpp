@@ -25,6 +25,9 @@ namespace llvm {
 extern std::string end_of_line;
 
 
+std::string type (parser::Type t);
+
+
 class ID_Factory {
   public:
     ID_Factory () : next_id_(0) {}
@@ -109,92 +112,92 @@ class Label {
     const std::string id_;
 };
 
-class Register {
-  public:
-    typedef std::shared_ptr<Register> Ptr;
+// class Register {
+//   public:
+//     typedef std::shared_ptr<Register> Ptr;
 
-    Register (const parser::Type& type, const std::string& id)
-          : type_(type), id_(id) {}
+//     Register (const parser::Type& type, const std::string& id)
+//           : type_(type), id_(id) {}
 
-    const parser::Type& type () const { return type_; }
+//     const parser::Type& type () const { return type_; }
 
-    std::string type_llvm_ir () {
-      switch (type_) {
-        case parser::Type::INT:
-          return "i32";
-        case parser::Type::STRING:
-          return "i8*";
-      }
-    }
+//     std::string type_llvm_ir () {
+//       switch (type_) {
+//         case parser::Type::INT:
+//           return "i32";
+//         case parser::Type::STRING:
+//           return "i8*";
+//       }
+//     }
 
-    std::string name_llvm_ir () {
-        return '%' + id_;
-    }
+//     std::string name_llvm_ir () {
+//         return '%' + id_;
+//     }
 
-  protected:
-    static ID_Factory id_factory_;
+//   protected:
+//     static ID_Factory id_factory_;
 
-  private:
-    const parser::Type type_;
-    const std::string id_;
-};
+//   private:
+//     const parser::Type type_;
+//     const std::string id_;
+// };
 
-class Pointer_Register : public Register {
-  public:
-    typedef std::shared_ptr<Pointer_Register> Ptr;
+// class Pointer_Register : public Register {
+//   public:
+//     typedef std::shared_ptr<Pointer_Register> Ptr;
 
-    Pointer_Register (const parser::Type& type)
-          : Register(type, ("P." + id_factory_.get_id())) {}
+//     Pointer_Register (const parser::Type& type)
+//           : Register(type, ("P." + id_factory_.get_id())) {}
 
-    // <pointer>
-    std::string pointer_llvm_ir() {
-        return type_llvm_ir() + "* " + name_llvm_ir();
-    }
-};
+//     // <pointer>
+//     std::string pointer_llvm_ir() {
+//         return type_llvm_ir() + "* " + name_llvm_ir();
+//     }
+// };
 
-class Value_Register : public Register {
-  public:
-    typedef std::shared_ptr<Value_Register> Ptr;
+// class Value_Register : public Register {
+//   public:
+//     typedef std::shared_ptr<Value_Register> Ptr;
 
-    Value_Register (const parser::Type& type)
-          : Register(type, ("V." + id_factory_.get_id())) {}
+//     Value_Register (const parser::Type& type)
+//           : Register(type, ("V." + id_factory_.get_id())) {}
 
-    Value_Register (const parser::Type& type, const std::string& id)
-          : Register(type, id) {}
-          
-    // <value>
-    virtual std::string value_llvm_ir() {
-      return type_llvm_ir() + " " + name_llvm_ir();
-    }
-};
+//     Value_Register (const parser::Type& type, const std::string& id)
+//           : Register(type, id) {}
 
-class Cond_Register : public Value_Register {
-  public:
-    std::string value_llvm_ir() {
-      return std::string("i1 ") + name_llvm_ir();
-    }
-};
+//     // <value>
+//     virtual std::string value_llvm_ir() {
+//       return type_llvm_ir() + " " + name_llvm_ir();
+//     }
+// };
+
+// class Cond_Register : public Value_Register {
+//   public:
+//     std::string value_llvm_ir() {
+//       return std::string("i1 ") + name_llvm_ir();
+//     }
+// };
 
 
 // Memory Access and Addressing Operations
 // alloca <pointer>
 std::string alloca_instruction (parser::Symbol::Ptr symbol);
 
-// alloca <pointer>
-std::string alloca_instruction (Pointer_Register::Ptr op);
+// // alloca <pointer>
+// std::string alloca_instruction (Pointer_Register::Ptr op);
 
 // Return value
 // <value> = load <pointer>
-std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
+// std::string load_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
 
 // store int, <pointer>
-std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1);
+// std::string store_instruction (int integer_value, llvm::Pointer_Register::Ptr op_1);
 
 // store string, <pointer>
-std::string store_instruction (llvm::String::Ptr string_1, llvm::Pointer_Register::Ptr op_1);
+// std::string store_instruction (llvm::String::Ptr string_1, llvm::Pointer_Register::Ptr op_1);
 
 // store <value>, <pointer>
-std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
+// std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Register::Ptr op_2);
 
 
 // Binary Operations
@@ -208,7 +211,7 @@ std::string store_instruction (llvm::Value_Register::Ptr op_1, llvm::Pointer_Reg
 std::string br_instruction (Label::Ptr label_1);
 
 // br i1 <cond>, label <iftrue>, label<iffailure>
-std::string br_instruction (llvm::Value_Register::Ptr cond, Label::Ptr label_1, Label::Ptr label_2);
+std::string br_instruction (const std::string& cond, Label::Ptr label_1, Label::Ptr label_2);
 
 // <value> = getelementptr (class string)
 std::string getelementptr_instruction (llvm::String::Ptr string);

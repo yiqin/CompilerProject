@@ -165,7 +165,7 @@ external_declaration :
         for (auto& str : llvm::String::all_strings()) {
             // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
             std::cout
-                << str->id() << " private constant [" << str->value().size()
+                << str->id() << " private unnamed_addr constant [" << str->value().size()
                 << " x i8] c\""
                 ;
             for (auto& c : str->value()) {
@@ -178,7 +178,7 @@ external_declaration :
                     std::cout << c;
                 }
             }
-            std::cout << '"' << std::endl;
+            std::cout << "\\00\"" << std::endl;
         }
         llvm::String::clear_store();
 

@@ -70,12 +70,12 @@ unit_test: $(TESTDIR)/$(BINDIR)/unit_test
 
 $(BINDIR)/compiler: $(BUILDDIR)/compiler_main.o \
 	$(BUILDDIR)/scanner.yy.o $(BUILDDIR)/parser.tab.o \
-	$(BUILDDIR)/symbol_table.o $(BUILDDIR)/llvm.o
+	$(BUILDDIR)/symbol_table.o $(BUILDDIR)/ast.o $(BUILDDIR)/llvm.o
 $(BINDIR)/preprocessor: $(BUILDDIR)/preprocessor.yy.o $(BUILDDIR)/macro.o
 
 $(TESTDIR)/$(BINDIR)/unit_test: $(TESTDIR)/$(BUILDDIR)/unit_test_main.o \
 	$(TESTDIR)/$(BUILDDIR)/unit_test_scanner.o $(BUILDDIR)/scanner.yy.o \
-	$(TESTDIR)/$(BUILDDIR)/unit_test_ast.o $(BUILDDIR)/llvm.o
+	$(TESTDIR)/$(BUILDDIR)/unit_test_ast.o $(BUILDDIR)/ast.o $(BUILDDIR)/llvm.o
 
 
 # SPECIFY SPECIAL DEPENDENCIES

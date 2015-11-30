@@ -3,8 +3,11 @@
 #define __CSTR_COMPILER__AST_HPP
 
 
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "llvm.hpp"
@@ -53,28 +56,19 @@ class Expression : public Node {
   public:
     typedef std::shared_ptr<Expression> Ptr;
 
-    // Yi: I remove (const parser::Type& type) to (const parser::Type type)
-    // If you don't agree, please let me know.
-    // (const parser::Type& type) doesn't save the type information.
-    Expression (const parser::Type type)
-          : result_register_(std::make_shared<llvm::Value_Register>(type)) {}
+    Expression (const parser::Type& type)
+          : type_(type) {}
 
-    const parser::Type& type                    () const { return result_register_->type(); }
-    llvm::Value_Register::Ptr result_register ()       { return result_register_;         }
-
-    void update_result_register (llvm::Value_Register::Ptr new_register) {
-        result_register_ = new_register;
-    }
+    const parser::Type& type () const { return type_; }
 
     std::string emit_llvm_ir () {
-      return std::string("/undefine Expression - Expression Class/");
+        return std::string("/undefine Expression - Expression Class/");
     }
 
+    virtual std::string emit_llvm_ir_access () = 0;
+
   private:
-    // FIXME: Chnage to Register
-    // Argumnets in llvm ir instructions must be pointer_register, or value_register
-    // If it's changed to Register, check several errors llvm.hpp file.
-    llvm::Value_Register::Ptr result_register_;
+    const parser::Type type_;
 };
 
 
@@ -134,16 +128,33 @@ class Variable : public Terminal {
 
     Variable (const parser::Symbol::Ptr& symbol)
           : Terminal(symbol->type()), symbol_(symbol) {
-      update_result_register(std::make_shared<llvm::Value_Register>(symbol_->type(), symbol_->name()));
+        symbol_->increment_access_count();
+        register_reference_ = '%' + symbol_->name() + '.' +
+            to_string(symbol_->access_count());
     }
 
-    // Return empty string.
-    // result_register is %<symbol_->name()>
     std::string emit_llvm_ir () {
-      return "";
+        switch (type()) {
+            case parser::Type::INT:
+                return  register_reference_ + " = load i32* %" +
+                    symbol_->name() + '\n';
+            case parser::Type::STRING:
+                // TODO
+                return "";
+        }
+    }
+
+    std::string emit_llvm_ir_access () {
+        // TODO(Emery): Access global variables.
+        return register_reference_;
+    }
+
+    std::string llvm_pointer_register () {
+        return '%' + symbol_->name();
     }
 
   private:
+    std::string register_reference_;
     parser::Symbol::Ptr symbol_;
 };
 
@@ -157,17 +168,11 @@ class Const_Integer : public Terminal {
           : Terminal(parser::Type::INT), value_(value) {}
 
     std::string emit_llvm_ir () {
-      // %1 = alloca i32, align 4
-      // store i32 0, i32* %1
+        return "";
+    }
 
-      llvm::Pointer_Register::Ptr tmp = std::make_shared<llvm::Pointer_Register>(type());
-
-      std::string ir = llvm::alloca_instruction(tmp);
-      ir += llvm::store_instruction(value_, tmp);
-
-      ir += llvm::load_instruction(result_register(), tmp);
-
-      return ir;
+    std::string emit_llvm_ir_access () {
+        return to_string(value_);
     }
 
   private:
@@ -187,25 +192,14 @@ class Const_String : public Terminal {
     const std::string& id () const { return string_->id(); }
 
     std::string emit_llvm_ir () {
-      std::string ir;
-      ir += result_register()->name_llvm_ir();
-      ir += " = ";
-      ir += llvm::getelementptr_instruction(string_);
-      return ir;
+        std::string ir;
+        ir += "%" + string_->id() + " = ";
+        ir += llvm::getelementptr_instruction(string_);
+        return ir;
     }
 
-    std::string declare_llvm_ir () {
-      // declarated outside any scope.
-      // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
-      std::string ir;
-
-      ir += id() + " = private unnamed_addr constant ";
-      ir += "[" + to_string(string_->value().size() + 1) + std::string(" x i8] ");
-      ir += "c\"" + string_->value() + "\\00\"";
-      ir += ", align 1";
-      ir += "\n";
-
-      return ir;
+    std::string emit_llvm_ir_access () {
+        return string_->id();
     }
 
   private:
@@ -213,34 +207,50 @@ class Const_String : public Terminal {
 };
 
 
-class Unary_Expression : public Expression {
+class Nonterminal : public Expression {
+  public:
+    Nonterminal (const parser::Type& type)
+          : Expression(type),
+            id_("tmp." + id_factory_.get_id()) {}
+
+    const std::string& id () const { return id_; }
+
+    std::string emit_llvm_ir_access () {
+        return '%' + id_;
+    }
+
+  private:
+    static llvm::ID_Factory id_factory_;
+
+    const std::string id_;
+};
+
+
+class Unary_Expression : public Nonterminal {
   public:
     typedef std::shared_ptr<Unary_Expression> Ptr;
 
     // TODO: Yi - Remove if we don't use this constructor.
     Unary_Expression (const parser::Type& type, Operation op, Expression::Ptr rhs)
-          : Expression(type), op_(op), rhs_(rhs) {}
+          : Nonterminal(type), op_(op), rhs_(rhs) {}
 
     Unary_Expression (Expression::Ptr rhs)
-          : Expression(parser::Type::INT), op_(Operation::SUBTRACTION), rhs_(rhs) {}
+          : Nonterminal(parser::Type::INT), op_(Operation::SUBTRACTION), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
       std::string ir;
 
-      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->result_register()->type());
       ir += rhs_->emit_llvm_ir();
 
-      llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(result_register()->type());
-
-      ir += result_register()->name_llvm_ir();
+      ir += '%' + id();
       ir += " = ";
       ir += "sub";
       ir += " ";
-      ir += result_register()->type_llvm_ir();
+      ir += llvm::type(type());
       ir += " ";
       ir += "0";
       ir += ", ";
-      ir += rhs_->result_register()->name_llvm_ir();
+      ir += rhs_->emit_llvm_ir_access();
       ir += "\n";
 
       return ir;
@@ -254,13 +264,13 @@ class Unary_Expression : public Expression {
 
 // Binary_Expression - Expression class for a binary operator
 // e.g. i <= 10, 1+2
-class Binary_Expression : public Expression {
+class Binary_Expression : public Nonterminal {
   public:
     typedef std::shared_ptr<Binary_Expression> Ptr;
 
     Binary_Expression (const parser::Type& type,
         Operation op, Expression::Ptr lhs, Expression::Ptr rhs)
-          : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
+          : Nonterminal(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
       std::string ir;
@@ -268,7 +278,7 @@ class Binary_Expression : public Expression {
       ir += lhs_->emit_llvm_ir();
       ir += rhs_->emit_llvm_ir();
 
-      ir += result_register()->name_llvm_ir();
+      ir += '%' + id();
       ir += " = ";
 
       // add
@@ -292,23 +302,25 @@ class Binary_Expression : public Expression {
         case Operation::MODULUS:
           ir += "urem";
           break;
-       case Operation::LEFT_SHIFT:
+        case Operation::LEFT_SHIFT:
+          // TODO
           ir += "/Undefine. Please wait./";
           break;
-       case Operation::RIGHT_SHIFT:
+        case Operation::RIGHT_SHIFT:
+          // TODO
           ir += "/Undefine. Please wait./";
           break;
       }
 
       ir += " ";
-      ir += result_register()->type_llvm_ir();
+      ir += llvm::type(type());
       ir += " ";
-      ir += lhs_->result_register()->name_llvm_ir();
+      ir += lhs_->emit_llvm_ir_access();
       ir += ", ";
-      ir += rhs_->result_register()->name_llvm_ir();
+      ir += rhs_->emit_llvm_ir_access();
 
       ir += "\n";
-      
+
       return ir;
     }
 
@@ -324,24 +336,24 @@ class Binary_Expression : public Expression {
 // But they are quite similar.
 // Currently it works, we can merge them in the future.
 // Return are different
-class Condition : public Expression {
+class Condition : public Nonterminal {
   public:
     typedef std::shared_ptr<Condition> Ptr;
 
     Condition (Expression::Ptr lhs, Comparison_Operation comparison_operator,
                    Expression::Ptr rhs)
-          : Expression(parser::Type::INT),
+          : Nonterminal(parser::Type::INT),
             lhs_(lhs),
             comparison_operator_(comparison_operator),
             rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
       std::string ir;
-      
+
       ir += lhs_->emit_llvm_ir();
       ir += rhs_->emit_llvm_ir();
-      
-      ir += result_register()->name_llvm_ir();
+
+      ir += '%' + id();
       ir += " = icmp ";
 
       // eq: equal
@@ -375,12 +387,11 @@ class Condition : public Expression {
           ir += "sge";
           break;
       }
+      ir += ' ' + llvm::type(type()) + ' ';
 
-      ir += " ";
-      ir += lhs_->result_register()->type_llvm_ir();
-      ir += " " + lhs_->result_register()->name_llvm_ir() + ", ";
-      ir += rhs_->result_register()->name_llvm_ir();
-      ir += "\n";
+      ir += lhs_->emit_llvm_ir_access();
+      ir += ", ";
+      ir += rhs_->emit_llvm_ir_access();
       return ir;
     }
 
@@ -392,23 +403,32 @@ class Condition : public Expression {
 };
 
 // For example: a = 1; b = "hello world";
-class Assignment : public Expression {
+class Assignment : public Nonterminal {
   public:
     typedef std::shared_ptr<Assignment> Ptr;
 
     Assignment (Variable::Ptr lhs, Expression::Ptr rhs)
-          : Expression(lhs->type()), lhs_(lhs), rhs_(rhs) {}
+          : Nonterminal(lhs->type()), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-      std::string ir;
-      ir += rhs_->emit_llvm_ir();
+        std::string ir;
+        ir += rhs_->emit_llvm_ir();
 
-      llvm::Pointer_Register::Ptr tmp_pointer_register = std::make_shared<llvm::Pointer_Register>(rhs_->type());
-      ir += llvm::alloca_instruction(tmp_pointer_register);
-      ir += llvm::store_instruction(rhs_->result_register(), tmp_pointer_register);
-      ir += llvm::load_instruction(lhs_->result_register(), tmp_pointer_register);
+        switch (type()) {
+            case parser::Type::INT:
+                ir += "store i32 " + rhs_->emit_llvm_ir_access() +
+                    ", i32* " + lhs_->llvm_pointer_register() + '\n';
+                break;
+            case parser::Type::STRING:
+                // TODO
+                break;
+        }
 
-      return ir;
+        return ir;
+    }
+
+    std::string emit_llvm_ir_access () {
+        return lhs_->emit_llvm_ir_access();
     }
 
   private:
@@ -417,61 +437,48 @@ class Assignment : public Expression {
 };
 
 
-class Function_Call : public Expression {
+class Function_Call : public Nonterminal {
   public:
     typedef std::shared_ptr<Function_Call> Ptr;
 
     Function_Call (parser::Function::Ptr function)
-          : Expression(function->type()),
+          : Nonterminal(function->type()),
             function_(function) {}
 
     Function_Call (
         parser::Function::Ptr function,
         const std::vector<Expression::Ptr>& argument_list
     )
-          : Expression(function->type()),
+          : Nonterminal(function->type()),
             function_(function),
             argument_list_(argument_list) {}
 
     std::string emit_llvm_ir () {
-      std::string ir;
+        std::string ir;
 
-      // Step 1: Prepare arguments
-      // Store the value of arguments in value registers
-      std::vector<llvm::Value_Register::Ptr> value_registers_for_argument_list;
+        // Step 1: Prepare arguments
+        for (auto& argument : argument_list_) {
+            ir += argument->emit_llvm_ir();
+        }
 
-      for (auto& argument : argument_list_) {
-        ir += argument->emit_llvm_ir();
-        llvm::Pointer_Register::Ptr tmp_pointer_register = std::make_shared<llvm::Pointer_Register>(argument->type());
-        ir += llvm::store_instruction(argument->result_register(), tmp_pointer_register);
-        llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(argument->type());
-        // ir += llvm::load_instruction(tmp, argument->result_register());
-        value_registers_for_argument_list.push_back(tmp_value_register);
-      }
+        // Step 2: call the function
+        std::ostringstream oss;
+        oss << '%' << id() << " = call " << function_->type_llvm_ir() << " (";
+        std::transform(
+            std::begin(function_->argument_list()),
+            std::end(function_->argument_list()),
+            std::ostream_iterator<std::string>(oss, ", "),
+            [] (parser::Symbol::Ptr symbol) { return symbol->type_llvm_ir(); }
+        );
+        oss << " @" << function_->name() << " (";
+        std::transform(
+            std::begin(argument_list_), std::end(argument_list_),
+            std::ostream_iterator<std::string>(oss, ", "),
+            [] (Expression::Ptr expr) { return expr->emit_llvm_ir_access(); }
+        );
+        oss << ")\n";
 
-      // Step 2: call the function
-      // The return value is stored in a value register
-      // llvm::Value_Register::Ptr tmp_value_register = std::make_shared<llvm::Value_Register>(function_->type());
-      ir += result_register()->name_llvm_ir();
-      ir += " = call ";
-      ir += function_->type_llvm_ir();
-      ir += " @";
-      ir += function_->name();
-      ir += "(";
-      for (auto& value_register_argument : value_registers_for_argument_list) {
-        ir += value_register_argument->value_llvm_ir();
-        ir += ", ";
-      }
-      // remove the last space and the last comma
-      if (value_registers_for_argument_list.size() > 0) {
-        ir.pop_back();
-        ir.pop_back();
-      }
-
-      ir += ")";
-      ir += "\n";
-
-      return ir;
+        return ir;
     }
 
   private:
@@ -484,6 +491,9 @@ class Function_Call : public Expression {
 class Instruction : public Node {
   public:
     typedef std::shared_ptr<Instruction> Ptr;
+
+    // Empty instruction.
+    std::string emit_llvm_ir () { return ""; }
 };
 
 
@@ -534,7 +544,8 @@ class Cond_Instruction : public Instruction {
 
       // Step 1: condition
       ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->result_register(), label_0, label_1);
+      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(),
+        label_0, label_1);
 
       // Step 2: instruction
       ir += "\n";
@@ -586,7 +597,8 @@ class While_Instruction : public Instruction {
       ir += "\n";
       ir += label_0->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->result_register(), label_1, label_2);
+      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(),
+        label_1, label_2);
 
       // Step 2: instruction
       ir += "\n";
@@ -634,7 +646,7 @@ class Do_Instruction : public Instruction {
       ir += "\n";
       ir += label_1->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->result_register(), label_0, label_2);
+      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(), label_0, label_2);
 
       // Step 3: the end
       ir += "\n";
@@ -681,7 +693,7 @@ class For_Instruction : public Instruction {
       ir += "\n";
       ir += label_0->destination_llvm_ir();
       ir += condition_->emit_llvm_ir();
-      ir += llvm::br_instruction(condition_->result_register(), label_1, label_3);
+      ir += llvm::br_instruction(condition_->emit_llvm_ir_access(), label_1, label_3);
 
       // Step 3: instruction, the body of the for instruction
       ir += "\n";
@@ -726,7 +738,9 @@ class Return_Instruction : public Instruction {
 
       ir += expression_->emit_llvm_ir();
 
-      ir += "ret " + expression_->result_register()->value_llvm_ir();
+      ir += "ret ";
+      ir += llvm::type(expression_->type()) + ' ';
+      ir += expression_->emit_llvm_ir_access();
       ir += "\n";
 
       return ir;

@@ -33,16 +33,16 @@ class Symbol {
         kSize
     };
 
-    Symbol (std::string&& name) : name_(std::move(name)), assignment_count_(0) {}
+    Symbol (std::string&& name) : name_(std::move(name)), access_count_(0) {}
     virtual ~Symbol() {}
 
     const std::string& name             () const { return name_; }
     const Type         type             () const { return type_; }
-    const int          assignment_count () const { return assignment_count_; }
+    const int          access_count () const { return access_count_; }
 
     void name (std::string&& value) { name_ = std::move(value); }
     void type (Type          value) { type_ = value; }
-    void increment_assignment_count () { ++assignment_count_; }
+    void increment_access_count () { ++access_count_; }
 
     virtual std::string type_str () const { return type_ == Type::INT ? "int" : "string"; }
     virtual std::string type_llvm_ir () const { return type_ == Type::INT ? "i32" : "i8*"; }
@@ -68,7 +68,7 @@ class Symbol {
   protected:
     std::string name_;
     Type type_;
-    int assignment_count_;
+    int access_count_;
 
     std::bitset<static_cast<std::size_t>(Attribute::kSize)> attributes_;
 };
