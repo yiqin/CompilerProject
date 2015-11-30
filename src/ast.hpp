@@ -263,10 +263,6 @@ class Binary_Expression : public Expression {
           : Expression(type), op_(op), lhs_(lhs), rhs_(rhs) {}
 
     std::string emit_llvm_ir () {
-      // Actually we have an abstract syntax tree
-      // Not simply left and right, then operation.
-      // No. We can simple left and right.
-
       std::string ir;
 
       ir += lhs_->emit_llvm_ir();
@@ -312,9 +308,7 @@ class Binary_Expression : public Expression {
       ir += rhs_->result_register()->name_llvm_ir();
 
       ir += "\n";
-      // ir += llvm::alloca_instruction(result_register());
-      // ir += llvm::store_instruction(tmp_value_register, result_register());
-
+      
       return ir;
     }
 
@@ -343,23 +337,10 @@ class Condition : public Expression {
 
     std::string emit_llvm_ir () {
       std::string ir;
-
-      // Step 1: lhs_ emit_llvm_ir
-      // Get the lhs data into one register
-
-      llvm::Value_Register::Ptr value_register_lhs = std::make_shared<llvm::Value_Register>(lhs_->type());
-
-      // ir += lhs_->emit_llvm_ir();
-      // ir += llvm::load_instruction(value_register_lhs, lhs_->result_register());
-
-      // Step 2: rhs_ emit_llvm_ir
-      // Get the rhs data into another register
-      llvm::Value_Register::Ptr value_register_rhs = std::make_shared<llvm::Value_Register>(rhs_->type());
-
-      // ir += rhs_->emit_llvm_ir();
-      // ir += llvm::load_instruction(value_register_rhs, rhs_->result_register());
-
-      // Step 3: Compare
+      
+      ir += lhs_->emit_llvm_ir();
+      ir += rhs_->emit_llvm_ir();
+      
       ir += result_register()->name_llvm_ir();
       ir += " = icmp ";
 
@@ -396,9 +377,9 @@ class Condition : public Expression {
       }
 
       ir += " ";
-      ir += value_register_lhs->type_llvm_ir();
-      ir += " " + value_register_lhs->name_llvm_ir() + ", ";
-      ir += value_register_rhs->name_llvm_ir();
+      ir += lhs_->result_register()->type_llvm_ir();
+      ir += " " + lhs_->result_register()->name_llvm_ir() + ", ";
+      ir += rhs_->result_register()->name_llvm_ir();
       ir += "\n";
       return ir;
     }
