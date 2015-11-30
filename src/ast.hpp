@@ -15,8 +15,6 @@ namespace ast {
 
 const std::string end_of_line = ", align 4\n";
 
-// Operation relates to Abstract Syntax Tree.
-// Operation and Comparison Operation are in different mechanisms.
 enum class Operation {
     ADDITION,
     SUBTRACTION,
@@ -48,10 +46,6 @@ class Node {
         return std::string("; /undefine Expression - Node Class/ \n");
     };
     // virtual std::string emit_llvm_ir () = 0;
-
-    // We don't need this.
-    // virtual void build_llvm_ir ();
-
 };
 
 // e.g. 0, 0+1, 1-2, a, a+b, a-b, a+(c+d)
@@ -83,7 +77,7 @@ class Expression : public Node {
     llvm::Value_Register::Ptr result_register_;
 };
 
-// Yi: What is Terminal? I always forget...
+
 class Terminal : public Expression {
   public:
     typedef std::shared_ptr<Terminal> Ptr;
