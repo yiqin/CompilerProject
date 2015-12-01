@@ -6,7 +6,14 @@ extern int foo2(int x);
 
 extern int foo3(int x, int y);
 
-int foo(int count, string s)
+int main()
+{
+    int i;
+    i = 5;
+    return i;
+}
+
+int foo(int count)
 {
     int i, sum;
     int sum2;

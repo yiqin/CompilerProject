@@ -29,7 +29,9 @@ Currently the Preprocessor and the Scanner are separate executables. They both
 take input from stdin and output to stdout. To run one into the other, just pipe
 the output from "preprocessor" into the input of "compiler".
 
-    $> ./bin/preprocessor < foo.c | ./bin/compiler
+    $> ./bin/preprocessor < foo.c | ./bin/compiler >foo.ll
+
+```foo.ll``` is in LLVM assembly IR.
 
 Notes about the Scanner implementation:
     1) The Lexer has no notion of type, so when building the symbol table, it

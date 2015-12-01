@@ -59,22 +59,28 @@ void LLVM_Generator::visit (ast::Declaration_List::Ptr       node) {
 void LLVM_Generator::visit (ast::Variable::Ptr               node) {
     const auto& symbol = node->symbol();
     
+    // if the symbol is <value>. For example, arguments in the function
+    if (current_var_count_(symbol) == -1) {
+        std::string register_reference = '%' + symbol->name();
+        register_reference_[node] = register_reference;
+        
+    } else {            
+        std::string register_reference = '%' + symbol->name() + '.' +
+            to_string(increment_var_count_(symbol));
     
+        register_reference_[node] = register_reference;
     
-    std::string register_reference = '%' + symbol->name() + '.' +
-        to_string(increment_var_count_(symbol));
-
-    register_reference_[node] = register_reference;
-
-    switch (node->type()) {
-        case parser::Type::INT:
-            out_ << register_reference << " = load i32* %" << symbol->name()
-                << std::endl;
-            break;
-        case parser::Type::STRING:
-            // TODO
-            break;
+        switch (node->type()) {
+            case parser::Type::INT:
+                out_ << register_reference << " = load i32* %" << symbol->name()
+                    << std::endl;
+                break;
+            case parser::Type::STRING:
+                // TODO
+                break;
+        }
     }
+
 }
 void LLVM_Generator::visit (ast::Const_Integer::Ptr          node) {
     register_reference_[node] = to_string(node->value());
@@ -204,6 +210,7 @@ void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
             out_<< "i8*" << std::endl;
             break;
         }
+        increment_var_count_(symbol);
     }
     
     std::string register_reference = '%' + symbol->name() + '.' +
@@ -416,19 +423,6 @@ void LLVM_Generator::visit (ast::Function_Declaration::Ptr   node) {
     out_ << "(";
     infix(out_, ", ", declarator->argument_list(),
         [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); });
-    // std::transform(
-    //     std::begin(declarator->argument_list()),
-    //     std::end(declarator->argument_list()),
-    //     std::ostream_iterator<std::string>(out_, ", "),
-    //     [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); }
-    // );
-
-    // // remove the last space and the last comma
-    // if (function_declarator_->argument_list().size() > 0) {
-    //     ir.pop_back();
-    //     ir.pop_back();
-    // }
-
     out_ << ")";
 
     // step 5
@@ -458,8 +452,9 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
     // step 5
     out_ << " {" << std::endl << "entry:" << std::endl;
 
-    // step 6: alloca local variable
-    
+    for (auto& symbol : declarator->argument_list()) {
+        set_symbol_as_value_(symbol);
+    }
 
     // step 7: function body
     node->body()->emit_code(*this);
