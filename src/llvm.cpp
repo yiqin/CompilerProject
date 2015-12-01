@@ -60,6 +60,7 @@ void LLVM_Generator::visit (ast::Variable::Ptr               node) {
     const auto& symbol = node->symbol();
     
     // if the symbol is <value>. For example, arguments in the function
+    // This doesn't work at all.
     if (current_var_count_(symbol) == -1) {
         std::string register_reference = '%' + symbol->name();
         register_reference_[node] = register_reference;
@@ -440,7 +441,8 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
 
     // step 5
     out_ << " {" << std::endl << "entry:" << std::endl;
-
+    
+    // step 6
     for (auto& symbol : declarator->argument_list()) {
         set_symbol_as_value_(symbol);
     }

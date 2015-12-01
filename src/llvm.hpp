@@ -87,13 +87,6 @@ class LLVM_Generator : public ast::Code_Generator {
 };
 
 
-
-
-
-
-extern std::string end_of_line;
-
-
 std::string type (parser::Type t);
 
 
