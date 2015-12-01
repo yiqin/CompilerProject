@@ -8,7 +8,7 @@ extern int foo3(int x, int y);
 
 
 
-int foo(int count)
+int foo(int count, string s)
 {
     string str1;
     
@@ -30,7 +30,7 @@ int foo(int count)
 
 int main()
 {
-    int i;
-    i = foo(2);
+    int i; string s; s = "world";
+    i = foo(2, s);
     return i;
 }

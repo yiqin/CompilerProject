@@ -71,6 +71,8 @@ void LLVM_Generator::visit (ast::Variable::Ptr               node) {
             break;
         case parser::Type::STRING:
             // TODO
+            out_ << register_reference << " = load i8** %" << symbol->name()
+                << std::endl;
             break;
     }   
 }
@@ -83,7 +85,7 @@ void LLVM_Generator::visit (ast::Const_String::Ptr           node) {
 
     register_reference_[node] = '%' + id;
 
-    // TODO
+    // TODO: improve getelementptr
     out_
         << '%' << id << " = getelementptr inbounds ["
         << node->value().size() + 1 << " x i8]* @." << id << ", i32 0, i32 0"
@@ -225,6 +227,11 @@ void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
             break;
         case parser::Type::STRING:
             // TODO
+             out_
+                << "store i8* " << register_reference_[node->rhs()]
+                << ", i8** %" << node->lhs()->symbol()->name()
+                << std::endl;
+                ;
             break;
     }
 }
@@ -460,6 +467,31 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
     // step 7: function body
     node->body()->emit_code(*this);
     out_ << "}" << std::endl;
+    
+    // step 8: const string
+    for (auto& str : llvm::String::all_strings()) {
+        // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
+        out_
+            << str->id() << " = private unnamed_addr constant [" << to_string(str->value().size()+1)
+            << " x i8] c\""
+            ;
+        
+        for (auto& c : str->value()) {
+            if (std::iscntrl(c)) {
+                char buf[3];
+                buf[2] = '\0';
+                snprintf(buf, 3, "%02x", c & 0xff);
+                out_ << '\\' << buf;
+            } else {
+                out_ << c;
+            }
+        }
+        
+        out_ << "\\00\"" << std::endl;
+        
+    }
+    llvm::String::clear_store();
+    out_ << "\n";
 }
 
 

@@ -1,8 +1,10 @@
 ; Define function 'foo'
-define i32 @foo(i32 %count) {
+define i32 @foo(i32 %count, i8* %s) {
 entry:
 %count.pointer = alloca i32
 store i32 %count, i32* %count.pointer
+%s.pointer = alloca i8*
+store i8* %s, i8** %s.pointer
 %sum = alloca i32
 store i32 0, i32* %sum
 %sum2 = alloca i32
@@ -36,16 +38,24 @@ br label %Label_0
 Label_3:
 %str1 = alloca i8*
 %str.0 = getelementptr inbounds [6 x i8]* @.str.0, i32 0, i32 0
+store i8* %str.0, i8** %str1
 %sum.5 = load i32* %sum
 ret i32 %sum.5
 }
-; Define function 'main'
 @.str.0 = private unnamed_addr constant [6 x i8] c"hello\00"
+
+; Define function 'main'
 define i32 @main() {
 entry:
+%s = alloca i8*
+%str.1 = getelementptr inbounds [6 x i8]* @.str.1, i32 0, i32 0
+store i8* %str.1, i8** %s
 %i = alloca i32
-%tmp.23 = call i32 (i32)* @foo(i32 2)
-store i32 %tmp.23, i32* %i
+%s.3 = load i8** %s
+%tmp.25 = call i32 (i32, i8*)* @foo(i32 2, i8* %s.3)
+store i32 %tmp.25, i32* %i
 %i.3 = load i32* %i
 ret i32 %i.3
 }
+@.str.1 = private unnamed_addr constant [6 x i8] c"world\00"
+
