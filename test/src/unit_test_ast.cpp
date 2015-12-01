@@ -245,15 +245,17 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
 
     // TODO(Emery): Come back to this once you move these global specifications out of "parser.yy".
-    // SECTION ("Const String") {
-    //     std::string expected_output_1 = "@.str_0 = private unnamed_addr constant [12 x i8] c\"hello world\\00\", align 1\n";
-    //     ast::Const_String::Ptr const_string_1 = std::make_shared<ast::Const_String>(std::string("hello world"));
-    //     REQUIRE (const_string_1->declare_llvm_ir() == expected_output_1 );
+    SECTION ("Const String") {
+        std::string expected_output_1 = "@.str_0 = private unnamed_addr constant [12 x i8] c\"hello world\\00\", align 1\n";
+        ast::Const_String::Ptr const_string_1 = std::make_shared<ast::Const_String>(std::string("hello world"));
+        const_string_1->emit_code(generator);
+        REQUIRE (output_stream.str() == expected_output_1 );
 
-    //     std::string expected_output_2 = "@.str_1 = private unnamed_addr constant [6 x i8] c\"hello\\00\", align 1\n";
-    //     ast::Const_String::Ptr const_string_2 = std::make_shared<ast::Const_String>(std::string("hello"));
-    //     REQUIRE (const_string_2->declare_llvm_ir() == expected_output_2 );
-    // }
+        std::string expected_output_2 = "@.str_1 = private unnamed_addr constant [6 x i8] c\"hello\\00\", align 1\n";
+        ast::Const_String::Ptr const_string_2 = std::make_shared<ast::Const_String>(std::string("hello"));
+        const_string_2->emit_code(generator);
+        REQUIRE (output_stream.str() == expected_output_2 );
+    }
 
     // TODO(Emery): Come back to this.
     // SECTION ("Assignment viariable with const_string: s = \"hello world\";") {
