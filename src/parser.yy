@@ -145,10 +145,15 @@ external_declaration :
         // Loop over declarations, and print out the functions as "function declarations".
         for (auto& symbol : $1) {
             symbol->set(Symbol::Attribute::GLOBAL);
-
+    std::cout << "Function_Declaration " <<std::endl;
+    
             if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
-                ast::Function_Declaration func_decl(function->type(), function);
-                func_decl.emit_code(code_generator);
+    std::cout << "Function_Declaration " <<std::endl;   
+                // These two break the code. 
+                // ast::Function_Declaration func_decl(function->type(), function);
+                ast::Function_Declaration::Ptr func_decl = std::make_shared<(ast::Function_Declaration)>(function->type(), function);
+                // func_decl.emit_code(code_generator);
+    std::cout << "Function_Declaration " <<std::endl;                
             } else {
                 // Global declaration.
                 // TODO: declare global variable.
