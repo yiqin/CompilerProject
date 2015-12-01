@@ -279,10 +279,6 @@ class Unary_Expression : public Expression {
   public:
     typedef std::shared_ptr<Unary_Expression> Ptr;
 
-    // TODO: Yi - Remove if we don't use this constructor.
-    Unary_Expression (const parser::Type& type, Operation op, Expression::Ptr rhs)
-          : Expression(type), op_(op), rhs_(rhs) {}
-
     Unary_Expression (Expression::Ptr rhs)
           : Expression(parser::Type::INT), op_(Operation::SUBTRACTION), rhs_(rhs) {}
 
