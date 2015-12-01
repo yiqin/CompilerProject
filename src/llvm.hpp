@@ -41,7 +41,7 @@ class LLVM_Generator : public ast::Code_Generator {
     void visit (ast::Condition::Ptr              node) override;
     void visit (ast::Assignment::Ptr             node) override;
     void visit (ast::Function_Call::Ptr          node) override;
-    // void visit (ast::Instruction::Ptr            node) override;
+    void visit (ast::Instruction::Ptr            node) override;
     void visit (ast::Expression_Instruction::Ptr node) override;
     void visit (ast::Cond_Instruction::Ptr       node) override;
     void visit (ast::While_Instruction::Ptr      node) override;

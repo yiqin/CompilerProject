@@ -243,7 +243,9 @@ void LLVM_Generator::visit (ast::Function_Call::Ptr          node) {
     // }
     out_ << ')' << std::endl;
 }
-// void LLVM_Generator::visit (ast::Instruction::Ptr            node) {}
+void LLVM_Generator::visit (ast::Instruction::Ptr            node) {
+    // This is an empty instruction. Do nothing.
+}
 void LLVM_Generator::visit (ast::Expression_Instruction::Ptr node) {
     node->expression()->emit_code(*this);
 }
@@ -453,7 +455,6 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
     node->body()->emit_code(*this);
     out_ << "}" << std::endl;
 }
-
 
 
 ID_Factory Label::id_factory_;

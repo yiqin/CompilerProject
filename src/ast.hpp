@@ -4,14 +4,12 @@
 
 
 #include <algorithm>
-#include <iomanip>  // DEBUG
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <type_traits>  // DEBUG
 
 #include "symbol.hpp"
 
