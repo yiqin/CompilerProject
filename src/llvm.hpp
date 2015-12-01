@@ -29,28 +29,28 @@ class LLVM_Generator : public ast::Code_Generator {
   public:
     LLVM_Generator (std::ostream& out) : out_(out) {}
 
-    // void visit (ast::Node&                   node);
-    // void visit (ast::Expression&             node);
-    // void visit (ast::Terminal&               node);
-    void visit (ast::Declaration_List&       node);
-    void visit (ast::Variable&               node);
-    void visit (ast::Const_Integer&          node);
-    void visit (ast::Const_String&           node);
-    void visit (ast::Unary_Expression&       node);
-    void visit (ast::Binary_Expression&      node);
-    void visit (ast::Condition&              node);
-    void visit (ast::Assignment&             node);
-    void visit (ast::Function_Call&          node);
-    // void visit (ast::Instruction&            node);
-    void visit (ast::Expression_Instruction& node);
-    void visit (ast::Cond_Instruction&       node);
-    void visit (ast::While_Instruction&      node);
-    void visit (ast::Do_Instruction&         node);
-    void visit (ast::For_Instruction&        node);
-    void visit (ast::Return_Instruction&     node);
-    void visit (ast::Compound_Instruction&   node);
-    void visit (ast::Function_Declaration&   node);
-    void visit (ast::Function_Definition&    node);
+    // void visit (ast::Node&                   node) override;
+    // void visit (ast::Expression&             node) override;
+    // void visit (ast::Terminal&               node) override;
+    void visit (ast::Declaration_List&       node) override;
+    void visit (ast::Variable&               node) override;
+    void visit (ast::Const_Integer&          node) override;
+    void visit (ast::Const_String&           node) override;
+    void visit (ast::Unary_Expression&       node) override;
+    void visit (ast::Binary_Expression&      node) override;
+    void visit (ast::Condition&              node) override;
+    void visit (ast::Assignment&             node) override;
+    void visit (ast::Function_Call&          node) override;
+    // void visit (ast::Instruction&            node) override;
+    void visit (ast::Expression_Instruction& node) override;
+    void visit (ast::Cond_Instruction&       node) override;
+    void visit (ast::While_Instruction&      node) override;
+    void visit (ast::Do_Instruction&         node) override;
+    void visit (ast::For_Instruction&        node) override;
+    void visit (ast::Return_Instruction&     node) override;
+    void visit (ast::Compound_Instruction&   node) override;
+    void visit (ast::Function_Declaration&   node) override;
+    void visit (ast::Function_Definition&    node) override;
 
   private:
     std::ostream& out_;

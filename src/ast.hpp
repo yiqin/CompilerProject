@@ -22,8 +22,7 @@ namespace ast {
 class Node;
 class Expression;
 class Terminal;
-class Symbol_Declarator;
-class Declaration;
+class Declaration_List;
 class Variable;
 class Const_Integer;
 class Const_String;
@@ -56,10 +55,7 @@ class Code_Generator {
     virtual void visit (Terminal& node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Terminal'.");
     }
-    virtual void visit (Symbol_Declarator& node) {
-        throw std::runtime_error("This code generator does not implement a handler for node class 'Symbol_Declarator'.");
-    }
-    virtual void visit (Declaration& node) {
+    virtual void visit (Declaration_List& node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Declaration'.");
     }
     virtual void visit (Variable& node) {
