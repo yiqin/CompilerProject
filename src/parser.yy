@@ -95,6 +95,7 @@
 // non-terminal type specifications
 
 %type <Symbol_List> declaration
+%type <Symbol_List> declaration_list;
 %type <Symbol_List> declarator_list
 %type <Symbol_List> parameter_list
 %type <Symbol::Ptr> declarator
@@ -326,9 +327,16 @@ declarator_list :
 declaration_list :
     declaration                   {
         // Nothing to do. Semantic action of "declaration" handles symbol creation.
+        $$ = $1;
     }
   | declaration_list declaration  {
         // Nothing to do. Semantic action of "declaration" handles symbol creation.
+        $$ = std::move($1);
+        for (auto& symbol : $2) {
+            $$.push_back(symbol);
+        }
+        
+        // $$.push_back($2);
     }
 ;
 
@@ -441,6 +449,9 @@ assignment :
 compound_instruction :
     block_start declaration_list instruction_list block_end {
         /* std::cout << "compound_instruction: block_start declaration_list instruction_list block_end" << std::endl; */
+        ast::Declaration_List::Ptr ast_declaration_list = std::make_shared<ast::Declaration_List>(std::move($2));
+        $3.insert($3.begin()+0, ast_declaration_list);
+        
         $$ = std::make_shared<ast::Compound_Instruction>(std::move($3));
     }
   | block_start declaration_list block_end {

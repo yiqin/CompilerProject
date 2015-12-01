@@ -201,23 +201,6 @@ class Terminal : public Expression {
 //     parser::Symbol::Ptr symbol_;
 // };
 
-// Declarate a list of symbols
-class Declaration_List : public Node {
-  public:
-    typedef std::shared_ptr<Declaration_List> Ptr;
-
-    Declaration_List (const parser::Symbol_List& symbol_list)
-          : symbol_list_(symbol_list) {}
-
-    const parser::Symbol_List& symbol_list () const { return symbol_list_; }
-
-    virtual void emit_code (Code_Generator& generator) {
-        generator.visit(self(this));
-    }
-
-  private:
-    parser::Symbol_List symbol_list_;
-};
 
 
 class Variable : public Terminal {
@@ -422,6 +405,25 @@ class Expression_Instruction : public Instruction {
     Expression::Ptr expression_;
 };
 
+// Declarate a list of symbols
+class Declaration_List : public Instruction {
+  public:
+    typedef std::shared_ptr<Declaration_List> Ptr;
+
+    Declaration_List (parser::Symbol_List symbol_list)
+          : symbol_list_(symbol_list) {}
+
+    const parser::Symbol_List& symbol_list () const { return symbol_list_; }
+
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
+    }
+
+  private:
+    parser::Symbol_List symbol_list_;
+};
+
+
 // If else, control flow
 class Cond_Instruction : public Instruction {
   public:
@@ -563,7 +565,7 @@ class Compound_Instruction : public Instruction {
           : instruction_list_(instruction_list) {}
 
     const std::vector<Instruction::Ptr>& instruction_list () const { return instruction_list_; }
-
+    
     virtual void emit_code (Code_Generator& generator) {
         generator.visit(self(this));
     }

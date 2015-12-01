@@ -5,6 +5,10 @@ entry:
 store i32 %count, i32* %count.pointer
 %s.pointer = alloca i8*
 store i8* %s, i8** %s.pointer
+%str1 = alloca i8*, align 8
+%i = alloca i32, align 4
+%sum = alloca i32, align 4
+%sum2 = alloca i32, align 4
 store i32 0, i32* %sum
 store i32 1, i32* %count.pointer
 store i32 2, i32* %count.pointer
@@ -43,6 +47,8 @@ ret i32 %sum.4
 ; Define function 'main'
 define i32 @main() {
 entry:
+%i = alloca i32, align 4
+%s = alloca i8*, align 8
 %str.1 = getelementptr inbounds [6 x i8]* @.str.1, i32 0, i32 0
 store i8* %str.1, i8** %s
 %s.2 = load i8** %s
