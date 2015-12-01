@@ -227,7 +227,8 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // %V.3 = load i32* %P.1, align 4
         // store i32 %V.3, i32* %i
 
-        expected_output = "store i32 450, i32* %i\n";
+        expected_output = "%i = alloca 450\n";
+        expected_output += "store i32 450, i32* %i\n";
 
         // rhs
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("i"));
@@ -596,7 +597,8 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
     SECTION ( "Compound_Instruction" ) {
         // i = 10;
         // i = -10;
-        expected_output = "store i32 -10, i32* %i\n";
+        expected_output = "%i = alloca i32\n";
+        expected_output += "store i32 -10, i32* %i\n";
         expected_output += "store i32 10, i32* %i\n";
 
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(-10));
@@ -634,7 +636,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // The test case is foo(i32 2, i32 4, i8* "hello world");
         //
 
-        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @str_1, i32 0, i32 0\n";
+        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @.str.0, i32 0, i32 0\n";
         expected_output += "%tmp.0 = call i32 ()* @foo(i32 2, i32 4, i8* %str.0)\n";
 
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));

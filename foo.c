@@ -15,14 +15,14 @@ int foo(int count, string s)
     int i, sum;
     int sum2;
     sum = 0;
-    sum2 = 1;
+    // sum2 = 1;
     
     
     
     count = 1;
     count = 2;
     for    (i = 1; i <= count; i = i + 1)
-        sum = sum; // + foo2(i);
+        sum = sum; sum2 = 1;// + foo2(i);
 
     str1 = "hello";
     return sum;

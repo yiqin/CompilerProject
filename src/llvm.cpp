@@ -195,7 +195,9 @@ void LLVM_Generator::visit (ast::Condition::Ptr              node) {
 void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
     const auto& symbol = node->lhs()->symbol();
     
+    // TODO: this is still wrong.
     // alloca the symbol is needed.
+    /*
     if (current_var_count_(symbol) == 0) {
         out_<< "%" << symbol->name() << " = alloca ";
         switch (symbol->type()) {
@@ -208,7 +210,7 @@ void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
         }
         increment_var_count_(symbol);
     }
-    
+    */
     std::string register_reference = '%' + symbol->name() + '.' +
         to_string(increment_var_count_(symbol));
     
