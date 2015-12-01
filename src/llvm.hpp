@@ -64,9 +64,6 @@ class LLVM_Generator : public ast::Code_Generator {
         if (iter == std::end(variable_counts_)) {
             return variable_counts_[symbol] = 1;
         } else {
-            if (variable_counts_[symbol] == -1) {
-                return -1;
-            }
             return ++variable_counts_[symbol];
         }
     }
@@ -78,10 +75,6 @@ class LLVM_Generator : public ast::Code_Generator {
         } else {
             return variable_counts_[symbol];
         }      
-    }
-    
-    void set_symbol_as_value_ (parser::Symbol::Ptr symbol) {
-        variable_counts_[symbol] = -1;
     }
     
 };

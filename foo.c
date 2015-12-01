@@ -16,7 +16,7 @@ int foo(int count)
     sum2 = 1;
 
     count = 1;
-
+    count = 2;
     for    (i = 1; i <= count; i = i + 1)
         sum = sum; // + foo2(i);
 

@@ -59,29 +59,20 @@ void LLVM_Generator::visit (ast::Declaration_List::Ptr       node) {
 void LLVM_Generator::visit (ast::Variable::Ptr               node) {
     const auto& symbol = node->symbol();
     
-    // if the symbol is <value>. For example, arguments in the function
-    // This doesn't work at all.
-    if (current_var_count_(symbol) == -1) {
-        std::string register_reference = '%' + symbol->name();
-        register_reference_[node] = register_reference;
-        
-    } else {            
-        std::string register_reference = '%' + symbol->name() + '.' +
-            to_string(increment_var_count_(symbol));
+    std::string register_reference = '%' + symbol->name();
+    register_reference += "." + to_string(increment_var_count_(symbol));
     
-        register_reference_[node] = register_reference;
-    
-        switch (node->type()) {
-            case parser::Type::INT:
-                out_ << register_reference << " = load i32* %" << symbol->name()
-                    << std::endl;
-                break;
-            case parser::Type::STRING:
-                // TODO
-                break;
-        }
-    }
+    register_reference_[node] = register_reference;
 
+    switch (node->type()) {
+        case parser::Type::INT:
+            out_ << register_reference << " = load i32* %" << symbol->name()
+                << std::endl;
+            break;
+        case parser::Type::STRING:
+            // TODO
+            break;
+    }   
 }
 void LLVM_Generator::visit (ast::Const_Integer::Ptr          node) {
     register_reference_[node] = to_string(node->value());
@@ -198,9 +189,9 @@ void LLVM_Generator::visit (ast::Condition::Ptr              node) {
         ;
 }
 void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
+    const auto& symbol = node->lhs()->symbol();
     
     // alloca the symbol is needed.
-    const auto& symbol = node->lhs()->symbol();
     if (current_var_count_(symbol) == 0) {
         out_<< "%" << symbol->name() << " = alloca ";
         switch (symbol->type()) {
@@ -442,9 +433,26 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
     // step 5
     out_ << " {" << std::endl << "entry:" << std::endl;
     
-    // step 6
-    for (auto& symbol : declarator->argument_list()) {
-        set_symbol_as_value_(symbol);
+    // step 6 alloca argument variables
+    for (auto& symbol : declarator->argument_list()) {        
+        std::string tmp_type;
+        switch (symbol->type()) {
+        case parser::Type::INT:
+            tmp_type = "i32";
+            break;
+        case parser::Type::STRING:
+            tmp_type = "i8*";
+            break;
+        }
+                
+        out_<< "%" << symbol->name() << ".pointer" << " = alloca " << tmp_type << std::endl;
+
+        out_<< "store " << tmp_type << " %" << symbol->name() << ", ";
+        out_<< tmp_type << "* %" << symbol->name() << ".pointer" << std::endl;    
+        
+        // Simply change the name to .pointer
+        symbol->name(symbol->name() + ".pointer");        
+        increment_var_count_(symbol);
     }
 
     // step 7: function body
