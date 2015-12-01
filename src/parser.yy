@@ -145,7 +145,7 @@ external_declaration :
 
             if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
                 ast::Function_Declaration func_decl(function->type(), function);
-                func_decl.emit_code(&code_generator);
+                func_decl.emit_code(code_generator);
             } else {
                 // Global declaration.
                 // TODO: declare global variable.
@@ -185,7 +185,7 @@ external_declaration :
         // llvm::String::clear_store();
 
         // emit function definition
-        $1->emit_code(&code_generator);
+        $1->emit_code(code_generator);
     }
 ;
 

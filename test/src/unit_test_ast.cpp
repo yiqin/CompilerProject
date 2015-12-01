@@ -40,7 +40,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
 
-        declaration_list->emit_code(&generator);
+        declaration_list->emit_code(generator);
         REQUIRE(output_stream.str() == expected_output);
     }
 
@@ -55,7 +55,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
 
-        declaration_list->emit_code(&generator);
+        declaration_list->emit_code(generator);
         REQUIRE(output_stream.str() == expected_output);
 	}
 
@@ -81,7 +81,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Declaration_List::Ptr declaration = std::make_shared<ast::Declaration_List>(symbol_list);
 
-        declaration->emit_code(&generator);
+        declaration->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -104,7 +104,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         function_declarator->argument_list().push_back(argument2);
 
         ast::Function_Declaration::Ptr function_declaration = std::make_shared<ast::Function_Declaration>(type, function_declarator);
-        function_declaration->emit_code(&generator);
+        function_declaration->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -122,7 +122,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // Return_Instruction
         ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(const_integer);
 
-        return_instruction->emit_code(&generator);
+        return_instruction->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -144,7 +144,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // Return_Instruction
         ast::Return_Instruction::Ptr return_instruction_1 = std::make_shared<ast::Return_Instruction>(variable_1);
 
-        return_instruction_1->emit_code(&generator);
+        return_instruction_1->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output_1);
     }
 
@@ -163,7 +163,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Binary_Expression::Ptr add_expression = std::make_shared<ast::Binary_Expression>(parser::Type::INT, ast::Operation::ADDITION, const_integer_1, const_integer_2);
 
-        add_expression->emit_code(&generator);
+        add_expression->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -214,7 +214,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // Return_Instruction
         ast::Return_Instruction::Ptr return_instruction = std::make_shared<ast::Return_Instruction>(minus_expression);
 
-        return_instruction->emit_code(&generator);
+        return_instruction->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -239,7 +239,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Assignment::Ptr assignment = std::make_shared<ast::Assignment>(variable, const_integer);
 
-        assignment->emit_code(&generator);
+        assignment->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -357,7 +357,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // for_instruction
         ast::For_Instruction::Ptr for_instruction = std::make_shared<ast::For_Instruction>(initialization, condition, increment, instruction);
 
-        for_instruction->emit_code(&generator);
+        for_instruction->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -401,13 +401,13 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // function_declarator->argument_list().push_back(argument2);
 
         ast::Function_Declaration::Ptr function_declaration = std::make_shared<ast::Function_Declaration>(type, function_declarator);
-        function_declaration->emit_code(&generator);
+        function_declaration->emit_code(generator);
 
         parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
         symbol->type(parser::Type::STRING);
 
         ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
-        declaration_list->emit_code(&generator);
+        declaration_list->emit_code(generator);
 
 
         // Unfinished....
@@ -458,7 +458,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1, instruction_2);
 
-        cond_instruction_1->emit_code(&generator);
+        cond_instruction_1->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -498,7 +498,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1);
 
-        cond_instruction_1->emit_code(&generator);
+        cond_instruction_1->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -543,7 +543,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::While_Instruction::Ptr while_instruction = std::make_shared<ast::While_Instruction>(condition, instruction_1);
 
-        while_instruction->emit_code(&generator);
+        while_instruction->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -587,7 +587,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Do_Instruction::Ptr do_instruction = std::make_shared<ast::Do_Instruction>(condition, instruction_1);
 
-        do_instruction->emit_code(&generator);
+        do_instruction->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -618,7 +618,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Compound_Instruction::Ptr compound_instruction = std::make_shared<ast::Compound_Instruction>(std::move(instruction_list));
 
-        compound_instruction->emit_code(&generator);
+        compound_instruction->emit_code(generator);
         REQUIRE (output_stream.str()==expected_output);
     }
 
@@ -650,7 +650,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Function_Call::Ptr function_call = std::make_shared<ast::Function_Call>(function, argument_list);
 
-        function_call->emit_code(&generator);
+        function_call->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 
@@ -663,7 +663,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Const_Integer::Ptr const_integer_1 = std::make_shared<ast::Const_Integer>(std::move(2));
 
-        const_integer_1->emit_code(&generator);
+        const_integer_1->emit_code(generator);
         REQUIRE (output_stream.str() == "");
         REQUIRE (generator.register_reference_.size() == 1);
 
@@ -687,7 +687,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
 
         ast::Unary_Expression::Ptr unary_expression = std::make_shared<ast::Unary_Expression>(variable_1);
 
-        unary_expression->emit_code(&generator);
+        unary_expression->emit_code(generator);
         REQUIRE (output_stream.str() == expected_output);
     }
 }

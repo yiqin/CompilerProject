@@ -46,70 +46,70 @@ class Function_Definition;
 // Visitor base class for code generation.
 class Code_Generator {
   public:
-    virtual void visit (Node& node) {
+    virtual void visit (std::shared_ptr<Node> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Node'.");
     }
-    virtual void visit (Expression& node) {
+    virtual void visit (std::shared_ptr<Expression> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Expression'.");
     }
-    virtual void visit (Terminal& node) {
+    virtual void visit (std::shared_ptr<Terminal> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Terminal'.");
     }
-    virtual void visit (Declaration_List& node) {
+    virtual void visit (std::shared_ptr<Declaration_List> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Declaration'.");
     }
-    virtual void visit (Variable& node) {
+    virtual void visit (std::shared_ptr<Variable> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Variable'.");
     }
-    virtual void visit (Const_Integer& node) {
+    virtual void visit (std::shared_ptr<Const_Integer> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Const_Integer'.");
     }
-    virtual void visit (Const_String& node) {
+    virtual void visit (std::shared_ptr<Const_String> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Const_String'.");
     }
-    virtual void visit (Unary_Expression& node) {
+    virtual void visit (std::shared_ptr<Unary_Expression> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Unary_Expression'.");
     }
-    virtual void visit (Binary_Expression& node) {
+    virtual void visit (std::shared_ptr<Binary_Expression> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Binary_Expression'.");
     }
-    virtual void visit (Condition& node) {
+    virtual void visit (std::shared_ptr<Condition> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Condition'.");
     }
-    virtual void visit (Assignment& node) {
+    virtual void visit (std::shared_ptr<Assignment> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Assignment'.");
     }
-    virtual void visit (Function_Call& node) {
+    virtual void visit (std::shared_ptr<Function_Call> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Function_Call'.");
     }
-    virtual void visit (Instruction& node) {
+    virtual void visit (std::shared_ptr<Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Instruction'.");
     }
-    virtual void visit (Expression_Instruction& node) {
+    virtual void visit (std::shared_ptr<Expression_Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Expression_Instruction'.");
     }
-    virtual void visit (Cond_Instruction& node) {
+    virtual void visit (std::shared_ptr<Cond_Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Cond_Instruction'.");
     }
-    virtual void visit (While_Instruction& node) {
+    virtual void visit (std::shared_ptr<While_Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'While_Instruction'.");
     }
-    virtual void visit (Do_Instruction& node) {
+    virtual void visit (std::shared_ptr<Do_Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Do_Instruction'.");
     }
-    virtual void visit (For_Instruction& node) {
+    virtual void visit (std::shared_ptr<For_Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'For_Instruction'.");
     }
-    virtual void visit (Return_Instruction& node) {
+    virtual void visit (std::shared_ptr<Return_Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Return_Instruction'.");
     }
-    virtual void visit (Compound_Instruction& node) {
+    virtual void visit (std::shared_ptr<Compound_Instruction> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Compound_Instruction'.");
     }
-    virtual void visit (Function_Declaration& node) {
+    virtual void visit (std::shared_ptr<Function_Declaration> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Function_Declaration'.");
     }
-    virtual void visit (Function_Definition& node) {
+    virtual void visit (std::shared_ptr<Function_Definition> node) {
         throw std::runtime_error("This code generator does not implement a handler for node class 'Function_Definition'.");
     }
 };
@@ -140,19 +140,18 @@ class Node : public std::enable_shared_from_this<Node> {
 
     virtual ~Node () {}
 
-    // TODO (Emery) Make abstract.
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
-    // virtual std::string emit_llvm_ir () = 0;
 
+  protected:
     template <typename T>
-    std::shared_ptr<T> self () {
+    std::shared_ptr<T> self (T*) {
         return std::static_pointer_cast<T>(shared_from_this());
     }
 
     template <typename T>
-    const std::shared_ptr<T const> self () const {
+    const std::shared_ptr<T const> self (T const*) const {
         return std::static_pointer_cast<T const>(shared_from_this());
     }
 };
@@ -167,8 +166,8 @@ class Expression : public Node {
 
     const parser::Type& type () const { return type_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -194,7 +193,7 @@ class Terminal : public Expression {
 //     Symbol_Declarator (const parser::Symbol::Ptr& symbol)
 //           : symbol_(symbol) {}
 
-//     virtual void emit_code (Code_Generator* generator) {
+//     virtual void emit_code (Code_Generator& generator) {
 //->        generator.visit(self(this));
 //     }
 
@@ -214,13 +213,8 @@ class Declaration_List : public Node {
 
     const parser::Symbol_List& symbol_list () const { return symbol_list_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-// std::cerr
-//     << "     -- in Declaration_List::emit_code(Code_Generator*):" << std::endl
-//     << "        std::is_same<decltype(this), Node*> ? " << std::boolalpha << std::is_same<decltype(this), Node*>::value << std::endl
-//     << "        std::is_same<decltype(this), Declaration_List*> ? " << std::boolalpha << std::is_same<decltype(this), Declaration_List*>::value << std::endl
-//     ;
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -237,8 +231,8 @@ class Variable : public Terminal {
 
     const parser::Symbol::Ptr& symbol () const { return symbol_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -256,8 +250,8 @@ class Const_Integer : public Terminal {
 
     int value () const { return value_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -274,8 +268,8 @@ class Const_String : public Terminal {
 
     const std::string& value () const { return value_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -297,8 +291,8 @@ class Unary_Expression : public Expression {
     const Operation&       op  () const { return op_;  }
     const Expression::Ptr& rhs () const { return rhs_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -321,8 +315,8 @@ class Binary_Expression : public Expression {
     const Expression::Ptr& lhs () const { return lhs_; }
     const Expression::Ptr& rhs () const { return rhs_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -352,8 +346,8 @@ class Condition : public Expression {
     const Expression::Ptr&      lhs () const { return lhs_; }
     const Expression::Ptr&      rhs () const { return rhs_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -373,8 +367,8 @@ class Assignment : public Expression {
     const Variable::Ptr&   lhs () const { return lhs_; }
     const Expression::Ptr& rhs () const { return rhs_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -402,8 +396,8 @@ class Function_Call : public Expression {
     const parser::Function::Ptr&        function      () const { return function_;      }
     const std::vector<Expression::Ptr>& argument_list () const { return argument_list_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -416,8 +410,8 @@ class Instruction : public Node {
   public:
     typedef std::shared_ptr<Instruction> Ptr;
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 };
 
@@ -431,8 +425,8 @@ class Expression_Instruction : public Instruction {
 
     const Expression::Ptr& expression () const { return expression_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -464,8 +458,8 @@ class Cond_Instruction : public Instruction {
     const Instruction::Ptr& instruction      () const { return instruction_;      }
     const Instruction::Ptr& else_instruction () const { return else_instruction_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -485,8 +479,8 @@ class While_Instruction : public Instruction {
     const Condition::Ptr&   condition   () const { return condition_;   }
     const Instruction::Ptr& instruction () const { return instruction_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -505,8 +499,8 @@ class Do_Instruction : public Instruction {
     const Condition::Ptr&   condition   () const { return condition_;   }
     const Instruction::Ptr& instruction () const { return instruction_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -535,8 +529,8 @@ class For_Instruction : public Instruction {
     const Expression::Ptr&  increment      () const { return increment_;      }
     const Instruction::Ptr& instruction    () const { return instruction_;    }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -560,8 +554,8 @@ class Return_Instruction : public Instruction {
 
     const Expression::Ptr& expression () const { return expression_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -581,8 +575,8 @@ class Compound_Instruction : public Instruction {
 
     const std::vector<Instruction::Ptr>& instruction_list () const { return instruction_list_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -601,8 +595,8 @@ class Function_Declaration : public Node {
     const parser::Type&          type                () const { return type_;                }
     const parser::Function::Ptr& function_declarator () const { return function_declarator_; }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
@@ -629,8 +623,8 @@ class Function_Definition : public Node {
     const parser::Function::Ptr&     function_declarator () const { return function_declarator_; }
     const Compound_Instruction::Ptr& body                () const { return body_;                }
 
-    virtual void emit_code (Code_Generator* generator) {
-        generator->visit(*this);
+    virtual void emit_code (Code_Generator& generator) {
+        generator.visit(self(this));
     }
 
   private:
