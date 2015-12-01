@@ -63,6 +63,12 @@ clean:
 unit_test: $(TESTDIR)/$(BINDIR)/unit_test
 	$<
 
+#
+# llc-3.6 -O3 sample.ll -march=x86-64 -o sample-x86-64.s
+# gcc sample-x86-64.s -o sample-x86-64
+#
+#
+
 
 # SPECIFY BINARY DEPENDENCIES
 #   All dependencies will automatically be built using the rule patterns
