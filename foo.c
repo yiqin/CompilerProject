@@ -10,17 +10,21 @@ extern int foo3(int x, int y);
 
 int foo(int count)
 {
+    string str1;
+    
     int i, sum;
     int sum2;
     sum = 0;
     sum2 = 1;
-
+    
+    
+    
     count = 1;
     count = 2;
     for    (i = 1; i <= count; i = i + 1)
         sum = sum; // + foo2(i);
 
-
+    str1 = "hello";
     return sum;
 }
 

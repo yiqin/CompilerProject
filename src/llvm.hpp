@@ -131,7 +131,7 @@ class String {
     // Constructors private to control new object creation.
     String (const std::string& value)
           : value_(value),
-            id_("@.str_" + id_factory_.get_id()) {}
+            id_("@.str." + id_factory_.get_id()) {}
 
     const std::string id_;
     const std::string value_;

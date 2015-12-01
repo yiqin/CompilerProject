@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <string>
 
+#include "llvm.hpp"
+
 // WARNING: USE OF A DIRTY MACRO
 //          The parser will by default try to use a global yylex function. We
 //          want it to use the lex function of its member reference "scanner".
@@ -164,25 +166,28 @@ external_declaration :
 
         // emit constant strings
         // TODO(Emery): Move this to Code_Generator subclass.
-        // for (auto& str : llvm::String::all_strings()) {
-        //     // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
-        //     std::cout
-        //         << str->id() << " private unnamed_addr constant [" << str->value().size()
-        //         << " x i8] c\""
-        //         ;
-        //     for (auto& c : str->value()) {
-        //         if (std::iscntrl(c)) {
-        //             char buf[3];
-        //             buf[2] = '\0';
-        //             snprintf(buf, 3, "%02x", c & 0xff);
-        //             std::cout << '\\' << buf;
-        //         } else {
-        //             std::cout << c;
-        //         }
-        //     }
-        //     std::cout << "\\00\"" << std::endl;
-        // }
-        // llvm::String::clear_store();
+        for (auto& str : llvm::String::all_strings()) {
+            // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
+            std::cout
+                << str->id() << " = private unnamed_addr constant [" << to_string(str->value().size()+1)
+                << " x i8] c\""
+                ;
+            /*    
+            for (auto& c : str->value()) {
+                if (std::iscntrl(c)) {
+                    char buf[3];
+                    buf[2] = '\0';
+                    snprintf(buf, 3, "%02x", c & 0xff);
+                    std::cout << '\\' << buf;
+                } else {
+                    std::cout << c;
+                }
+            }
+            */
+            std::cout << str->value();
+            std::cout << "\\00\"" << std::endl;
+        }
+        llvm::String::clear_store();
 
         // emit function definition
         $1->emit_code(code_generator);
@@ -732,7 +737,8 @@ primary_expression :
     }
   | CONST_STRING       {
         /* std::cout << "primary_expression: CONST_STRING " << $1 << std::endl; */
-        $$ = std::make_shared<ast::Const_String>($1);
+        // remove "
+        $$ = std::make_shared<ast::Const_String>($1.substr(1,$1.size()-2));
     }
   | '(' expression ')' {
         /* std::cout << "primary_expression: '(' expression ')'" << std::endl; */

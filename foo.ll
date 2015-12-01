@@ -34,15 +34,18 @@ store i32 %tmp.16, i32* %i
 br label %Label_0
 
 Label_3:
+%str1 = alloca i8*
+%str.0 = getelementptr inbounds [6 x i8]* @.str.0, i32 0, i32 0
 %sum.5 = load i32* %sum
 ret i32 %sum.5
 }
 ; Define function 'main'
+@.str.0 = private unnamed_addr constant [6 x i8] c"hello\00"
 define i32 @main() {
 entry:
 %i = alloca i32
-%tmp.21 = call i32 (i32)* @foo(i32 2)
-store i32 %tmp.21, i32* %i
+%tmp.23 = call i32 (i32)* @foo(i32 2)
+store i32 %tmp.23, i32* %i
 %i.3 = load i32* %i
 ret i32 %i.3
 }

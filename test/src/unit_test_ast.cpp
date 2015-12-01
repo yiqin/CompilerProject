@@ -634,7 +634,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // The test case is foo(i32 2, i32 4, i8* "hello world");
         //
 
-        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @str.0, i32 0, i32 0\n";
+        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @str_1, i32 0, i32 0\n";
         expected_output += "%tmp.0 = call i32 ()* @foo(i32 2, i32 4, i8* %str.0)\n";
 
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));

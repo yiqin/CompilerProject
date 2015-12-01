@@ -83,11 +83,13 @@ void LLVM_Generator::visit (ast::Const_String::Ptr           node) {
 
     register_reference_[node] = '%' + id;
 
+    // TODO
     out_
         << '%' << id << " = getelementptr inbounds ["
-        << node->value().size() + 1 << " x i8]* @" << id << ", i32 0, i32 0"
+        << node->value().size() + 1 << " x i8]* @." << id << ", i32 0, i32 0"
         << std::endl
         ;
+    String::construct(node->value());
 }
 void LLVM_Generator::visit (ast::Unary_Expression::Ptr       node) {
     std::string register_ref = "%tmp." + to_string(register_reference_.size());
@@ -463,7 +465,7 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
 
 ID_Factory Label::id_factory_;
 // ID_Factory Register::id_factory_;
-// ID_Factory String::id_factory_;
+ID_Factory String::id_factory_;
 
 std::vector<String::Ptr> String::all_strings_;
 
