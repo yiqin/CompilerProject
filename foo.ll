@@ -40,23 +40,27 @@ Label_3:
 store i32 1, i32* %sum2
 %str.0 = getelementptr inbounds [6 x i8]* @.str.0, i32 0, i32 0
 store i8* %str.0, i8** %str1
+%str.1 = getelementptr inbounds [5 x i8]* @.str.1, i32 0, i32 0
+%str.2 = getelementptr inbounds [5 x i8]* @.str.2, i32 0, i32 0
 %sum.2 = load i32* %sum
 ret i32 %sum.2
 }
 @.str.0 = private unnamed_addr constant [6 x i8] c"hello\00"
+@.str.1 = private unnamed_addr constant [5 x i8] c"word\00"
+@.str.2 = private unnamed_addr constant [5 x i8] c"word\00"
 
 ; Define function 'main'
 define i32 @main() {
 entry:
 %i = alloca i32, align 4
 %s = alloca i8*, align 8
-%str.1 = getelementptr inbounds [6 x i8]* @.str.1, i32 0, i32 0
-store i8* %str.1, i8** %s
+%str.3 = getelementptr inbounds [6 x i8]* @.str.3, i32 0, i32 0
+store i8* %str.3, i8** %s
 %s.1 = load i8** %s
-%tmp.27 = call i32 (i32, i8*)* @foo(i32 2, i8* %s.1)
-store i32 %tmp.27, i32* %i
+%tmp.29 = call i32 (i32, i8*)* @foo(i32 2, i8* %s.1)
+store i32 %tmp.29, i32* %i
 %i.1 = load i32* %i
 ret i32 %i.1
 }
-@.str.1 = private unnamed_addr constant [6 x i8] c"world\00"
+@.str.3 = private unnamed_addr constant [6 x i8] c"world\00"
 

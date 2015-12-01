@@ -24,7 +24,7 @@ int foo(int count, string s)
     for    (i = 1; i <= count; i = i + 1)
         sum = sum; sum2 = 1;// + foo2(i);
 
-    str1 = "hello";
+    str1 = "hello"; "word"; "word";
     return sum;
 }
 
