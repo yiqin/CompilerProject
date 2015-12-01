@@ -323,12 +323,7 @@ class Binary_Expression : public Expression {
     Expression::Ptr rhs_;
 };
 
-// TODO: Do we merge Binary_Expression and Condition?
-// Yi: One expression can have many +-*/(), but can only have one >=, ==
-// So we can seperate to two different class.
-// But they are quite similar.
-// Currently it works, we can merge them in the future.
-// Return are different
+// return type is i1
 class Condition : public Expression {
   public:
     typedef std::shared_ptr<Condition> Ptr;

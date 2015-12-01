@@ -1,11 +1,3 @@
-; Define function 'main'
-define i32 @main() {
-entry:
-%i = alloca i32
-store i32 5, i32* %i
-%i.3 = load i32* %i
-ret i32 %i.3
-}
 ; Define function 'foo'
 define i32 @foo(i32 %count) {
 entry:
@@ -22,8 +14,8 @@ br label %Label_0
 
 Label_0:
 %i.3 = load i32* %i
-%tmp.9 = icmp sle i32 %i.3, %count
-br i1 %tmp.9, label %Label_1, label %Label_3
+%tmp.6 = icmp sle i32 %i.3, %count
+br i1 %tmp.6, label %Label_1, label %Label_3
 
 Label_1:
 %sum.4 = load i32* %sum
@@ -32,11 +24,20 @@ br label %Label_2
 
 Label_2:
 %i.5 = load i32* %i
-%tmp.15 = add i32 %i.5, 1
-store i32 %tmp.15, i32* %i
+%tmp.12 = add i32 %i.5, 1
+store i32 %tmp.12, i32* %i
 br label %Label_0
 
 Label_3:
 %sum.5 = load i32* %sum
 ret i32 %sum.5
+}
+; Define function 'main'
+define i32 @main() {
+entry:
+%i = alloca i32
+%tmp.17 = call i32 (i32)* @foo(i32 2)
+store i32 %tmp.17, i32* %i
+%i.3 = load i32* %i
+ret i32 %i.3
 }

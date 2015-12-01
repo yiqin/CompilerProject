@@ -6,12 +6,7 @@ extern int foo2(int x);
 
 extern int foo3(int x, int y);
 
-int main()
-{
-    int i;
-    i = 5;
-    return i;
-}
+
 
 int foo(int count)
 {
@@ -20,10 +15,18 @@ int foo(int count)
     sum = 0;
     sum2 = 1;
 
+    // count = 1;
 
     for    (i = 1; i <= count; i = i + 1)
         sum = sum; // + foo2(i);
 
 
     return sum;
+}
+
+int main()
+{
+    int i;
+    i = foo(2);
+    return i;
 }

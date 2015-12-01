@@ -250,25 +250,14 @@ void LLVM_Generator::visit (ast::Function_Call::Ptr          node) {
     out_ << register_ref << " = call " << type(function->type()) << " (";
     infix(out_, ", ", function->argument_list(),
         [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); });
-    // std::transform(
-    //     std::begin(function->argument_list()),
-    //     std::end(function->argument_list()),
-    //     std::ostream_iterator<std::string>(out_, ", "),
-    //     [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); }
-    // );
+
     out_ << ")* @" << function->name() << "(";
     infix(out_, ", ", arguments,
-        [&] (ast::Expression::Ptr expr) { return register_reference_[expr]; });
-    // std::transform(
-    //     std::begin(arguments), std::end(arguments),
-    //     std::ostream_iterator<std::string>(out_, ", "),
-    //     [&] (ast::Expression::Ptr expr) { return register_reference_[expr]; }
-    // );
-    // // remove the last space and the last comma
-    // if (argument_list_.size() > 0) {
-    //     ir.pop_back();
-    //     ir.pop_back();
-    // }
+        [&] (ast::Expression::Ptr expr) { 
+            std::string tmp = type(expr->type()) + " " + register_reference_[expr];
+            return tmp;// register_reference_[expr]; 
+            });
+
     out_ << ')' << std::endl;
 }
 void LLVM_Generator::visit (ast::Instruction::Ptr            node) {
