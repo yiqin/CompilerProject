@@ -20,7 +20,7 @@ int foo(int count, string s)
     
     
     count = 1;
-    count = 2;
+    count = 2; count = 4;
     for    (i = 1; i <= count; i = i + 1)
         sum = sum; sum2 = 1;// + foo2(i);
 

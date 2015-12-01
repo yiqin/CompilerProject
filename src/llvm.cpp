@@ -193,27 +193,6 @@ void LLVM_Generator::visit (ast::Condition::Ptr              node) {
         ;
 }
 void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
-    const auto& symbol = node->lhs()->symbol();
-    
-    // TODO: this is still wrong.
-    // alloca the symbol is needed.
-    /*
-    if (current_var_count_(symbol) == 0) {
-        out_<< "%" << symbol->name() << " = alloca ";
-        switch (symbol->type()) {
-        case parser::Type::INT:
-            out_<< "i32" << std::endl;
-            break;
-        case parser::Type::STRING:
-            out_<< "i8*" << std::endl;
-            break;
-        }
-        increment_var_count_(symbol);
-    }
-    */
-    std::string register_reference = '%' + symbol->name() + '.' +
-        to_string(increment_var_count_(symbol));
-    
     std::string register_ref = "%tmp." + to_string(register_reference_.size());
     register_reference_[node] = register_ref;
 
@@ -463,7 +442,6 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
         
         // Simply change the name to .pointer
         symbol->name(symbol->name() + ".pointer");        
-        increment_var_count_(symbol);
     }
 
     // step 7: function body

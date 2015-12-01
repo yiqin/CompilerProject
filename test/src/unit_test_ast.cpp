@@ -17,7 +17,7 @@
 
 void reset_ids () {
     llvm::Label::id_factory_.reset();
-    // llvm::String::id_factory_.reset();
+    llvm::String::id_factory_.reset();
     // ast::Nonterminal::id_factory_.reset();
 }
 
@@ -323,17 +323,6 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // i = -10 Assignment
         ast::Assignment::Ptr initialization = std::make_shared<ast::Assignment>(variable, const_integer_1);
 
-        // We are not going to test several expressions in for_intruction.
-        // Registers are different.
-
-        // std::string expected_output_1 =
-        //     "%P.1 = alloca i32, align 4\n"
-        //     "store i32 -10, i32* %P.1\n"
-        //     "%V.9 = load i32* %P.1, align 4\n"
-        //     "store i32 %V.9, i32* %i\n"
-        //     ;
-        // REQUIRE ( initialization->emit_llvm_ir() == expected_output_1 );
-
         // condition
         // i <= 10
         // 10
@@ -360,7 +349,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         ast::For_Instruction::Ptr for_instruction = std::make_shared<ast::For_Instruction>(initialization, condition, increment, instruction);
 
         for_instruction->emit_code(generator);
-        // REQUIRE (output_stream.str() == expected_output);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -461,7 +450,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1, instruction_2);
 
         cond_instruction_1->emit_code(generator);
-        // REQUIRE (output_stream.str() == expected_output);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Cond_Instruction if" ) {
@@ -501,7 +490,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         ast::Cond_Instruction::Ptr cond_instruction_1 = std::make_shared<ast::Cond_Instruction>(condition, instruction_1);
 
         cond_instruction_1->emit_code(generator);
-        // REQUIRE (output_stream.str() == expected_output);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
 
@@ -546,7 +535,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         ast::While_Instruction::Ptr while_instruction = std::make_shared<ast::While_Instruction>(condition, instruction_1);
 
         while_instruction->emit_code(generator);
-        // REQUIRE (output_stream.str() == expected_output);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Do_Instruction" ) {
@@ -590,7 +579,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         ast::Do_Instruction::Ptr do_instruction = std::make_shared<ast::Do_Instruction>(condition, instruction_1);
 
         do_instruction->emit_code(generator);
-        // REQUIRE (output_stream.str() == expected_output);
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Compound_Instruction" ) {
