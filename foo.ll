@@ -20,8 +20,8 @@ br label %Label_0
 
 Label_0:
 %i.2 = load i32* %i
-%count.pointer.4 = load i32* %count.pointer
-%tmp.8 = icmp sle i32 %i.2, %count.pointer.4
+%count.pointer.3 = load i32* %count.pointer
+%tmp.8 = icmp sle i32 %i.2, %count.pointer.3
 br i1 %tmp.8, label %Label_1, label %Label_3
 
 Label_1:
