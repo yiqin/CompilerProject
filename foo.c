@@ -6,7 +6,7 @@ extern int foo2(int x);
 
 extern int foo3(int x, int y);
 
-int foo(int count)
+int foo(int count, string s)
 {
     int i, sum;
     int sum2;
@@ -15,7 +15,7 @@ int foo(int count)
 
 
     for    (i = 1; i <= count; i = i + 1)
-        sum = sum + foo2(i);
+        sum = sum; // + foo2(i);
 
 
     return sum;

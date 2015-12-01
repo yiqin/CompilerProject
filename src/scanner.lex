@@ -51,7 +51,7 @@ yylloc->step();
     // #define[^\n]*\n {std::cout << "- declare #define" << std::endl;}
 
  // ignore lines beginning with a '#'
-"#".* { std::cerr << "ignoring meta-comment - \"" << yytext << "\"" << std::endl; }
+"#".* { std::cerr << "; ignoring meta-comment - \"" << yytext << "\"" << std::endl; }
 
 "+" { return token::PLUS; }
 "-" { return token::MINUS; }

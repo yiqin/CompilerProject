@@ -228,7 +228,7 @@ function_definition :
 ;
 
 decl_glb_fct : {
-        std::cout << "- define function '" << last_function_->name() << "'" << std::endl;
+        std::cout << "; Define function '" << last_function_->name() << "'" << std::endl;
 
         Function::Ptr function = last_function_;
 

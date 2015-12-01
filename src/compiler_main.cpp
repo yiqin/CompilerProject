@@ -12,14 +12,14 @@
 int main (int argc, char** argv) {
     scanner::Scanner scanner;
     parser::Symbol_Table::Ptr symbol_table =
-        parser::Symbol_Table::construct("global scope", parser::location());
+    parser::Symbol_Table::construct("global scope", parser::location());
     llvm::LLVM_Generator llvm_generator(std::cout);
     parser::Parser parser(scanner, symbol_table, llvm_generator);
 
     parser.parse();
 
-    std::cout << std::endl << "SYMBOL TABLES" << std::endl << std::endl;
-    parser::Symbol_Table::print_tables();
+    // std::cout << std::endl << "SYMBOL TABLES" << std::endl << std::endl;
+    // parser::Symbol_Table::print_tables();
 
     return 0;
 }

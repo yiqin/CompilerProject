@@ -67,6 +67,16 @@ class LLVM_Generator : public ast::Code_Generator {
             return ++variable_counts_[symbol];
         }
     }
+    
+    std::size_t current_var_count_ (parser::Symbol::Ptr symbol) {
+        auto iter = variable_counts_.find(symbol);
+        if (iter == std::end(variable_counts_)) {
+            return 0;
+        } else {
+            return variable_counts_[symbol];
+        }      
+    }
+    
 };
 
 

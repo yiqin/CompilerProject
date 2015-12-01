@@ -58,6 +58,9 @@ void LLVM_Generator::visit (ast::Declaration_List::Ptr       node) {
 }
 void LLVM_Generator::visit (ast::Variable::Ptr               node) {
     const auto& symbol = node->symbol();
+    
+    
+    
     std::string register_reference = '%' + symbol->name() + '.' +
         to_string(increment_var_count_(symbol));
 
@@ -188,6 +191,24 @@ void LLVM_Generator::visit (ast::Condition::Ptr              node) {
         ;
 }
 void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
+    
+    // alloca the symbol is needed.
+    const auto& symbol = node->lhs()->symbol();
+    if (current_var_count_(symbol) == 0) {
+        out_<< "%" << symbol->name() << " = alloca ";
+        switch (symbol->type()) {
+        case parser::Type::INT:
+            out_<< "i32" << std::endl;
+            break;
+        case parser::Type::STRING:
+            out_<< "i8*" << std::endl;
+            break;
+        }
+    }
+    
+    std::string register_reference = '%' + symbol->name() + '.' +
+        to_string(increment_var_count_(symbol));
+    
     std::string register_ref = "%tmp." + to_string(register_reference_.size());
     register_reference_[node] = register_ref;
 
@@ -431,27 +452,16 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
         [] (parser::Symbol::Ptr symbol) {
             return type(symbol->type()) + " %" + symbol->name();
         });
-    // std::transform(
-    //     std::begin(declarator->argument_list()),
-    //     std::end(declarator->argument_list()),
-    //     std::ostream_iterator<std::string>(out_, ", "),
-    //     [] (parser::Symbol::Ptr symbol) {
-    //         return type(symbol->type()) + " %" + symbol->name();
-    //     }
-    // );
-
-    // // remove the last space and the last comma
-    // if (function_declarator_->argument_list().size() > 0) {
-    //     ir.pop_back();
-    //     ir.pop_back();
-    // }
 
     out_ << ")";
 
     // step 5
     out_ << " {" << std::endl << "entry:" << std::endl;
 
-    // step 6: function body
+    // step 6: alloca local variable
+    
+
+    // step 7: function body
     node->body()->emit_code(*this);
     out_ << "}" << std::endl;
 }
