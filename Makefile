@@ -43,10 +43,13 @@ clean:
 		$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.cpp,$(BSNS)) \
 		$(patsubst $(SRCDIR)/%.yy, $(SRCDIR)/%.tab.hpp,$(BSNS)) \
 		$(SRCDIR)/location.hh $(SRCDIR)/position.hh $(SRCDIR)/stack.hh \
-		$(TESTDIR)/$(BINDIR) $(TESTDIR)/$(BUILDDIR)
+		$(TESTDIR)/$(BINDIR) $(TESTDIR)/$(BUILDDIR) \
+		$(TESTDIR)/test_cases.cstr $(TESTDIR)/test_cases.gcc
+
+tests: unit_tests integration_tests
 
 .SECONDARY:
-.PHONY: all clean unit_test
+.PHONY: all clean tests unit_tests integration_tests
 
 
 # TEST ACTIONS
@@ -60,8 +63,11 @@ clean:
 # 	$(CXX) $(CXXFLAGS) -I src $(TEST)/testCatch.cpp -o $(TEST)/testCatch; \
 # 	./$(TEST)/testCatch >$(TEST)/test_report.txt
 
-unit_test: $(TESTDIR)/$(BINDIR)/unit_test
+unit_tests: $(TESTDIR)/$(BINDIR)/unit_tests
 	$<
+
+integration_tests: $(BINDIR)/compiler
+	bash test/integration_tests.sh
 
 #
 # llc-3.6 -O3 sample.ll -march=x86-64 -o sample-x86-64.s
@@ -79,7 +85,7 @@ $(BINDIR)/compiler: $(BUILDDIR)/compiler_main.o \
 	$(BUILDDIR)/symbol_table.o $(BUILDDIR)/ast.o $(BUILDDIR)/llvm.o
 $(BINDIR)/preprocessor: $(BUILDDIR)/preprocessor.yy.o $(BUILDDIR)/macro.o
 
-$(TESTDIR)/$(BINDIR)/unit_test: $(TESTDIR)/$(BUILDDIR)/unit_test_main.o \
+$(TESTDIR)/$(BINDIR)/unit_tests: $(TESTDIR)/$(BUILDDIR)/unit_test_main.o \
 	$(TESTDIR)/$(BUILDDIR)/unit_test_scanner.o $(BUILDDIR)/scanner.yy.o \
 	$(TESTDIR)/$(BUILDDIR)/unit_test_ast.o $(BUILDDIR)/ast.o $(BUILDDIR)/llvm.o
 
