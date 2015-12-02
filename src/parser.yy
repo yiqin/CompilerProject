@@ -149,10 +149,8 @@ external_declaration :
     
             if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
     std::cout << "Function_Declaration " <<std::endl;   
-                // These two break the code. 
-                // ast::Function_Declaration func_decl(function->type(), function);
-                ast::Function_Declaration::Ptr func_decl = std::make_shared<(ast::Function_Declaration)>(function->type(), function);
-                // func_decl.emit_code(code_generator);
+                ast::Function_Declaration::Ptr func_decl = std::make_shared<ast::Function_Declaration>(function->type(), function);
+                func_decl->emit_code(code_generator);
     std::cout << "Function_Declaration " <<std::endl;                
             } else {
                 // Global declaration.
