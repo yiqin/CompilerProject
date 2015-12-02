@@ -135,7 +135,7 @@ void LLVM_Generator::visit (ast::Binary_Expression::Ptr      node) {
             break;
         case ast::Operation::LEFT_SHIFT:
           // TODO
-            out_ << "/Undefined. Please wait./ ";
+            out_ << "shl ";
             break;
         case ast::Operation::RIGHT_SHIFT:
           // TODO

@@ -61,8 +61,8 @@ yylloc->step();
 "/" { return token::DIVIDE; }
 "%" { return token::MODULO; }
 
-">>" { return token::SHIFTRIGHT; }
 "<<" { return token::SHIFTLEFT; }
+">>" { return token::SHIFTRIGHT; }
 
 "," { return static_cast<token_type>(','); }
 "=" { return static_cast<token_type>('='); }

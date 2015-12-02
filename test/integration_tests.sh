@@ -12,7 +12,7 @@ test_cases=(
     # 'expr'  # need to implement something
     # 'functions'
     # 'loops'  # segmentation fault
-    # 'lsh'  # need to implement something
+    'lsh'
     'mod'
     'mul'
     'neg'
