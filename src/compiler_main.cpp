@@ -12,8 +12,9 @@
 int main (int argc, char** argv) {
     scanner::Scanner scanner;
     parser::Symbol_Table::Ptr symbol_table =
-    parser::Symbol_Table::construct("global scope", parser::location());
+        parser::Symbol_Table::construct("global scope", parser::location());
     llvm::LLVM_Generator llvm_generator(std::cout);
+    llvm_generator.indentation("  ");
     parser::Parser parser(scanner, symbol_table, llvm_generator);
 
     parser.parse();

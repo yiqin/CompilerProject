@@ -564,8 +564,11 @@ class Compound_Instruction : public Instruction {
     Compound_Instruction (const std::vector<Instruction::Ptr>& instruction_list)
           : instruction_list_(instruction_list) {}
 
+    Compound_Instruction (std::vector<Instruction::Ptr>&& instruction_list)
+          : instruction_list_(std::move(instruction_list)) {}
+
     const std::vector<Instruction::Ptr>& instruction_list () const { return instruction_list_; }
-    
+
     virtual void emit_code (Code_Generator& generator) {
         generator.visit(self(this));
     }

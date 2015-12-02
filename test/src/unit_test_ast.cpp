@@ -15,19 +15,21 @@
 #undef private
 
 
-void reset_ids () {
+void reset () {
     llvm::Label::id_factory_.reset();
-    llvm::String::id_factory_.reset();
+    // llvm::String::id_factory_.reset();
     // ast::Nonterminal::id_factory_.reset();
+
 }
 
 
 TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
-    reset_ids();
+    reset();
     std::string expected_output;
     std::ostringstream output_stream;
 
     llvm::LLVM_Generator generator(output_stream);
+    generator.indentation("  ");
 
     SECTION ("Symbol Declaration: int i;") {
         // int i;
@@ -244,17 +246,11 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
     }
 
 
-    // TODO(Emery): Come back to this once you move these global specifications out of "parser.yy".
     SECTION ("Const String") {
-        std::string expected_output_1 = "@str_0 = private unnamed_addr constant [12 x i8] c\"hello world\\00\", align 1\n";
+        std::string expected_output_1 = "%str.0 = getelementptr inbounds [12 x i8]* @str.0, i32 0, i32 0\n";
         ast::Const_String::Ptr const_string_1 = std::make_shared<ast::Const_String>(std::string("hello world"));
         const_string_1->emit_code(generator);
-        // REQUIRE (output_stream.str() == expected_output_1 );
-
-        std::string expected_output_2 = "@str_1 = private unnamed_addr constant [6 x i8] c\"hello\\00\", align 1\n";
-        ast::Const_String::Ptr const_string_2 = std::make_shared<ast::Const_String>(std::string("hello"));
-        const_string_2->emit_code(generator);
-        // REQUIRE (output_stream.str() == expected_output_2 );
+        REQUIRE (output_stream.str() == expected_output_1 );
     }
 
     // TODO(Emery): Come back to this.
@@ -379,31 +375,56 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // @.str = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
         //
 
-        parser::Type type = parser::Type::STRING;
-        // function_declarator includes the argument list
-        parser::Function::Ptr function_declarator = std::make_shared<parser::Function>(std::move("foo"));
+        std::string expected_output =
+            "define i8* @foo() {\n"
+            "entry:\n"
+            "  %symbol_identifier = alloca i8*, align 8\n"
+            "  %str.0 = getelementptr inbounds [6 x i8]* @str.0, i32 0, i32 0\n"
+            "  store i8* %str.0, i8** %symbol_identifier\n"
+            "  %symbol_identifier.1 = load i8** %symbol_identifier\n"
+            "  ret i8* %symbol_identifier.1\n"
+            "}\n"
+            "@str.0 = private unnamed_addr constant [6 x i8] c\"hello\\00\"\n"
+            "\n"
+            ;
 
-        // parser::Symbol::Ptr argument1 = std::make_shared<parser::Symbol>(std::move("a"));
-        // argument1->type(parser::Type::INT);
-        // function_declarator->argument_list().push_back(argument1);
 
-        // parser::Symbol::Ptr argument2 = std::make_shared<parser::Symbol>(std::move("b"));
-        // argument2->type(parser::Type::INT);
-        // function_declarator->argument_list().push_back(argument2);
 
-        ast::Function_Declaration::Ptr function_declaration = std::make_shared<ast::Function_Declaration>(type, function_declarator);
-        function_declaration->emit_code(generator);
+        // function [symbo]) includes the argument list
+        auto function_symbol = std::make_shared<parser::Function>("foo");
+        function_symbol->type(parser::Type::STRING);
 
-        parser::Symbol::Ptr symbol = std::make_shared<parser::Symbol>(std::move("s"));
+        // symbol - constant string that is returned
+        auto symbol = std::make_shared<parser::Symbol>("symbol_identifier");
         symbol->type(parser::Type::STRING);
 
-        ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
-        declaration_list->emit_code(generator);
+        // ast variable
+        auto variable = std::make_shared<ast::Variable>(symbol);
+
+        auto function_definition = std::make_shared<ast::Function_Definition>(
+            function_symbol->type(),
+            function_symbol,
+            std::make_shared<ast::Compound_Instruction>(std::vector<ast::Instruction::Ptr> {
+                std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol}),
+                std::make_shared<ast::Expression_Instruction>(
+                    std::make_shared<ast::Assignment>(
+                        variable,
+                        std::make_shared<ast::Const_String>("hello")
+                    )
+                ),
+                std::make_shared<ast::Return_Instruction>(variable)
+            })
+        );
+        function_definition->emit_code(generator);
+
+
+        // ast::Declaration_List::Ptr declaration_list = std::make_shared<ast::Declaration_List>(parser::Symbol_List {symbol});
+        // declaration_list->emit_code(generator);
 
 
         // Unfinished....
 
-        // REQUIRE (output == "" );
+        REQUIRE (output_stream.str() == expected_output);
     }
 
     SECTION ( "Cond_Instruction if else" ) {
@@ -623,7 +644,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // The test case is foo(i32 2, i32 4, i8* "hello world");
         //
 
-        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @.str.0, i32 0, i32 0\n";
+        expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @str.0, i32 0, i32 0\n";
         expected_output += "%tmp.0 = call i32 ()* @foo(i32 2, i32 4, i8* %str.0)\n";
 
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));

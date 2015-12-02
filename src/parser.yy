@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <string>
 
-#include "llvm.hpp"
 
 // WARNING: USE OF A DIRTY MACRO
 //          The parser will by default try to use a global yylex function. We
@@ -146,12 +145,12 @@ external_declaration :
         for (auto& symbol : $1) {
             symbol->set(Symbol::Attribute::GLOBAL);
     std::cout << "Function_Declaration " <<std::endl;
-    
+
             if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
-    std::cout << "Function_Declaration " <<std::endl;   
+    std::cout << "Function_Declaration " <<std::endl;
                 ast::Function_Declaration::Ptr func_decl = std::make_shared<ast::Function_Declaration>(function->type(), function);
                 func_decl->emit_code(code_generator);
-    std::cout << "Function_Declaration " <<std::endl;                
+    std::cout << "Function_Declaration " <<std::endl;
             } else {
                 // Global declaration.
                 // TODO: declare global variable.
@@ -176,7 +175,7 @@ external_declaration :
         //         << str->id() << " = private unnamed_addr constant [" << to_string(str->value().size()+1)
         //         << " x i8] c\""
         //         ;
-        //         
+        //
         //     for (auto& c : str->value()) {
         //         if (std::iscntrl(c)) {
         //             char buf[3];
@@ -187,7 +186,7 @@ external_declaration :
         //             std::cout << c;
         //         }
         //     }
-        //     
+        //
         //     std::cout << "\\00\"" << std::endl;
         // }
         // llvm::String::clear_store();
@@ -338,7 +337,7 @@ declaration_list :
         for (auto& symbol : $2) {
             $$.push_back(symbol);
         }
-        
+
         // $$.push_back($2);
     }
 ;
@@ -454,7 +453,7 @@ compound_instruction :
         /* std::cout << "compound_instruction: block_start declaration_list instruction_list block_end" << std::endl; */
         ast::Declaration_List::Ptr ast_declaration_list = std::make_shared<ast::Declaration_List>(std::move($2));
         $3.insert($3.begin()+0, ast_declaration_list);
-        
+
         $$ = std::make_shared<ast::Compound_Instruction>(std::move($3));
     }
   | block_start declaration_list block_end {
