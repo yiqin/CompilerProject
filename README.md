@@ -76,3 +76,6 @@ at [http://stackoverflow.com/questions/1061753/how-can-i-implement-a-string-data
 
 * Local variables in LLVM IR
 at [http://stackoverflow.com/questions/24605063/assigning-literal-value-to-local-variable-in-llvm-ir](http://stackoverflow.com/questions/24605063/assigning-literal-value-to-local-variable-in-llvm-ir).
+
+* The Often Misunderstood GEP Instruction
+at [http://llvm.org/docs/GetElementPtr.html#what-is-the-first-index-of-the-gep-instruction](http://llvm.org/docs/GetElementPtr.html#what-is-the-first-index-of-the-gep-instruction)
