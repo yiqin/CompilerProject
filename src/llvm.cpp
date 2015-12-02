@@ -68,12 +68,12 @@ void LLVM_Generator::visit (ast::Variable::Ptr               node) {
     apply_indent_();
     switch (node->type()) {
         case parser::Type::INT:
-            out_ << register_reference << " = load i32* %" << symbol->name()
+            out_ << register_reference << " = load i32, i32* %" << symbol->name()
                 << std::endl;
             break;
         case parser::Type::STRING:
             // TODO
-            out_ << register_reference << " = load i8** %" << symbol->name()
+            out_ << register_reference << " = load i8*, i8** %" << symbol->name()
                 << std::endl;
             break;
     }
@@ -234,18 +234,29 @@ void LLVM_Generator::visit (ast::Function_Call::Ptr          node) {
         argument->emit_code(*this);
     }
 
+    // // Step 2: call the function
+    // apply_indent_();
+    // out_ << register_ref << " = call " << type(function->type()) << " (";
+    // infix(out_, ", ", function->argument_list(),
+    //     [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); });
+
+    // out_ << ")* @" << function->name() << "(";
+    // infix(out_, ", ", arguments,
+    //     [&] (ast::Expression::Ptr expr) {
+    //         std::string tmp = type(expr->type()) + " " + register_reference_[expr];
+    //         return tmp;// register_reference_[expr];
+    // });
+
     // Step 2: call the function
     apply_indent_();
-    out_ << register_ref << " = call " << type(function->type()) << " (";
-    infix(out_, ", ", function->argument_list(),
-        [] (parser::Symbol::Ptr symbol) { return type(symbol->type()); });
+    out_ << register_ref << " = call " << type(function->type());
 
-    out_ << ")* @" << function->name() << "(";
+    out_ << " @" << function->name() << "(";
     infix(out_, ", ", arguments,
         [&] (ast::Expression::Ptr expr) {
             std::string tmp = type(expr->type()) + " " + register_reference_[expr];
             return tmp;// register_reference_[expr];
-            });
+        });
 
     out_ << ')' << std::endl;
 }

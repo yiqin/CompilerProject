@@ -135,7 +135,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // INT
         // %V.1 = load i32* %a, align 4
         // ret i32 %V.1
-        std::string expected_output_1 = "%a.1 = load i32* %a\nret i32 %a.1\n";
+        std::string expected_output_1 = "%a.1 = load i32, i32* %a\nret i32 %a.1\n";
 
         // Prepare
         // Expression - Variable
@@ -194,7 +194,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // return a+1-2;
 
         expected_output =
-            "%a.1 = load i32* %a\n"
+            "%a.1 = load i32, i32* %a\n"
             "%tmp.1 = add i32 %a.1, 1\n"
             "%tmp.0 = sub i32 %tmp.1, 2\n"
             "ret i32 %tmp.0\n"
@@ -289,7 +289,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
             "br label %Label_0\n"
             "\n"
             "Label_0:\n"
-            "%i.1 = load i32* %i\n"
+            "%i.1 = load i32, i32* %i\n"
             "%tmp.2 = icmp sle i32 %i.1, 10\n"
             "br i1 %tmp.2, label %Label_1, label %Label_3\n"
             "\n"
@@ -297,7 +297,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
             "br label %Label_2\n"
             "\n"
             "Label_2:\n"
-            "%i.2 = load i32* %i\n"
+            "%i.2 = load i32, i32* %i\n"
             "%tmp.6 = add i32 %i.2, 1\n"
             "store i32 %tmp.6, i32* %i\n"
             "br label %Label_0\n"
@@ -381,7 +381,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
             "  %symbol_identifier = alloca i8*, align 8\n"
             "  %str.0 = getelementptr inbounds [6 x i8]* @str.0, i32 0, i32 0\n"
             "  store i8* %str.0, i8** %symbol_identifier\n"
-            "  %symbol_identifier.1 = load i8** %symbol_identifier\n"
+            "  %symbol_identifier.1 = load i8*, i8** %symbol_identifier\n"
             "  ret i8* %symbol_identifier.1\n"
             "}\n"
             "@str.0 = private unnamed_addr constant [6 x i8] c\"hello\\00\"\n"
@@ -527,12 +527,12 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
             "br label %Label_0\n"
             "\n"
             "Label_0:\n"
-            "%i.1 = load i32* %i\n"
+            "%i.1 = load i32, i32* %i\n"
             "%tmp.0 = icmp slt i32 %i.1, 10\n"
             "br i1 %tmp.0, label %Label_1, label %Label_2\n"
             "\n"
             "Label_1:\n"
-            "%i.2 = load i32* %i\n"
+            "%i.2 = load i32, i32* %i\n"
             "%tmp.4 = add i32 %i.2, 2\n"
             "store i32 %tmp.4, i32* %i\n"
             "br label %Label_0\n"
@@ -571,13 +571,13 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
             "br label %Label_0\n"
             "\n"
             "Label_0:\n"
-            "%i.1 = load i32* %i\n"
+            "%i.1 = load i32, i32* %i\n"
             "%tmp.1 = add i32 %i.1, 2\n"
             "store i32 %tmp.1, i32* %i\n"
             "br label %Label_1\n"
             "\n"
             "Label_1:\n"
-            "%i.2 = load i32* %i\n"
+            "%i.2 = load i32, i32* %i\n"
             "%tmp.4 = icmp slt i32 %i.2, 10\n"
             "br i1 %tmp.4, label %Label_0, label %Label_2\n"
             "\n"
@@ -645,7 +645,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         //
 
         expected_output = "%str.0 = getelementptr inbounds [12 x i8]* @str.0, i32 0, i32 0\n";
-        expected_output += "%tmp.0 = call i32 ()* @foo(i32 2, i32 4, i8* %str.0)\n";
+        expected_output += "%tmp.0 = call i32 @foo(i32 2, i32 4, i8* %str.0)\n";
 
         parser::Function::Ptr function = std::make_shared<parser::Function>(std::move("foo"));
         function->type(parser::Type::INT);
@@ -689,7 +689,7 @@ TEST_CASE ("Generate LLVM --from-- Abstract Syntax Tree") {
         // a is int type.
 
         expected_output =
-            "%a.1 = load i32* %a\n"
+            "%a.1 = load i32, i32* %a\n"
             "%tmp.0 = sub i32 0, %a.1\n"
             ;
 

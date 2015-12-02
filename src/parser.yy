@@ -141,16 +141,13 @@ program :
 
 external_declaration :
     declaration         {
-        // Loop over declarations, and print out the functions as "function declarations".
+        // Loop over declarations, and emit function declarations.
         for (auto& symbol : $1) {
             symbol->set(Symbol::Attribute::GLOBAL);
-    std::cout << "Function_Declaration " <<std::endl;
 
             if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
-    std::cout << "Function_Declaration " <<std::endl;
                 ast::Function_Declaration::Ptr func_decl = std::make_shared<ast::Function_Declaration>(function->type(), function);
                 func_decl->emit_code(code_generator);
-    std::cout << "Function_Declaration " <<std::endl;
             } else {
                 // Global declaration.
                 // TODO: declare global variable.
@@ -166,30 +163,6 @@ external_declaration :
     }
   | function_definition {
         /* std::cout << "external_declaration: function_definition" << std::endl; */
-
-        // emit constant strings
-        // TODO(Emery): Move this to Code_Generator subclass.
-        // for (auto& str : llvm::String::all_strings()) {
-        //     // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
-        //     std::cout
-        //         << str->id() << " = private unnamed_addr constant [" << to_string(str->value().size()+1)
-        //         << " x i8] c\""
-        //         ;
-        //
-        //     for (auto& c : str->value()) {
-        //         if (std::iscntrl(c)) {
-        //             char buf[3];
-        //             buf[2] = '\0';
-        //             snprintf(buf, 3, "%02x", c & 0xff);
-        //             std::cout << '\\' << buf;
-        //         } else {
-        //             std::cout << c;
-        //         }
-        //     }
-        //
-        //     std::cout << "\\00\"" << std::endl;
-        // }
-        // llvm::String::clear_store();
 
         // emit function definition
         $1->emit_code(code_generator);
