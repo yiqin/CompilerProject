@@ -5,6 +5,24 @@ pushd $root_dir > /dev/null
 
 test_cases=(
     'add'
+    # 'compteur'
+    'cond'
+    # 'div'  # compiles
+    # 'erato'
+    # 'expr'  # need to implement something
+    # 'functions'
+    # 'loops'  # segmentation fault
+    # 'lsh'  # need to implement something
+    'mod'
+    'mul'
+    'neg'
+    # 'opti'  # fails on string stuff
+    # 'rsh'  # need to implement something
+    # 'string'
+    # 'string2'
+    # 'string3'
+    'sub'
+    # 'toto'
 )
 
 RED='\033[0;31m'
