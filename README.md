@@ -79,3 +79,10 @@ at [http://stackoverflow.com/questions/24605063/assigning-literal-value-to-local
 
 * The Often Misunderstood GEP Instruction
 at [http://llvm.org/docs/GetElementPtr.html#what-is-the-first-index-of-the-gep-instruction](http://llvm.org/docs/GetElementPtr.html#what-is-the-first-index-of-the-gep-instruction)
+
+* L/R shift operations in C. logical vs arithmetic
+at [http://stackoverflow.com/questions/7622/shift-operator-in-c](http://stackoverflow.com/questions/7622/shift-operator-in-c)
+Based on the discussion on this page, we chose to implement them as arithmetic shifts. (The test file "test/test_cases/rsh.c" doesn't seem to test for one or the other though.)
+
+* Reference for colored output in bash script.
+at [http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux](http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux)

@@ -17,7 +17,7 @@ test_cases=(
     'mul'
     'neg'
     # 'opti'  # fails on string stuff
-    # 'rsh'  # need to implement something
+    'rsh'  # need to implement something
     # 'string'
     # 'string2'
     # 'string3'
@@ -74,12 +74,12 @@ do
         diff test/test_cases.gcc/${t}.stderr test/test_cases.cstr/${t}.stderr > /dev/null
         if [ "$?" == "0" ]
         then
-            printf " ${GREEN}GOOD${NC}\n"
+            echo -e " ${GREEN}GOOD${NC}"
         else
-            printf " ${RED}FAILED${NC} - stderr does not match\n"
+            echo -e " ${RED}FAILED${NC} - stderr does not match"
         fi
     else
-        printf " ${RED}FAILED${NC} - stdout does not match\n"
+        echo -e " ${RED}FAILED${NC} - stdout does not match"
     fi
 done
 
