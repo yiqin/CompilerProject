@@ -11,7 +11,7 @@ test_cases=(
     # 'erato'
     'expr'
     'expr_temp'
-    # 'functions'
+    'functions'
     # 'loops'  # segmentation fault
     'lsh'
     'mod'
