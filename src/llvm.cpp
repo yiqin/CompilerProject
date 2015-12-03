@@ -134,11 +134,9 @@ void LLVM_Generator::visit (ast::Binary_Expression::Ptr      node) {
             out_ << "srem ";
             break;
         case ast::Operation::LEFT_SHIFT:
-          // TODO
             out_ << "shl ";
             break;
         case ast::Operation::RIGHT_SHIFT:
-          // TODO
             out_ << "ashr ";
             break;
     }

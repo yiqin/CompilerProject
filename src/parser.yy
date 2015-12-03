@@ -5,6 +5,7 @@
 #include <cctype>
 
 #include <algorithm>
+#include <stack>
 #include <string>
 
 
@@ -14,6 +15,17 @@
 //          So #define yylex to refer to this.
 #define yylex scanner.lex
 
+
+std::string type_str (const parser::Type& type) {
+    switch (type) {
+        case parser::Type::INT:
+            return "int";
+        case parser::Type::STRING:
+            return "string";
+        default:
+            return "(undef)";
+    }
+}
 
 %}
 
@@ -49,6 +61,7 @@
 }
 
 %code {
+    std::stack<parser::Type> unclaimed_types_;
     parser::Function::Ptr last_function_;
     bool new_function_definition_;
 }
@@ -171,37 +184,15 @@ external_declaration :
 
 function_definition :
     type function_declarator decl_glb_fct compound_instruction {
-        // Set function return type.
+        // Verify the function return type. (Should have been set when
+        // processing `function_declarator`.)
         auto function = $2;
-        function->type($1);
-
-        // A function can be declared before it is defined.
-        if (symbol_table->is_visible(function->name())) {
-            // Retrieve previously declared function.
-            auto declared_func = std::dynamic_pointer_cast<Function>(
-                symbol_table->lookup(function->name()));
-
-            // Verify the return type. (type-checking)
-            if (function->type() != declared_func->type()) {
-                std::ostringstream oss;
-                oss
-                    << "Return type of function definition, "
-                    << (function->type() == Type::INT ? "int" : "string")
-                    << ", does not match declaration, "
-                    << (declared_func->type() == Type::INT ? "int" : "string")
-                    << "."
-                    ;
-                throw syntax_error(@$, oss.str());
-            }
-
-            // Rest of type checking is done when processing `decl_glb_fct`.
+        unclaimed_types_.pop();
+        if (function->type() != $1) {
+            throw std::runtime_error("INTERNAL ERROR: Type mismatch.");
         }
 
-        // Or it can be declared for the first time here.
-        else {
-            symbol_table->add($2->name(), Symbol::Ptr($2));
-            // $2->print_semantic_action();
-        }
+        // Type checking is done when processing `decl_glb_fct`.
 
         $$ = std::make_shared<ast::Function_Definition>($1, function, $4);
     }
@@ -224,7 +215,18 @@ decl_glb_fct : {
                     "variable '" + function->name() + "'.");
             }
 
-            // Return type checked when processing `function_definition`.
+            // Verify the return type. (type-checking)
+            if (function->type() != declared_func->type()) {
+                std::ostringstream oss;
+                oss
+                    << "Return type of function definition, "
+                    << (function->type() == Type::INT ? "int" : "string")
+                    << ", does not match declaration, "
+                    << (declared_func->type() == Type::INT ? "int" : "string")
+                    << "."
+                    ;
+                throw syntax_error(@$, oss.str());
+            }
 
             // Verify the argument list. (type-checking)
             if (function->argument_list().size() != declared_func->argument_list().size()) {
@@ -238,6 +240,13 @@ decl_glb_fct : {
             if (pair.first != std::end(function->argument_list())) {
                 throw syntax_error(@$, "Signature mismatch between function definition and declaration.");
             }
+        }
+
+        // If function is not yet declared, add it to the symbol table before we
+        // attempt to define it. This enables recursion.
+        else {
+            symbol_table->add(function->name(), Symbol::Ptr(function));
+            // $2->print_semantic_action();
         }
 
         // Raise a flag to let "block_start" know that the symbol-table has
@@ -265,6 +274,7 @@ declaration :
     type declarator_list ';' {
         $$ = $2;
         for (auto& symbol : $$) {
+            unclaimed_types_.pop();
             symbol->type($1);
 
             if (symbol_table->is_in_this_scope(symbol->name())) {
@@ -282,9 +292,11 @@ declaration :
 
 type :
     INT    {
+        unclaimed_types_.push(Type::INT);
         $$ = Type::INT;
     }
   | STRING {
+        unclaimed_types_.push(Type::STRING);
         $$ = Type::STRING;
     }
 ;
@@ -326,11 +338,17 @@ declarator :
 
 function_declarator :
     IDENT '(' ')'                 {
+        // Create function and set return type.
         $$ = std::make_shared<Function>(std::move($1));
+        $$->type(unclaimed_types_.top());
+
         last_function_ = $$;
     }
   | IDENT '(' parameter_list ')'  {
+        // Create function and set return type.
         $$ = std::make_shared<Function>(std::move($1));
+        $$->type(unclaimed_types_.top());
+
         last_function_ = $$;
         for (auto& symbol : $3) {
             symbol->set(Symbol::Attribute::FUNCTION_PARAM);
@@ -352,6 +370,7 @@ parameter_list :
 parameter_declaration :
     type IDENT {
         $$ = std::make_shared<Symbol>(std::move($2));
+        unclaimed_types_.pop();
         $$->type($1);
     }
 ;
@@ -540,7 +559,13 @@ expression :
         if ($1->type() == Type::INT and $3->type() == Type::INT) {
             $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::LEFT_SHIFT, $1, $3);
         } else {
-            throw syntax_error(@$, "Only two integers can do '<<' operation.");
+            std::ostringstream oss;
+            oss
+                << "Cannot do '<<' operation between types '"
+                << type_str($1->type()) << "' and '" << type_str($3->type())
+                << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
   | expression SHIFTRIGHT additive_expression {
@@ -548,7 +573,13 @@ expression :
         if ($1->type() == Type::INT and $3->type() == Type::INT) {
             $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::RIGHT_SHIFT, $1, $3);
         } else {
-            throw syntax_error(@$, "Only two integers can do '>>' operation.");
+            std::ostringstream oss;
+            oss
+                << "Cannot do '>>' operation between types '"
+                << type_str($1->type()) << "' and '" << type_str($3->type())
+                << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
 ;
@@ -560,10 +591,24 @@ additive_expression :
     }
   | additive_expression PLUS multiplicative_expression  {
         /* std::cout << "additive_expression: additive_expression PLUS multiplicative_expression" << std::endl; */
-        if ($1->type() == Type::INT and $3->type() == Type::INT) {
-            $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::ADDITION, $1, $3);
+        if ($1->type() == $3->type()) {
+            switch ($1->type()) {
+                case Type::INT:
+                    $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::ADDITION, $1, $3);
+                    break;
+                case Type::STRING:
+                    $$ = std::make_shared<ast::Binary_Expression>(Type::STRING, ast::Operation::ADDITION, $1, $3);
+                    break;
+            }
         } else {
-            throw syntax_error(@$, "Only two integers can do '+' operation.");
+            // throw syntax_error(@$, "Addition can only be done between arguments of the same type. (`INT + INT` or `STRING + STRING`)");
+            std::ostringstream oss;
+            oss
+                << "Cannot do '+' operation between types '"
+                << type_str($1->type()) << "' and '" << type_str($3->type())
+                << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
   | additive_expression MINUS multiplicative_expression {
@@ -571,7 +616,13 @@ additive_expression :
         if ($1->type() == Type::INT and $3->type() == Type::INT) {
             $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::SUBTRACTION, $1, $3);
         } else {
-            throw syntax_error(@$, "Only two integers can do '-' operation.");
+            std::ostringstream oss;
+            oss
+                << "Cannot do '-' operation between types '"
+                << type_str($1->type()) << "' and '" << type_str($3->type())
+                << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
 ;
@@ -586,7 +637,13 @@ multiplicative_expression :
         if ($1->type() == Type::INT and $3->type() == Type::INT) {
             $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::MULTIPLICATION, $1, $3);
         } else {
-            throw syntax_error(@$, "Only two integers can do '*' operation.");
+            std::ostringstream oss;
+            oss
+                << "Cannot do '*' operation between types '"
+                << type_str($1->type()) << "' and '" << type_str($3->type())
+                << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
   | multiplicative_expression DIVIDE unary_expression   {
@@ -594,7 +651,13 @@ multiplicative_expression :
         if ($1->type() == Type::INT and $3->type() == Type::INT) {
             $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::DIVISION, $1, $3);
         } else {
-            throw syntax_error(@$, "Only two integers can do '/' operation.");
+            std::ostringstream oss;
+            oss
+                << "Cannot do '/' operation between types '"
+                << type_str($1->type()) << "' and '" << type_str($3->type())
+                << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
   | multiplicative_expression MODULO unary_expression   {
@@ -602,7 +665,13 @@ multiplicative_expression :
         if ($1->type() == Type::INT and $3->type() == Type::INT) {
             $$ = std::make_shared<ast::Binary_Expression>(Type::INT, ast::Operation::MODULUS, $1, $3);
         } else {
-            throw syntax_error(@$, "Only two integers can do modulo operation.");
+            std::ostringstream oss;
+            oss
+                << "Cannot do '%' operation between types '"
+                << type_str($1->type()) << "' and '" << type_str($3->type())
+                << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
 ;
@@ -618,7 +687,12 @@ unary_expression:
             // $$ = std::make_shared<ast::Unary_Expression>(Type::INT, ast::Operation::SUBTRACTION, $2);
             $$ = std::make_shared<ast::Unary_Expression>($2);
         } else {
-            throw syntax_error(@$, "Unary MINUS is not defined for this type.");
+            std::ostringstream oss;
+            oss
+                << "Cannot do unary '-' operation on type '"
+                << type_str($2->type()) << "'."
+                ;
+            throw syntax_error(@$, oss.str());
         }
     }
 ;
