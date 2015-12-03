@@ -9,7 +9,8 @@ test_cases=(
     'cond'
     # 'div'  # compiles
     # 'erato'
-    # 'expr'  # need to implement something
+    'expr'
+    'expr_temp'
     # 'functions'
     # 'loops'  # segmentation fault
     'lsh'
@@ -17,7 +18,7 @@ test_cases=(
     'mul'
     'neg'
     # 'opti'  # fails on string stuff
-    'rsh'  # need to implement something
+    'rsh'
     # 'string'
     # 'string2'
     # 'string3'

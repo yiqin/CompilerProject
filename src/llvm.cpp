@@ -131,7 +131,7 @@ void LLVM_Generator::visit (ast::Binary_Expression::Ptr      node) {
             out_ << "udiv ";
             break;
         case ast::Operation::MODULUS:
-            out_ << "urem ";
+            out_ << "srem ";
             break;
         case ast::Operation::LEFT_SHIFT:
           // TODO
