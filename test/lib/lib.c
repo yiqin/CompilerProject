@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 int printd( int d ) {
-  return printf( "%d\n", d );
+  return printf( "%d", d );
 }
 int get_char_at( char *s, int i ) {
   return s[i];

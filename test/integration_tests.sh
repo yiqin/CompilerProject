@@ -20,7 +20,7 @@ test_cases=(
     # 'opti'  # fails on string stuff
     'rsh'
     'string'
-    # 'string2'
+    'string2'
     # 'string3'
     'sub'
     # 'toto'

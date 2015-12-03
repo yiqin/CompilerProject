@@ -67,7 +67,7 @@ tests: unit_tests integration_tests
 unit_tests: $(TESTDIR)/$(BINDIR)/unit_tests
 	$<
 
-integration_tests: $(BINDIR)/compiler
+integration_tests: $(BINDIR)/compiler $(BUILDDIR)/string_lib.o
 	bash test/integration_tests.sh
 
 #

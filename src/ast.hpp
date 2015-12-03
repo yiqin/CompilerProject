@@ -309,7 +309,7 @@ class Condition : public Expression {
 
     Condition (Comparison_Operation op, Expression::Ptr lhs,
                Expression::Ptr rhs)
-          : Expression(parser::Type::INT),
+          : Expression(lhs->type()),
             op_(op),
             lhs_(lhs),
             rhs_(rhs) {}
