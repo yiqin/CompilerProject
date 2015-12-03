@@ -6,6 +6,7 @@ TESTDIR  = test
 
 # build tools
 CXX   = g++
+LLC   = llc
 FLEX  = flex
 BISON = bison
 
@@ -35,7 +36,7 @@ TEST_SRCS = $(wildcard $(TESTDIR)/$(SRCDIR)/*.cpp)
 
 # BUILD ACTIONS
 
-all: $(BINARIES)
+all: $(BINARIES) $(BUILDDIR)/string_lib.o
 
 clean:
 	$(RM) $(BINDIR) $(BUILDDIR) \
@@ -116,6 +117,9 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 $(TESTDIR)/$(BUILDDIR)/%.o: $(TESTDIR)/$(SRCDIR)/%.cpp
 	@$(MKDIR) $(@D)
 	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $<
+$(BUILDDIR)/%.s: $(SRCDIR)/%.ll
+	@$(MKDIR) $(@D)
+	$(LLC) -o $@ $<
 
 # Flex
 $(SRCDIR)/%.yy.cpp: $(SRCDIR)/%.lex

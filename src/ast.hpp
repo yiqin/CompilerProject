@@ -410,10 +410,14 @@ class Declaration_List : public Instruction {
   public:
     typedef std::shared_ptr<Declaration_List> Ptr;
 
+    Declaration_List () {}
+
     Declaration_List (parser::Symbol_List symbol_list)
           : symbol_list_(symbol_list) {}
 
     const parser::Symbol_List& symbol_list () const { return symbol_list_; }
+
+    void push_back (parser::Symbol::Ptr symbol) { symbol_list_.push_back(symbol); }
 
     virtual void emit_code (Code_Generator& generator) {
         generator.visit(self(this));

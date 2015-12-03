@@ -10,6 +10,7 @@ test_cases=(
     # 'div'  # compiles
     # 'erato'
     'expr'
+    'expr_temp'
     # 'functions'
     # 'loops'  # segmentation fault
     'lsh'
@@ -18,7 +19,7 @@ test_cases=(
     'neg'
     # 'opti'  # fails on string stuff
     'rsh'
-    # 'string'
+    'string'
     # 'string2'
     # 'string3'
     'sub'
@@ -53,13 +54,13 @@ do
         set -e
 
         # Compile with gcc.
-        gcc -S test/test_cases/${t}.c -o test/test_cases.gcc/${t}.s
-        gcc test/test_cases.gcc/${t}.s test/lib/lib.o -o test/test_cases.gcc/${t}
+        gcc -o test/test_cases.gcc/${t}.s -S -D GCC test/test_cases/${t}.c -Wno-format-security
+        gcc -o test/test_cases.gcc/${t} test/test_cases.gcc/${t}.s test/lib/lib.o
 
         # Compile with cstr.
         cpp test/test_cases/${t}.c | bin/compiler > test/test_cases.cstr/${t}.ll
         llc test/test_cases.cstr/${t}.ll -o test/test_cases.cstr/${t}.s
-        gcc test/test_cases.cstr/${t}.s test/lib/lib.o -o test/test_cases.cstr/${t}
+        gcc -o test/test_cases.cstr/${t} test/test_cases.cstr/${t}.s test/lib/lib.o build/string_lib.o
 
         # Run gcc version.
         test/test_cases.gcc/${t} > test/test_cases.gcc/${t}.stdout 2> test/test_cases.gcc/${t}.stderr

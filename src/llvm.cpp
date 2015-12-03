@@ -2,6 +2,7 @@
 #include "llvm.hpp"
 
 #include <iostream>
+#include <iterator>
 #include <string>
 
 #include "ast.hpp"
@@ -50,11 +51,24 @@ void infix (std::ostream& out, const char* delim, const C& container, Op op) {
 void LLVM_Generator::visit (ast::Declaration_List::Ptr       node) {
     for (auto& symbol : node->symbol_list()) {
         apply_indent_();
-        out_
-            << '%' << symbol->name() << " = alloca " << type(symbol->type())
-            << ", " << alignment(symbol->type())
-            << std::endl
-            ;
+
+        // Declare global variable.
+        if (symbol->get(parser::Symbol::Attribute::GLOBAL)) {
+            out_
+                << '@' << symbol->name() << " = global "
+                << type(symbol->type()) << " null"
+                << std::endl
+                ;
+        }
+
+        // Declare local variable.
+        else {
+            out_
+                << '%' << symbol->name() << " = alloca " << type(symbol->type())
+                << ", " << alignment(symbol->type())
+                << std::endl
+                ;
+        }
     }
 }
 void LLVM_Generator::visit (ast::Variable::Ptr               node) {
@@ -68,12 +82,18 @@ void LLVM_Generator::visit (ast::Variable::Ptr               node) {
     apply_indent_();
     switch (node->type()) {
         case parser::Type::INT:
-            out_ << register_reference << " = load i32, i32* %" << symbol->name()
+            out_
+                << register_reference << " = load i32, i32* "
+                << (node->symbol()->get(parser::Symbol::Attribute::GLOBAL) ? '@' : '%')
+                << symbol->name()
                 << std::endl;
             break;
         case parser::Type::STRING:
             // TODO
-            out_ << register_reference << " = load i8*, i8** %" << symbol->name()
+            out_
+                << register_reference << " = load i8*, i8** "
+                << (node->symbol()->get(parser::Symbol::Attribute::GLOBAL) ? '@' : '%')
+                << symbol->name()
                 << std::endl;
             break;
     }
@@ -87,11 +107,20 @@ void LLVM_Generator::visit (ast::Const_String::Ptr           node) {
 
     register_reference_[node] = '%' + id;
 
+    // Allow for escape characters.
+    std::size_t size = node->value().size();
+    for (auto& c : node->value()) {
+        if (c == '\\') {
+            --size;
+        }
+    }
+
     // TODO: improve getelementptr
     apply_indent_();
     out_
         << '%' << id << " = getelementptr inbounds ["
-        << node->value().size() + 1 << " x i8]* @" << id << ", i32 0, i32 0"
+        << size + 1 << " x i8], ["
+        << size + 1 << " x i8]* @" << id << ", i32 0, i32 0"
         << std::endl
         ;
 }
@@ -116,36 +145,53 @@ void LLVM_Generator::visit (ast::Binary_Expression::Ptr      node) {
 
     apply_indent_();
     out_ << register_ref << " = ";
+    switch (node->type()) {
+        case parser::Type::INT:
+            switch (node->op()) {
+                case ast::Operation::ADDITION:
+                    out_ << "add ";
+                    break;
+                case ast::Operation::SUBTRACTION:
+                    out_ << "sub ";
+                    break;
+                case ast::Operation::MULTIPLICATION:
+                    out_ << "mul ";
+                    break;
+                case ast::Operation::DIVISION:
+                    out_ << "udiv ";
+                    break;
+                case ast::Operation::MODULUS:
+                    out_ << "srem ";
+                    break;
+                case ast::Operation::LEFT_SHIFT:
+                    out_ << "shl ";
+                    break;
+                case ast::Operation::RIGHT_SHIFT:
+                    out_ << "ashr ";
+                    break;
+            }
 
-    switch (node->op()) {
-        case ast::Operation::ADDITION:
-            out_ << "add ";
+            out_
+                << type(node->type()) << ' '
+                << register_reference_[node->lhs()] << ", "
+                << register_reference_[node->rhs()]
+                << std::endl
+                ;
+
             break;
-        case ast::Operation::SUBTRACTION:
-            out_ << "sub ";
-            break;
-        case ast::Operation::MULTIPLICATION:
-            out_ << "mul ";
-            break;
-        case ast::Operation::DIVISION:
-            out_ << "udiv ";
-            break;
-        case ast::Operation::MODULUS:
-            out_ << "srem ";
-            break;
-        case ast::Operation::LEFT_SHIFT:
-            out_ << "shl ";
-            break;
-        case ast::Operation::RIGHT_SHIFT:
-            out_ << "ashr ";
+
+        case parser::Type::STRING:
+            // '+' is the only operation allowed between strings.
+            out_
+                << "call i8* @__string_concat__(i8* "
+                << register_reference_[node->lhs()] << ", i8* "
+                << register_reference_[node->rhs()] << ")"
+                << std::endl
+                ;
+            need_string_functions_ = true;
+            strings_to_free_.insert(register_ref);
             break;
     }
-
-    out_
-        << type(node->type()) << ' '
-        << register_reference_[node->lhs()] << ", "
-        << register_reference_[node->rhs()] << std::endl
-        ;
 }
 void LLVM_Generator::visit (ast::Condition::Ptr              node) {
     std::string register_ref = "%tmp." + to_string(register_reference_.size());
@@ -155,7 +201,7 @@ void LLVM_Generator::visit (ast::Condition::Ptr              node) {
     node->rhs()->emit_code(*this);
 
     apply_indent_();
-    out_ << register_ref << " = icmp ";
+    out_ << register_ref << " = ";
 
     // eq: equal
     // ne: not equal
@@ -168,32 +214,66 @@ void LLVM_Generator::visit (ast::Condition::Ptr              node) {
     // slt: signed less than
     // sle: signed less or equal
 
-    switch (node->op()) {
-        case ast::Comparison_Operation::EQUAL:
-            out_ << "eq ";
+    switch (node->type()) {
+        case parser::Type::INT:
+            out_ << "icmp ";
+
+            switch (node->op()) {
+                case ast::Comparison_Operation::EQUAL:
+                    out_ << "eq ";
+                    break;
+                case ast::Comparison_Operation::NOT_EQUAL:
+                    out_ << "ne ";
+                    break;
+                case ast::Comparison_Operation::LESS_THAN:
+                    out_ << "slt ";
+                    break;
+                case ast::Comparison_Operation::GREATER_THAN:
+                    out_ << "sgt ";
+                    break;
+                case ast::Comparison_Operation::LESS_THAN_OR_EQUAL:
+                    out_ << "sle ";
+                    break;
+                case ast::Comparison_Operation::GREATER_THAN_OR_EQUAL:
+                    out_ << "sge ";
+                    break;
+            }
+
+            out_
+                << type(node->type()) << ' '
+                << register_reference_[node->lhs()] << ", "
+                << register_reference_[node->rhs()]
+                << std::endl
+                ;
+
             break;
-        case ast::Comparison_Operation::NOT_EQUAL:
-            out_ << "ne ";
-            break;
-        case ast::Comparison_Operation::LESS_THAN:
-            out_ << "slt ";
-            break;
-        case ast::Comparison_Operation::GREATER_THAN:
-            out_ << "sgt ";
-            break;
-        case ast::Comparison_Operation::LESS_THAN_OR_EQUAL:
-            out_ << "sle ";
-            break;
-        case ast::Comparison_Operation::GREATER_THAN_OR_EQUAL:
-            out_ << "sge ";
+
+        case parser::Type::STRING:
+            out_ << "call i1 @";
+
+            switch (node->op()) {
+                case ast::Comparison_Operation::EQUAL:
+                    out_ << "__string_equal__";
+                    break;
+                case ast::Comparison_Operation::NOT_EQUAL:
+                    out_ << "__string_not_equal__";
+                    break;
+                default:
+                    // TODO(Emery): Make this a syntax_error.
+                    throw std::runtime_error("Operation not supported for strings.");
+                    break;
+            }
+
+            out_
+                <<  "(i8* " << register_reference_[node->lhs()]
+                << ", i8* " << register_reference_[node->rhs()]
+                << ")"
+                << std::endl
+                ;
+
+            need_string_functions_ = true;
             break;
     }
-
-    out_
-        << type(node->type()) << ' '
-        << register_reference_[node->lhs()] << ", "
-        << register_reference_[node->rhs()] << std::endl
-        ;
 }
 void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
     std::string register_ref = "%tmp." + to_string(register_reference_.size());
@@ -205,16 +285,18 @@ void LLVM_Generator::visit (ast::Assignment::Ptr             node) {
     switch (node->type()) {
         case parser::Type::INT:
             out_
-                << "store i32 " << register_reference_[node->rhs()]
-                << ", i32* %" << node->lhs()->symbol()->name()
+                << "store i32 " << register_reference_[node->rhs()] << ", i32* "
+                << (node->lhs()->symbol()->get(parser::Symbol::Attribute::GLOBAL) ? '@' : '%')
+                << node->lhs()->symbol()->name()
                 << std::endl;
                 ;
             break;
         case parser::Type::STRING:
             // TODO
              out_
-                << "store i8* " << register_reference_[node->rhs()]
-                << ", i8** %" << node->lhs()->symbol()->name()
+                << "store i8* " << register_reference_[node->rhs()] << ", i8** "
+                << (node->lhs()->symbol()->get(parser::Symbol::Attribute::GLOBAL) ? '@' : '%')
+                << node->lhs()->symbol()->name()
                 << std::endl;
                 ;
             break;
@@ -400,10 +482,39 @@ void LLVM_Generator::visit (ast::For_Instruction::Ptr        node) {
 void LLVM_Generator::visit (ast::Return_Instruction::Ptr     node) {
     node->expression()->emit_code(*this);
 
+    std::string reg = register_reference_[node->expression()];
+
+    if (node->expression()->type() == parser::Type::STRING) {
+        // If this register is slated for free-ing, cancel it. We need to return
+        // a copy.
+        if (strings_to_free_.find(reg) == std::end(strings_to_free_)) {
+            strings_to_free_.erase(reg);
+        }
+
+        // If not, make a copy of the string so we can guarantee that the caller
+        // can free it later.
+        else {
+            reg = "%tmp.return";
+            apply_indent_();
+            out_
+                << reg << " = call i8* @__string_copy__(i8* "
+                << register_reference_[node->expression()] << ")"
+                << std::endl
+                ;
+        }
+    }
+
+    // Free any strings created in this function
+    for (auto& reg : strings_to_free_) {
+        apply_indent_();
+        out_ << "call void @__string_free__ (i8* " << reg << ")" << std::endl;
+    }
+    strings_to_free_.clear();
+
     apply_indent_();
     out_ << "ret ";
     out_ << type(node->expression()->type()) << ' ';
-    out_ << register_reference_[node->expression()];
+    out_ << reg;
     out_ << std::endl;
 }
 void LLVM_Generator::visit (ast::Compound_Instruction::Ptr   node) {
@@ -436,17 +547,16 @@ void LLVM_Generator::visit (ast::Function_Declaration::Ptr   node) {
 void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
     auto& declarator = node->function_declarator();
 
-    // step 1
     apply_indent_();
     out_ << "define ";
 
-    // step 2: function return type
+    // function return type
     out_ << type(node->type());
 
-    // step 3: function name
+    // function name
     out_ << " @" << declarator->name();
 
-    // step 4: function argument list
+    // function argument list
     out_ << "(";
     infix(out_, ", ", declarator->argument_list(),
         [] (parser::Symbol::Ptr symbol) {
@@ -455,13 +565,13 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
 
     out_ << ")";
 
-    // step 5
+    // entry block
     out_ << " {" << std::endl;
     apply_indent_();
     out_ << "entry:" << std::endl;
     ++indent_level_;
 
-    // step 6 alloca argument variables
+    // alloca argument variables
     for (auto& symbol : declarator->argument_list()) {
         std::string tmp_type = type(symbol->type());
 
@@ -476,38 +586,96 @@ void LLVM_Generator::visit (ast::Function_Definition::Ptr    node) {
         symbol->name(symbol->name() + ".pointer");
     }
 
-    // step 7: function body
+    // function body
     node->body()->emit_code(*this);
+
+    // close function
     --indent_level_;
     apply_indent_();
     out_ << "}" << std::endl;
 
-    // step 8: const string
+    // const strings
     for (auto& pair : const_strings_) {
         auto& str_id = pair.first;
         auto& str_value = pair.second;
         // @.str_7 = private constant [18 x i8] c"hello, world! %i\0A\00"
         apply_indent_();
-        out_
-            << '@' << str_id << " = private unnamed_addr constant ["
-            << (str_value.size() + 1) << " x i8] c\""
-            ;
 
-        for (auto& c : str_value) {
+        std::ostringstream str_builder;
+        std::size_t str_size = 0;
+        for (std::size_t i = 0; i < str_value.size(); ++i) {
+            char c = str_value[i];
             if (std::iscntrl(c)) {
                 char buf[3];
                 buf[2] = '\0';
                 snprintf(buf, 3, "%02x", c & 0xff);
-                out_ << '\\' << buf;
+                str_builder << '\\' << buf;
+                ++str_size;
+            } else if (c == '\\') {
+                bool found_cntrl_token = false;
+                if (i + 1 < str_value.size()) {
+                    switch (str_value[i + 1]) {
+                        case '0':
+                            found_cntrl_token = true;
+                            str_builder << "\\00";
+                            break;
+                        case 'n':
+                            found_cntrl_token = true;
+                            str_builder << "\\0A";
+                            break;
+                        case 'r':
+                            found_cntrl_token = true;
+                            str_builder << "\\0D";
+                            break;
+                        case 't':
+                            found_cntrl_token = true;
+                            str_builder << "\\09";
+                            break;
+                        case 'v':
+                            found_cntrl_token = true;
+                            str_builder << "\\0B";
+                            break;
+                    }
+                }
+
+                if (found_cntrl_token) {
+                    ++i;
+                } else {
+                    str_builder << c;
+                }
+                ++str_size;
             } else {
-                out_ << c;
+                str_builder << c;
+                ++str_size;
             }
         }
 
-        out_ << "\\00\"" << std::endl;
+        out_
+            << '@' << str_id << " = private unnamed_addr constant ["
+            << str_size + 1 << " x i8] c\"" << str_builder.str()
+            << "\\00\""
+            << std::endl
+            ;
     }
     const_strings_.clear();
     out_ << std::endl;
+
+    // declare string functions if needed
+    if (need_string_functions_ and not string_functions_declared_) {
+        apply_indent_();
+        out_ << "declare i1 @__string_equal__(i8*, i8*)" << std::endl;
+        apply_indent_();
+        out_ << "declare i1 @__string_not_equal__(i8*, i8*)" << std::endl;
+        apply_indent_();
+        out_ << "declare i8* @__string_copy__(i8*)" << std::endl;
+        apply_indent_();
+        out_ << "declare i8* @__string_concat__(i8*, i8*)" << std::endl;
+        apply_indent_();
+        out_ << "declare void @__string_free__(i8*)" << std::endl;
+
+        out_ << std::endl;
+        string_functions_declared_ = true;
+    }
 }
 
 

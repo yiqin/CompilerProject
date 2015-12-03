@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "ast.hpp"
@@ -144,9 +145,15 @@ class LLVM_Generator : public ast::Code_Generator {
 
     std::unordered_map<ast::Expression::Ptr, std::string> register_reference_;
     std::unordered_map<parser::Symbol::Ptr, std::size_t>  variable_counts_;
-    std::vector<std::pair<std::string, std::string>>      const_strings_;
 
+    std::vector<std::pair<std::string, std::string>> const_strings_;
     std::size_t const_string_next_id_;
+    bool need_string_functions_ = false;
+    bool string_functions_declared_ = false;
+    std::unordered_set<std::string> strings_to_free_;
+
+    std::size_t indent_level_ = 0;
+    std::string indentation_;
 
     std::size_t increment_var_count_ (parser::Symbol::Ptr symbol) {
         auto iter = variable_counts_.find(symbol);
@@ -173,9 +180,6 @@ class LLVM_Generator : public ast::Code_Generator {
             out_ << label.destination_llvm_ir();
         }
     }
-
-    std::size_t indent_level_ = 0;
-    std::string indentation_;
 };
 
 

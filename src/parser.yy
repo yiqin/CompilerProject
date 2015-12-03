@@ -154,25 +154,38 @@ program :
 
 external_declaration :
     declaration         {
-        // Loop over declarations, and emit function declarations.
+        auto declaration_list = std::make_shared<ast::Declaration_List>();
+
         for (auto& symbol : $1) {
             symbol->set(Symbol::Attribute::GLOBAL);
 
+            // Emit function declarations.
             if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
-                ast::Function_Declaration::Ptr func_decl = std::make_shared<ast::Function_Declaration>(function->type(), function);
+                auto func_decl = std::make_shared<ast::Function_Declaration>(function->type(), function);
                 func_decl->emit_code(code_generator);
             } else {
-                // Global declaration.
-                // TODO: declare global variable.
+                declaration_list->push_back(symbol);
             }
         }
+
+        declaration_list->emit_code(code_generator);
     }
   | EXTERN declaration  {
+        auto declaration_list = std::make_shared<ast::Declaration_List>();
+
         for (auto& symbol : $2) {
             symbol->set(Symbol::Attribute::GLOBAL);
             symbol->set(Symbol::Attribute::EXTERN);
-            // std::cout << "- flag '" << symbol->name() << "' as extern" << std::endl;
+
+            if (auto function = std::dynamic_pointer_cast<Function>(symbol)) {
+                auto func_decl = std::make_shared<ast::Function_Declaration>(function->type(), function);
+                func_decl->emit_code(code_generator);
+            } else {
+                declaration_list->push_back(symbol);
+            }
         }
+
+        declaration_list->emit_code(code_generator);
     }
   | function_definition {
         /* std::cout << "external_declaration: function_definition" << std::endl; */
@@ -273,8 +286,9 @@ decl_glb_fct : {
 declaration :
     type declarator_list ';' {
         $$ = $2;
+        unclaimed_types_.pop();
+
         for (auto& symbol : $$) {
-            unclaimed_types_.pop();
             symbol->type($1);
 
             if (symbol_table->is_in_this_scope(symbol->name())) {
@@ -285,8 +299,6 @@ declaration :
             symbol_table->add(symbol->name(), symbol);
             // symbol->print_semantic_action();  // TODO: Remove for Part 3.
         }
-
-
     }
 ;
 
@@ -813,5 +825,4 @@ void parser::Parser::error (
     const parser::Parser::location_type& loc,
     const std::string& message
 ) {
-    std::cerr << "ERROR: at " << loc << " - " << message << std::endl;
-}
+    }
