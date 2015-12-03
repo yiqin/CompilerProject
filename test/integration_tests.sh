@@ -10,7 +10,7 @@ test_cases=(
     # 'div'  # compiles
     # 'erato'
     'expr'
-    'expr_temp'
+    # 'expr_temp'
     'functions'
     # 'loops'  # segmentation fault
     'lsh'
